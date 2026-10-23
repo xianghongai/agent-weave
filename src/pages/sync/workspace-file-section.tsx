@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { importProblemMessage } from '@/i18n/problems';
-import { downloadText } from '@/lib/download';
-import { formatTime } from '@/lib/format-time';
+import { downloadText } from '@/browser/download';
+import { formatTime } from '@/i18n/format-time';
 import type { Workspace } from '@/lib/workspace';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 import { getWorkspace, runOperation } from '@/state/workspace-store';

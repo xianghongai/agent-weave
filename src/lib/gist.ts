@@ -71,11 +71,13 @@ export type PullResult = { workspace: Workspace } | { problem: GistRequestProble
 /**
  * 推送工作区，整体覆盖远端。
  * `gistId` 为 `null` 时创建 Secret Gist，返回新 ID，由调用方保存。
+ * `description` 是新建 Gist 的描述，说明它的来源；属于界面文案，由调用方提供。更新时不修改描述。
  */
 export async function pushWorkspace(
   connection: GistConnection,
   gistId: string | null,
-  workspace: Workspace
+  workspace: Workspace,
+  description: string
 ): Promise<PushResult> {
   const files = { [GIST_FILE_NAME]: { content: exportWorkspace(workspace).text } };
   // 更新时只提交这一个文件，Gist 中的其他文件保持不变。
@@ -83,7 +85,7 @@ export async function pushWorkspace(
     gistId === null
       ? await request(connection, `${API_ROOT}/gists`, {
           method: 'POST',
-          body: { description: GIST_DESCRIPTION, public: false, files },
+          body: { description, public: false, files },
         })
       : await request(connection, gistUrl(gistId), { method: 'PATCH', body: { files } });
   if ('problem' in response) {
@@ -136,9 +138,6 @@ export function parseGistId(input: string): string | null {
   const id = path.slice(path.lastIndexOf('/') + 1);
   return /^[0-9a-f]+$/i.test(id) ? id : null;
 }
-
-/** 新建 Gist 的描述，说明它的来源。 */
-const GIST_DESCRIPTION = 'agent-weave 工作区（由 agent-weave 创建，用于在设备之间同步）';
 
 function gistUrl(gistId: string): string {
   return `${API_ROOT}/gists/${encodeURIComponent(gistId)}`;

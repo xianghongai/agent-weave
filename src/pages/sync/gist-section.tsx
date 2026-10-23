@@ -24,20 +24,19 @@ import {
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { gistProblemMessage } from '@/i18n/problems';
-import { formatTime } from '@/lib/format-time';
+import { gistProblemMessage, persistenceProblemMessage } from '@/i18n/problems';
+import { formatTime } from '@/i18n/format-time';
 import {
   type GistConnection,
   type GistContentFailure,
-  type GistSettings,
   browserFetch,
   isContentFailure,
   parseGistId,
   pullWorkspace,
   pushWorkspace,
 } from '@/lib/gist';
-import { browserStorage, loadGistSettings, saveGistSettings } from '@/lib/persistence';
 import type { Workspace } from '@/lib/workspace';
+import { getGistSettings, setGistSettings, useGistSettings, useGistSettingsProblem } from '@/state/gist-settings-store';
 import { getWorkspace, runOperation } from '@/state/workspace-store';
 
 /** 创建 Token 的页面：经典 Token 预先勾选 `gist`，Fine-grained Token 需要用户自己授予 Gists 读写。 */
@@ -55,7 +54,8 @@ type Pending =
 /** 同步页的“Gist 同步”一节：Token 指引、本机 Gist 设置，以及手动推送和拉取。 */
 export function GistSection() {
   const { t } = useTranslation();
-  const [settings, setSettings] = useState<GistSettings>(() => loadGistSettings(browserStorage));
+  const settings = useGistSettings();
+  const settingsProblem = useGistSettingsProblem();
   const [busy, setBusy] = useState(false);
   // 对话框关闭时保留待确认的内容，避免退场动画期间内容跳变。
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -68,14 +68,6 @@ export function GistSection() {
 
   function connection(): GistConnection {
     return { fetch: browserFetch, token: settings.token };
-  }
-
-  function update(next: GistSettings) {
-    setSettings(next);
-    if (saveGistSettings(browserStorage, next) !== null) {
-      // 同一条提示只显示一次，避免每输入一个字符弹出一次。
-      toast.error(t('gist.settingsNotSaved'), { id: 'gist-settings-not-saved' });
-    }
   }
 
   /** 推送前先读取远端，展示双方的修改时间；还没有 Gist 时直接创建。 */
@@ -98,14 +90,15 @@ export function GistSection() {
 
   async function push(id: string | null) {
     setBusy(true);
-    const result = await pushWorkspace(connection(), id, getWorkspace());
+    const result = await pushWorkspace(connection(), id, getWorkspace(), t('gist.description'));
     setBusy(false);
     if ('problem' in result) {
       toast.error(t('gist.pushFailed'), { description: gistProblemMessage(t, result) });
       return;
     }
     if (id === null) {
-      update({ ...settings, gist_id: result.gistId });
+      // 请求期间设置可能被修改，以最新的设置为准。
+      setGistSettings({ ...getGistSettings(), gist_id: result.gistId });
       toast.success(t('gist.created'));
     } else {
       toast.success(t('gist.pushed'));
@@ -174,7 +167,7 @@ export function GistSection() {
             autoComplete="off"
             spellCheck={false}
             className="font-mono"
-            onChange={(event) => update({ ...settings, token: event.target.value })}
+            onChange={(event) => setGistSettings({ ...settings, token: event.target.value })}
           />
           <FieldDescription>{t('gist.tokenHint')}</FieldDescription>
         </Field>
@@ -188,7 +181,7 @@ export function GistSection() {
             placeholder={t('gist.gistIdPlaceholder')}
             aria-invalid={gistIdInvalid ? true : undefined}
             className="font-mono"
-            onChange={(event) => update({ ...settings, gist_id: event.target.value })}
+            onChange={(event) => setGistSettings({ ...settings, gist_id: event.target.value })}
           />
           {gistIdInvalid ? (
             <FieldError>{t('gist.gistIdInvalid')}</FieldError>
@@ -205,6 +198,19 @@ export function GistSection() {
           )}
         </Field>
       </FieldGroup>
+
+      {settingsProblem && (
+        <Note tone="warning" icon={TriangleAlertIcon}>
+          {settingsProblem === 'invalidStructure' ? (
+            <p>{t('gist.invalidStructure')}</p>
+          ) : (
+            <>
+              <p>{persistenceProblemMessage(t, settingsProblem)}</p>
+              <p>{t('gist.unsaved')}</p>
+            </>
+          )}
+        </Note>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" disabled={busy || !hasToken || gistIdInvalid} onClick={() => void startPush()}>

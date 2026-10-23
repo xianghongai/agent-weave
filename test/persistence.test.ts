@@ -164,32 +164,35 @@ describe('持久化：Gist 设置', () => {
     const { storage, items } = memoryStorage();
     saveWorkspace(storage, edited());
     expect(saveGistSettings(storage, settings)).toBeNull();
-    expect(loadGistSettings(storage)).toEqual(settings);
+    expect(loadGistSettings(storage)).toEqual({ settings, problem: null });
     expect(items.get(STORAGE_KEYS.workspace)).not.toContain('test-token');
     expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
   });
 
+  it('首次访问时没有本地数据，返回空的设置且不提示', () => {
+    const { storage } = memoryStorage();
+    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: null });
+  });
+
   it.each([
-    ['没有本地数据', undefined],
-    ['数据无法解析', '{"token": '],
-    ['数据不是对象', '[]'],
-  ])('%s时返回空的设置', (_, text) => {
+    ['无法解析', '{"token": '],
+    ['不是对象', '[]'],
+    ['属性不是字符串', JSON.stringify({ token: 'test-token', gist_id: 42 })],
+  ])('本地数据%s时返回空的设置，并给出原因码', (_, text) => {
     const { storage, items } = memoryStorage();
-    if (text !== undefined) {
-      items.set(STORAGE_KEYS.gistSettings, text);
-    }
-    expect(loadGistSettings(storage)).toEqual({ token: '', gist_id: '' });
+    items.set(STORAGE_KEYS.gistSettings, text);
+    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: 'invalidStructure' });
   });
 
-  it('只取认识的字符串属性，其余视为空', () => {
+  it('丢弃不认识的属性', () => {
     const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.gistSettings, JSON.stringify({ token: 'test-token', gist_id: 42, extra: 'x' }));
-    expect(loadGistSettings(storage)).toEqual({ token: 'test-token', gist_id: '' });
+    items.set(STORAGE_KEYS.gistSettings, JSON.stringify({ ...settings, extra: 'x' }));
+    expect(loadGistSettings(storage)).toEqual({ settings, problem: null });
   });
 
-  it('存储不可用时读取返回空的设置，写入返回 writeFailed', () => {
+  it('存储无法读取或写入时返回原因码，不抛异常', () => {
     const { storage } = memoryStorage({ failRead: true, failWrite: true });
-    expect(loadGistSettings(storage)).toEqual({ token: '', gist_id: '' });
+    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: 'readFailed' });
     expect(saveGistSettings(storage, settings)).toBe('writeFailed');
   });
 });

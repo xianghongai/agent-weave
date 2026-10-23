@@ -65,22 +65,63 @@ export function saveWorkspace(storage: KeyValueStorage, workspace: Workspace): S
 }
 
 /**
+ * 读取本机设置或 Gist 设置的问题：
  * - `readFailed`：同 `LoadProblem`；
- * - `invalidStructure`：本地保存的本机设置无法解析，或不是有效的本机设置。
+ * - `invalidStructure`：本地保存的设置无法解析，或不是有效的设置。
  */
-export type DeviceSettingsLoadProblem = 'readFailed' | 'invalidStructure';
+export type SettingsLoadProblem = 'readFailed' | 'invalidStructure';
 
-function parseDeviceSettings(text: string): DeviceSettings | null {
+/** 设置的存储状态：读取时的问题，或写入时的问题。 */
+export type SettingsProblem = SettingsLoadProblem | SaveProblem;
+
+/** 解析为 JSON 对象；无法解析或不是对象时返回 `null`。 */
+function parseObject(text: string): Record<string, unknown> | null {
   let value: unknown;
   try {
     value = JSON.parse(text);
   } catch {
     return null;
   }
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/**
+ * 读取一份只存在本机的设置，总是返回一份可用的设置。
+ * 没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。
+ */
+function loadSettings<T>(
+  storage: KeyValueStorage,
+  key: string,
+  parse: (value: Record<string, unknown>) => T | null,
+  empty: T
+): { settings: T; problem: SettingsLoadProblem | null } {
+  let text: string | null;
+  try {
+    text = storage.getItem(key);
+  } catch {
+    return { settings: empty, problem: 'readFailed' };
   }
-  const { os, user_name: userName } = value as Record<string, unknown>;
+  if (text === null) {
+    return { settings: empty, problem: null };
+  }
+  const value = parseObject(text);
+  const settings = value && parse(value);
+  return settings ? { settings, problem: null } : { settings: empty, problem: 'invalidStructure' };
+}
+
+function saveSettings(storage: KeyValueStorage, key: string, settings: object): SaveProblem | null {
+  try {
+    storage.setItem(key, JSON.stringify(settings));
+    return null;
+  } catch {
+    return 'writeFailed';
+  }
+}
+
+function parseDeviceSettings(value: Record<string, unknown>): DeviceSettings | null {
+  const { os, user_name: userName } = value;
   // `undefined` 表示取值无效；`null` 表示未选择操作系统，是合法的。
   const parsedOs = os === null ? null : OPERATING_SYSTEMS.find((candidate) => candidate === os);
   if (parsedOs === undefined || typeof userName !== 'string') {
@@ -90,66 +131,36 @@ function parseDeviceSettings(text: string): DeviceSettings | null {
   return { os: parsedOs, user_name: userName };
 }
 
-/**
- * 读取本机设置，总是返回一份可用的设置。
- * 没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。
- */
+/** 读取本机设置。没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。 */
 export function loadDeviceSettings(storage: KeyValueStorage): {
   settings: DeviceSettings;
-  problem: DeviceSettingsLoadProblem | null;
+  problem: SettingsLoadProblem | null;
 } {
-  let text: string | null;
-  try {
-    text = storage.getItem(STORAGE_KEYS.deviceSettings);
-  } catch {
-    return { settings: EMPTY_DEVICE_SETTINGS, problem: 'readFailed' };
-  }
-  if (text === null) {
-    return { settings: EMPTY_DEVICE_SETTINGS, problem: null };
-  }
-  const settings = parseDeviceSettings(text);
-  return settings ? { settings, problem: null } : { settings: EMPTY_DEVICE_SETTINGS, problem: 'invalidStructure' };
+  return loadSettings(storage, STORAGE_KEYS.deviceSettings, parseDeviceSettings, EMPTY_DEVICE_SETTINGS);
 }
 
 /** 保存本机设置。成功时返回 `null`。 */
 export function saveDeviceSettings(storage: KeyValueStorage, settings: DeviceSettings): SaveProblem | null {
-  try {
-    storage.setItem(STORAGE_KEYS.deviceSettings, JSON.stringify(settings));
-    return null;
-  } catch {
-    return 'writeFailed';
-  }
+  return saveSettings(storage, STORAGE_KEYS.deviceSettings, settings);
 }
 
-/**
- * 读取 Gist 设置。没有数据、无法读取或无效时返回空的设置：
- * 这时用户重新填写即可，存储不可用的情况已由工作区的读取结果提示。
- */
-export function loadGistSettings(storage: KeyValueStorage): GistSettings {
-  let value: unknown;
-  try {
-    value = JSON.parse(storage.getItem(STORAGE_KEYS.gistSettings) ?? 'null');
-  } catch {
-    return { ...EMPTY_GIST_SETTINGS };
-  }
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return { ...EMPTY_GIST_SETTINGS };
-  }
-  const { token, gist_id } = value as Record<string, unknown>;
-  return {
-    token: typeof token === 'string' ? token : '',
-    gist_id: typeof gist_id === 'string' ? gist_id : '',
-  };
+function parseGistSettings(value: Record<string, unknown>): GistSettings | null {
+  const { token, gist_id } = value;
+  // 只保留已知属性，丢弃未知属性。
+  return typeof token === 'string' && typeof gist_id === 'string' ? { token, gist_id } : null;
+}
+
+/** 读取 Gist 设置。没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。 */
+export function loadGistSettings(storage: KeyValueStorage): {
+  settings: GistSettings;
+  problem: SettingsLoadProblem | null;
+} {
+  return loadSettings(storage, STORAGE_KEYS.gistSettings, parseGistSettings, EMPTY_GIST_SETTINGS);
 }
 
 /** 保存 Gist 设置。成功时返回 `null`。 */
 export function saveGistSettings(storage: KeyValueStorage, settings: GistSettings): SaveProblem | null {
-  try {
-    storage.setItem(STORAGE_KEYS.gistSettings, JSON.stringify({ token: settings.token, gist_id: settings.gist_id }));
-    return null;
-  } catch {
-    return 'writeFailed';
-  }
+  return saveSettings(storage, STORAGE_KEYS.gistSettings, { token: settings.token, gist_id: settings.gist_id });
 }
 
 /**

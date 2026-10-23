@@ -45,6 +45,7 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
 }
 
 const TOKEN = 'test-token';
+const DESCRIPTION = '调用方提供的 Gist 描述';
 
 /** 请求体中 `agent-weave.json` 的内容。 */
 function fileContent(body: unknown): string {
@@ -56,7 +57,7 @@ describe('Gist：推送', () => {
   it('没有 Gist ID 时创建 Secret Gist，内容是导出的工作区，返回新 ID', async () => {
     const github = fakeGitHub(json(201, { id: 'new-gist', files: {} }));
 
-    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, null, edited());
+    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, null, edited(), DESCRIPTION);
 
     expect(result).toEqual({ gistId: 'new-gist' });
     expect(github.requests).toHaveLength(1);
@@ -64,20 +65,21 @@ describe('Gist：推送', () => {
     expect(request?.url).toBe('https://api.github.com/gists');
     expect(request?.method).toBe('POST');
     expect(request?.headers.authorization).toBe(`Bearer ${TOKEN}`);
-    expect(request?.body).toMatchObject({ public: false });
+    expect(request?.body).toMatchObject({ public: false, description: DESCRIPTION });
     expect(importWorkspace(fileContent(request?.body))).toEqual({ workspace: edited() });
   });
 
   it('有 Gist ID 时更新其中的 agent-weave.json，ID 不变', async () => {
     const github = fakeGitHub(json(200, { id: 'my-gist', files: {} }));
 
-    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist', edited());
+    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist', edited(), DESCRIPTION);
 
     expect(result).toEqual({ gistId: 'my-gist' });
     expect(github.requests).toHaveLength(1);
     const [request] = github.requests;
     expect(request?.url).toBe('https://api.github.com/gists/my-gist');
     expect(request?.method).toBe('PATCH');
+    expect(request?.body).not.toHaveProperty('description');
     expect(request?.headers.authorization).toBe(`Bearer ${TOKEN}`);
     expect(importWorkspace(fileContent(request?.body))).toEqual({ workspace: edited() });
   });
@@ -174,7 +176,7 @@ describe('Gist：请求失败', () => {
   ])('推送时 Token 权限不足，%s Gist 返回 unauthorized', async (_, gistId) => {
     const github = fakeGitHub(json(403, { message: 'Resource not accessible by personal access token' }));
 
-    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, gistId, edited());
+    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, gistId, edited(), DESCRIPTION);
 
     expect(result).toEqual({ problem: 'unauthorized' });
   });
@@ -190,7 +192,7 @@ describe('Gist：请求失败', () => {
   it('推送时要更新的 Gist 不存在返回 notFound，不会改为创建新 Gist', async () => {
     const github = fakeGitHub(json(404, { message: 'Not Found' }));
 
-    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, 'missing-gist', edited());
+    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, 'missing-gist', edited(), DESCRIPTION);
 
     expect(result).toEqual({ problem: 'notFound' });
     expect(github.requests).toHaveLength(1);
@@ -202,7 +204,7 @@ describe('Gist：请求失败', () => {
     };
 
     const pulled = await pullWorkspace({ fetch: fakeGitHub(offline).fetch, token: TOKEN }, 'my-gist');
-    const pushed = await pushWorkspace({ fetch: fakeGitHub(offline).fetch, token: TOKEN }, null, edited());
+    const pushed = await pushWorkspace({ fetch: fakeGitHub(offline).fetch, token: TOKEN }, null, edited(), DESCRIPTION);
 
     expect(pulled).toEqual({ problem: 'networkFailed' });
     expect(pushed).toEqual({ problem: 'networkFailed' });
@@ -235,7 +237,7 @@ describe('Gist：请求失败', () => {
   it('创建 Gist 的响应缺少 ID 时返回 unexpectedResponse', async () => {
     const github = fakeGitHub(json(201, { files: {} }));
 
-    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, null, edited());
+    const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, null, edited(), DESCRIPTION);
 
     expect(result).toEqual({ problem: 'unexpectedResponse' });
   });

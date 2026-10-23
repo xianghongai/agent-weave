@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { setTheme, useTheme } from '@/lib/theme';
+import { setTheme, useTheme } from '@/state/theme';
 
 export function ThemeToggle() {
   const { t } = useTranslation();

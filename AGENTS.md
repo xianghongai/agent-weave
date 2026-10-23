@@ -14,10 +14,15 @@
 ## 目录职责
 
 - `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动出现在顶部导航和路由中。登记顺序就是导航顺序，第一项也是首页；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
-- `src/lib/`：纯函数，不依赖 React 和 DOM（`theme.ts` 除外），全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
-- `src/state/`：界面订阅的内存状态。`workspace-store.ts` 保存当前工作区，界面用 `useWorkspace()` 读取，用 `runOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作；这里只保存结果、通知订阅者，不写业务逻辑。
-- `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数放在 `src/i18n/` 中。
-- `src/components/`：站点外壳（页眉、页脚、主题切换）和页面容器 `page.tsx`。
+- `src/lib/`：纯函数，不依赖 React 和 DOM，全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
+- `src/state/`：界面订阅的内存状态，都基于 `create-store.ts` 的 `createStore()`；这里只保存结果、写入本地存储、通知订阅者，不写业务逻辑。
+  - `workspace-store.ts`：当前工作区。界面用 `useWorkspace()` 读取，用 `runOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作。
+  - `device-settings-store.ts`、`gist-settings-store.ts`：本机设置和 Gist 设置，只保存在本机，各自带有读写本地存储的问题。
+  - `theme.ts`：深浅色主题，记录在 `<html>` 的 `dark` class 上。
+- `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
+- `src/components/`：站点外壳（页眉、页脚、主题切换）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅。只在一个页面中使用的组件放在该页面的目录里。
+- `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。
+- `src/browser/`：直接调用浏览器 API、又不是组件的界面辅助函数，如让浏览器下载文件的 `download.ts`。
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。
 - `build/`：只在构建时使用的 Vite 插件和配置，不打包进站点。
 - `test/`：Vitest 单元测试，以 `*.test.ts` 命名，只测纯函数。
@@ -30,7 +35,7 @@
 - Vite、React、Tailwind CSS v4、shadcn/ui（Base UI），格式化与 lint 使用 oxfmt 和 oxlint。
 - 路由使用 wouter 的 hash 路由：GitHub Pages 没有服务端重写，路径放在 `#` 之后才能直接打开和刷新。`vite.config.ts` 的 `base` 为 `./`，同一份构建产物可以部署在任意子路径下。
 - 设计令牌在 `src/index.css` 中用 `@theme` 声明，不使用 `tailwind.config.js`。品牌色为 `brand`。
-- 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/lib/theme.ts` 负责切换。
+- 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/state/theme.ts` 负责切换。
 - class 合并使用 `import { cn } from 'cn'`，不使用 clsx 与 tailwind-merge。
 - 页面适配窄屏，但不禁止缩放：`index.html` 的 viewport 保持 `width=device-width, initial-scale=1.0`，不加 `maximum-scale`、`user-scalable=no`。
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。

@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from 'react';
-
 import {
   type LoadProblem,
   type PersistenceProblem,
@@ -9,6 +7,7 @@ import {
 } from '@/lib/persistence';
 import type { Workspace } from '@/lib/workspace';
 import type { OperationProblem, OperationResult } from '@/lib/workspace-operations';
+import { createStore } from '@/state/create-store';
 
 /*
  * 当前工作区的内存状态。界面通过 `useWorkspace()` 订阅，通过 `runOperation()` 修改。
@@ -26,33 +25,22 @@ export interface StorageStatus {
 
 const initial = loadWorkspace(browserStorage);
 
-let current: Workspace = initial.workspace;
-let status: StorageStatus = {
-  fallback: initial.problem === 'readFailed' ? null : initial.problem,
-  unsaved: initial.problem === 'readFailed' ? 'readFailed' : null,
-};
-const listeners = new Set<() => void>();
-
-function notify(): void {
-  listeners.forEach((listener) => listener());
-}
+const store = createStore<{ workspace: Workspace; status: StorageStatus }>({
+  workspace: initial.workspace,
+  status: {
+    fallback: initial.problem === 'readFailed' ? null : initial.problem,
+    unsaved: initial.problem === 'readFailed' ? 'readFailed' : null,
+  },
+});
 
 export function getWorkspace(): Workspace {
-  return current;
+  return store.get().workspace;
 }
 
 function setWorkspace(next: Workspace): void {
-  current = next;
-  const problem = saveWorkspace(browserStorage, next);
-  if (problem !== status.unsaved) {
-    status = { ...status, unsaved: problem };
-  }
-  notify();
-}
-
-export function subscribeWorkspace(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  const { status } = store.get();
+  const unsaved = saveWorkspace(browserStorage, next);
+  store.set({ workspace: next, status: unsaved === status.unsaved ? status : { ...status, unsaved } });
 }
 
 /**
@@ -61,7 +49,7 @@ export function subscribeWorkspace(listener: () => void): () => void {
  * 写入本地存储失败不算操作失败，结果通过 `useStorageStatus()` 反映。
  */
 export function runOperation(operation: (workspace: Workspace) => OperationResult): OperationProblem | null {
-  const result = operation(current);
+  const result = operation(getWorkspace());
   if ('problem' in result) {
     return result.problem;
   }
@@ -70,21 +58,17 @@ export function runOperation(operation: (workspace: Workspace) => OperationResul
 }
 
 export function useWorkspace(): Workspace {
-  return useSyncExternalStore(subscribeWorkspace, getWorkspace);
-}
-
-function getStorageStatus(): StorageStatus {
-  return status;
+  return store.use((state) => state.workspace);
 }
 
 export function useStorageStatus(): StorageStatus {
-  return useSyncExternalStore(subscribeWorkspace, getStorageStatus);
+  return store.use((state) => state.status);
 }
 
 /** 用户看过“已回退到预设”的提示后关闭它。 */
 export function dismissStorageFallback(): void {
-  if (status.fallback !== null) {
-    status = { ...status, fallback: null };
-    notify();
+  const state = store.get();
+  if (state.status.fallback !== null) {
+    store.set({ ...state, status: { ...state.status, fallback: null } });
   }
 }
