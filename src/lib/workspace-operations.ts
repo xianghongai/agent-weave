@@ -1,4 +1,15 @@
-import type { CommandTool, Decision, Rule, ToolRef, Workspace } from '@/lib/workspace';
+import type {
+  Agent,
+  CommandTool,
+  Decision,
+  McpOutput,
+  PermissionOutput,
+  Rule,
+  Scope,
+  TemplatePair,
+  ToolRef,
+  Workspace,
+} from '@/lib/workspace';
 import { TOOL_TYPES } from '@/lib/workspace';
 
 /*
@@ -18,7 +29,15 @@ export const systemContext: OperationContext = {
   newId: () => crypto.randomUUID(),
 };
 
-export type OperationProblem = 'keyEmpty' | 'keyDuplicate' | 'notFound' | 'toolMissing';
+export type OperationProblem =
+  | 'keyEmpty'
+  | 'keyDuplicate'
+  | 'nameEmpty'
+  | 'nameDuplicate'
+  | 'propertyPathInvalid'
+  | 'decisionKeyDuplicate'
+  | 'notFound'
+  | 'toolMissing';
 
 export type OperationResult = { workspace: Workspace } | { problem: OperationProblem };
 
@@ -108,6 +127,153 @@ export function deleteCommandTool(
     {
       command_tools: workspace.command_tools.filter((tool) => tool.id !== id),
       rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
+    },
+    ctx
+  );
+}
+
+/* Agent */
+
+/**
+ * Agent 表单提交的内容。内置工具单独增删改，不经过这里，编辑 Agent 时保持不变。
+ * MCP 输出与权限输出一样整体传入，为 `null` 表示该 Agent 不输出这一部分。
+ */
+export interface AgentInput {
+  name: string;
+  description: string;
+  permission_output: PermissionOutput | null;
+  mcp_output: McpOutput | null;
+}
+
+/** 新增 Agent 或开启权限输出时的初始值：决策键名映射默认为 `allow`、`ask`、`deny`，模板留空待填。 */
+export function newPermissionOutput(): PermissionOutput {
+  return {
+    property_path: 'permissions',
+    scopes: [],
+    decision_keys: { allow: 'allow', ask: 'ask', deny: 'deny' },
+    command_templates: { with_pattern: '', without_pattern: '' },
+    mcp_templates: { with_pattern: '', without_pattern: '' },
+  };
+}
+
+function trimTemplates(pair: TemplatePair): TemplatePair {
+  return { with_pattern: pair.with_pattern.trim(), without_pattern: pair.without_pattern.trim() };
+}
+
+/** 去掉作用域各字段首尾的空白，丢弃全部为空的作用域（表单中新增后未填写的行）。 */
+function trimScopes(scopes: Scope[]): Scope[] {
+  return scopes
+    .map((scope) => ({ name: scope.name.trim(), path: scope.path.trim(), note: scope.note.trim() }))
+    .filter((scope) => scope.name !== '' || scope.path !== '' || scope.note !== '');
+}
+
+/** 点分的属性路径：至少一段，且每一段都不为空。 */
+function isValidPropertyPath(path: string): boolean {
+  return path.split('.').every((segment) => segment !== '');
+}
+
+function normalizePermissionOutput(output: PermissionOutput): PermissionOutput {
+  return {
+    property_path: output.property_path.trim(),
+    scopes: trimScopes(output.scopes),
+    decision_keys: {
+      allow: output.decision_keys.allow.trim(),
+      ask: output.decision_keys.ask.trim(),
+      deny: output.decision_keys.deny.trim(),
+    },
+    command_templates: trimTemplates(output.command_templates),
+    mcp_templates: trimTemplates(output.mcp_templates),
+  };
+}
+
+function normalizeMcpOutput(output: McpOutput): McpOutput {
+  return { style: output.style, property_path: output.property_path.trim(), scopes: trimScopes(output.scopes) };
+}
+
+/** 整理并检查 Agent 表单的内容。名称在全部 Agent 中唯一。 */
+function checkAgentInput(
+  workspace: Workspace,
+  input: AgentInput,
+  selfId: string | null
+): { problem: OperationProblem } | { fields: Omit<Agent, 'id' | 'built_in_tools'> } {
+  const name = input.name.trim();
+  if (name === '') {
+    return { problem: 'nameEmpty' };
+  }
+  if (workspace.agents.some((agent) => agent.name === name && agent.id !== selfId)) {
+    return { problem: 'nameDuplicate' };
+  }
+
+  const permission_output = input.permission_output && normalizePermissionOutput(input.permission_output);
+  const mcp_output = input.mcp_output && normalizeMcpOutput(input.mcp_output);
+  for (const output of [permission_output, mcp_output]) {
+    if (output && !isValidPropertyPath(output.property_path)) {
+      return { problem: 'propertyPathInvalid' };
+    }
+  }
+  if (permission_output) {
+    // 同一个键名出现两次时，JSON 中后一个决策会覆盖前一个；留空的决策不输出，不算重复。
+    const keys = Object.values(permission_output.decision_keys).filter((key) => key !== '');
+    if (new Set(keys).size !== keys.length) {
+      return { problem: 'decisionKeyDuplicate' };
+    }
+  }
+
+  return { fields: { name, description: input.description.trim(), permission_output, mcp_output } };
+}
+
+export function addAgent(
+  workspace: Workspace,
+  input: AgentInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const checked = checkAgentInput(workspace, input, null);
+  if ('problem' in checked) {
+    return checked;
+  }
+  const agent: Agent = { id: ctx.newId(), ...checked.fields, built_in_tools: [] };
+  return commit(workspace, { agents: [...workspace.agents, agent] }, ctx);
+}
+
+export function updateAgent(
+  workspace: Workspace,
+  id: string,
+  input: AgentInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  if (!workspace.agents.some((agent) => agent.id === id)) {
+    return { problem: 'notFound' };
+  }
+  const checked = checkAgentInput(workspace, input, id);
+  if ('problem' in checked) {
+    return checked;
+  }
+  const agents = workspace.agents.map((agent) => (agent.id === id ? { ...agent, ...checked.fields } : agent));
+  return commit(workspace, { agents }, ctx);
+}
+
+/** 指向该 Agent 内置工具的规则，删除 Agent 时会一并删除。 */
+function isAgentRule(agent: Agent, rule: Rule): boolean {
+  return rule.tool.type === 'built_in' && agent.built_in_tools.some((tool) => tool.id === rule.tool.id);
+}
+
+/** 删除 Agent 前，界面用它在确认框中显示受影响的规则数量。 */
+export function countRulesForAgent(workspace: Workspace, agentId: string): number {
+  const agent = workspace.agents.find((candidate) => candidate.id === agentId);
+  return agent ? workspace.rules.filter((rule) => isAgentRule(agent, rule)).length : 0;
+}
+
+/** 删除 Agent，同时删除它的内置工具，以及指向这些内置工具的规则。 */
+export function deleteAgent(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
+  const agent = workspace.agents.find((candidate) => candidate.id === id);
+  if (!agent) {
+    return { problem: 'notFound' };
+  }
+  return commit(
+    workspace,
+    {
+      agents: workspace.agents.filter((candidate) => candidate.id !== id),
+      rules: workspace.rules.filter((rule) => !isAgentRule(agent, rule)),
     },
     ctx
   );

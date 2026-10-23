@@ -1,3 +1,4 @@
+import { ANTIGRAVITY } from '@/lib/presets/agents/antigravity';
 import { CLAUDE_CODE } from '@/lib/presets/agents/claude-code';
 import { PRESET_COMMAND_TOOLS } from '@/lib/presets/command-tools';
 import { PRESET_RULES } from '@/lib/presets/rules';
@@ -17,7 +18,7 @@ const PRESET_WORKSPACE: Workspace = {
   tags: [],
   command_tools: PRESET_COMMAND_TOOLS,
   mcp_servers: [],
-  agents: [CLAUDE_CODE],
+  agents: [CLAUDE_CODE, ANTIGRAVITY],
   rules: PRESET_RULES,
 };
 

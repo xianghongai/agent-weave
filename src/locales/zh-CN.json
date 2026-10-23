@@ -93,7 +93,15 @@
       "keyEmpty": "标识不能为空。",
       "keyDuplicate": "已有相同标识的条目，标识不能重复。",
       "notFound": "该条目已不存在，可能已被删除。",
-      "toolMissing": "所选工具已不存在，请重新选择。"
+      "toolMissing": "所选工具已不存在，请重新选择。",
+      "nameEmpty": "名称不能为空。",
+      "nameDuplicate": "已有同名的 Agent，名称不能重复。",
+      "propertyPathInvalid": "属性路径不能为空，点分的每一段也不能为空。",
+      "decisionKeyDuplicate": "两个决策不能使用同一个键名。"
+    },
+    "skip": {
+      "decisionKeyMissing": "该 Agent 不支持“{{decision}}”这一档：决策键名为空。",
+      "templateMissing": "该 Agent 的{{templates}}中，{{template}}为空。"
     },
     "persistence": {
       "readFailed": "浏览器不允许本站访问本地存储，可能禁用了站点数据。",
@@ -153,7 +161,9 @@
     "scopes": "粘贴到",
     "preview": "预览",
     "copyHint": "“复制”只复制 {{key}} 这一层的键值对，可以在编辑器里折叠原属性后整体替换；“复制内部”只复制该决策数组的元素，可以追加到已有数组后自行去重。",
-    "entryCount": "{{n}} 条"
+    "entryCount": "{{n}} 条",
+    "skippedRules": "跳过的规则",
+    "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。"
   },
   "pwa": {
     "offlineReady": "已可离线使用",
@@ -161,5 +171,46 @@
     "updateDescription": "刷新后生效。工作区已自动保存，正在填写但未提交的内容会丢失，可以完成后再刷新。",
     "reload": "刷新",
     "later": "稍后"
+  },
+  "agents": {
+    "add": "新增 Agent",
+    "addTitle": "新增 Agent",
+    "editTitle": "编辑 Agent",
+    "empty": "还没有 Agent。",
+    "name": "名称",
+    "namePlaceholder": "如 Claude Code",
+    "description": "描述",
+    "permissionOutput": "输出权限",
+    "permissionOutputHint": "关闭后该 Agent 不输出权限，也不列出跳过的规则。",
+    "noPermissionOutput": "不输出权限",
+    "permissionScopes": "权限的作用域",
+    "scopesHint": "只用于提示把输出粘贴到哪个文件，不影响输出内容。",
+    "scopeName": "名称",
+    "scopeNamePlaceholder": "如 用户级",
+    "scopePath": "路径",
+    "scopePathPlaceholder": "如 ~/.claude/settings.json",
+    "scopeNote": "说明",
+    "addScope": "添加作用域",
+    "removeScope": "删除作用域",
+    "noScopes": "还没有作用域。",
+    "advanced": "高级",
+    "advancedHint": "属性路径、决策键名和输出模板。",
+    "propertyPath": "属性路径",
+    "propertyPathHint": "点分的多层路径，如 permissions、userSettings.globalPermissionGrants。",
+    "decisionKeys": "决策键名",
+    "decisionKeysHint": "每个决策在输出中的键名。留空表示该 Agent 不支持这一档，这一档的规则进入跳过的规则。",
+    "decisionKeyPlaceholder": "留空表示不支持",
+    "commandTemplates": "命令工具模板",
+    "commandTemplatesHint": "使用 {command} 和 {pattern}，如 Bash({command} {pattern} *) 与 Bash({command} *)。",
+    "mcpTemplates": "MCP 工具模板",
+    "mcpTemplatesHint": "使用 {server} 和 {pattern}，如 mcp__{server}__{pattern} 与 mcp__{server}。",
+    "withPattern": "有模式模板",
+    "withoutPattern": "无模式模板",
+    "templatesEmptyHint": "模板为空时，需要它的规则进入跳过的规则。",
+    "editLabel": "编辑 {{name}}",
+    "deleteLabel": "删除 {{name}}",
+    "deleteTitle": "删除 Agent {{name}}？",
+    "deleteDescription": "它的 {{tools}} 个内置工具，以及指向这些内置工具的 {{rules}} 条权限规则会一并删除。共享的规则不受影响。",
+    "builtInTemplates": "内置工具模板"
   }
 }
