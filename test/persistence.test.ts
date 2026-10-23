@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { type KeyValueStorage, STORAGE_KEYS, loadWorkspace, saveWorkspace } from '@/lib/persistence';
+import {
+  type KeyValueStorage,
+  STORAGE_KEYS,
+  loadDeviceSettings,
+  loadWorkspace,
+  saveDeviceSettings,
+  saveWorkspace,
+} from '@/lib/persistence';
 import { createPresetWorkspace } from '@/lib/presets';
+import { EMPTY_DEVICE_SETTINGS } from '@/lib/workspace';
 import { parseWorkspace } from '@/lib/workspace-validation';
 
 import { corrupt, edited } from './fixtures/workspace';
@@ -98,6 +106,52 @@ describe('持久化：工作区', () => {
     saveWorkspace(storage, edited());
     expect(items.get(STORAGE_KEYS.deviceSettings)).toBe('device');
     expect(items.get(STORAGE_KEYS.gistSettings)).toBe('gist');
+  });
+});
+
+describe('持久化：本机设置', () => {
+  it('保存后再读取，得到同样的本机设置', () => {
+    const { storage } = memoryStorage();
+    expect(saveDeviceSettings(storage, { os: 'macos', user_name: 'alice' })).toBeNull();
+    expect(loadDeviceSettings(storage)).toEqual({ settings: { os: 'macos', user_name: 'alice' }, problem: null });
+  });
+
+  it('只写本机设置自己的键，不进入工作区', () => {
+    const { storage, items } = memoryStorage();
+    saveWorkspace(storage, edited());
+    saveDeviceSettings(storage, { os: 'linux', user_name: 'alice' });
+    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
+    expect([...items.keys()].toSorted()).toEqual([STORAGE_KEYS.deviceSettings, STORAGE_KEYS.workspace].toSorted());
+  });
+
+  it('首次访问时没有本地数据，返回空的本机设置且不提示', () => {
+    const { storage } = memoryStorage();
+    expect(loadDeviceSettings(storage)).toEqual({ settings: EMPTY_DEVICE_SETTINGS, problem: null });
+  });
+
+  it.each([
+    ['无法解析', '{"os": '],
+    ['不是对象', '[]'],
+    ['操作系统未知', '{"os": "beos", "user_name": "alice"}'],
+    ['用户名不是字符串', '{"os": "linux", "user_name": 1}'],
+  ])('本地数据%s时返回空的本机设置，并给出原因码', (_, text) => {
+    const { storage, items } = memoryStorage();
+    items.set(STORAGE_KEYS.deviceSettings, text);
+    expect(loadDeviceSettings(storage)).toEqual({ settings: EMPTY_DEVICE_SETTINGS, problem: 'invalidStructure' });
+  });
+
+  it('未选择操作系统是合法的本机设置', () => {
+    const { storage } = memoryStorage();
+    saveDeviceSettings(storage, { os: null, user_name: 'alice' });
+    expect(loadDeviceSettings(storage)).toEqual({ settings: { os: null, user_name: 'alice' }, problem: null });
+  });
+
+  it('存储无法读取或写入时返回原因码，不抛异常', () => {
+    expect(loadDeviceSettings(memoryStorage({ failRead: true }).storage)).toEqual({
+      settings: EMPTY_DEVICE_SETTINGS,
+      problem: 'readFailed',
+    });
+    expect(saveDeviceSettings(memoryStorage({ failWrite: true }).storage, EMPTY_DEVICE_SETTINGS)).toBe('writeFailed');
   });
 });
 
