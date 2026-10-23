@@ -43,5 +43,12 @@
   },
   "placeholder": {
     "comingSoon": "这一页还在建设中。"
+  },
+  "pwa": {
+    "offlineReady": "已可离线使用",
+    "update": "有新版本",
+    "updateDescription": "刷新后生效。工作区已自动保存，正在填写但未提交的内容会丢失，可以完成后再刷新。",
+    "reload": "刷新",
+    "later": "稍后"
   }
 }

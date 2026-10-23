@@ -3,8 +3,10 @@ import { Suspense } from 'react';
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
 
+import { PwaPrompt } from '@/components/pwa-prompt';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PAGES } from '@/pages/registry';
 
@@ -53,6 +55,8 @@ export function App() {
             <SiteFooter />
           </div>
         </Router>
+        <Toaster position="bottom-center" />
+        <PwaPrompt />
       </TooltipProvider>
     </MotionConfig>
   );
