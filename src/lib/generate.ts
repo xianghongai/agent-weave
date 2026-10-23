@@ -103,6 +103,8 @@ function templatesFor(tool: ResolvedTool, output: PermissionOutput): { pair: Tem
   switch (tool.type) {
     case 'command':
       return { pair: output.command_templates, values: { command: tool.tool.key } };
+    case 'mcp':
+      return { pair: output.mcp_templates, values: { server: tool.tool.key } };
   }
 }
 

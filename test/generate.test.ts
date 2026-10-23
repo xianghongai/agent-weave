@@ -7,6 +7,7 @@ import {
   type CommandTool,
   type Decision,
   EMPTY_DEVICE_SETTINGS,
+  type McpServer,
   type Rule,
   type Workspace,
 } from '@/lib/workspace';
@@ -332,5 +333,61 @@ describe('生成：没有权限输出的 Agent', () => {
     const output = generate(workspace(['git'], [rule('git', '', 'allow')], mcpOnly), claude.id, EMPTY_DEVICE_SETTINGS);
     expect(output?.permission).toBeNull();
     expect(output?.skippedRules).toEqual([]);
+  });
+});
+
+function server(key: string, content: McpServer['content'] = {}, description = ''): McpServer {
+  return { id: `server-${key}`, key, content, description, tag_ids: [], high_risk: false };
+}
+
+function mcpRule(serverKey: string, pattern: string, decision: Decision): Rule {
+  ruleSeq += 1;
+  return {
+    id: `rule-${ruleSeq}`,
+    tool: { type: 'mcp', id: `server-${serverKey}` },
+    pattern,
+    decision,
+    high_risk: false,
+  };
+}
+
+/** 在命令工具之外再放入若干 MCP Server。 */
+function withServers(ws: Workspace, servers: McpServer[]): Workspace {
+  return { ...ws, mcp_servers: servers };
+}
+
+describe('生成：MCP 规则', () => {
+  const rules = [mcpRule('context7', '', 'allow'), mcpRule('context7', 'resolve-library-id', 'ask')];
+
+  it('Claude Code 风格：模式为空时写成 mcp__server，否则写成 mcp__server__tool', () => {
+    const ws = withServers(workspace([], rules), [server('context7')]);
+    expect(entries(ws, 'allow')).toEqual(['mcp__context7']);
+    expect(entries(ws, 'ask')).toEqual(['mcp__context7__resolve-library-id']);
+  });
+
+  it('Antigravity 风格：模式为空时写成 mcp(server/*)，否则写成 mcp(server/tool)', () => {
+    const antigravity = agentWith({
+      mcp_templates: { with_pattern: 'mcp({server}/{pattern})', without_pattern: 'mcp({server}/*)' },
+    });
+    const ws = withServers(workspace([], rules, antigravity), [server('context7')]);
+    expect(entries(ws, 'allow')).toEqual(['mcp(context7/*)']);
+    expect(entries(ws, 'ask')).toEqual(['mcp(context7/resolve-library-id)']);
+  });
+
+  it('MCP 工具排在命令工具之后，同类之间按标识排序', () => {
+    const ws = withServers(
+      workspace(['zip'], [mcpRule('memory', '', 'allow'), mcpRule('context7', '', 'allow'), rule('zip', '', 'allow')]),
+      [server('memory'), server('context7')]
+    );
+    expect(entries(ws, 'allow')).toEqual(['Bash(zip *)', 'mcp__context7', 'mcp__memory']);
+  });
+
+  it('MCP 工具模板为空时，规则进入跳过的规则', () => {
+    const noMcp = agentWith({ mcp_templates: { with_pattern: '', without_pattern: 'mcp__{server}' } });
+    const tool = mcpRule('context7', 'query-docs', 'allow');
+    const ws = withServers(workspace([], [tool], noMcp), [server('context7')]);
+    expect(generate(ws, claude.id, EMPTY_DEVICE_SETTINGS)?.skippedRules).toEqual([
+      { ruleId: tool.id, reason: 'templateMissing' },
+    ]);
   });
 });
