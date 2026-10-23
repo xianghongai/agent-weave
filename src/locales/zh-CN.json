@@ -73,7 +73,7 @@
     "skippedTitle": "以下 {{n}} 个预设条目已跳过",
     "skippedHint": "它们与工作区中已有的条目重名。如果需要，可以先修改已有条目的标识，再合并一次。",
     "skipped": {
-      "tag": "标签 {{key}}：已有同名标识的标签。",
+      "tag": "标签 {{key}}：已有同名标识的标签，新增的工具改用这个已有的标签。",
       "command_tool": "命令工具 {{key}}：已有同名标识的命令工具。",
       "mcp_server": "MCP Server {{key}}：已有同名标识的 MCP Server。",
       "agent": "Agent {{key}}：已有同名的 Agent。",

@@ -88,7 +88,80 @@ describe('合并预设', () => {
     const { workspace: merged, report } = mergePresets(mine, preset, ctx);
 
     expect(merged.tags).toEqual([{ id: 'my-tag', key: 'vcs', name: '我自己的' }]);
-    expect(report.skipped).toEqual([{ kind: 'tag', id: 'preset-tag-vcs', key: 'vcs', reason: 'keyConflict' }]);
+    expect(report.skipped).toEqual([
+      { kind: 'tag', id: 'preset-tag-vcs', key: 'vcs', reason: 'keyConflict', mergedInto: 'my-tag' },
+    ]);
+  });
+
+  it('预设标签因标识冲突被跳过时，新增的工具改用工作区中同标识的标签，不留下已删除的标签', () => {
+    const preset = workspace({
+      tags: [
+        { id: 'preset-tag-vcs', key: 'vcs', name: '版本控制' },
+        { id: 'preset-tag-net', key: 'net', name: '网络' },
+      ],
+      command_tools: [
+        {
+          id: 'preset-command-git',
+          key: 'git',
+          description: '',
+          tag_ids: ['preset-tag-vcs', 'preset-tag-net'],
+          high_risk: false,
+        },
+        {
+          id: 'preset-command-hg',
+          key: 'hg',
+          description: '',
+          tag_ids: ['my-vcs', 'preset-tag-vcs'],
+          high_risk: false,
+        },
+        { id: 'preset-command-ls', key: 'ls', description: '', tag_ids: ['preset-tag-vcs'], high_risk: false },
+      ],
+      mcp_servers: [
+        {
+          id: 'preset-mcp-github',
+          key: 'github',
+          content: {},
+          description: '',
+          tag_ids: ['preset-tag-vcs'],
+          high_risk: false,
+        },
+      ],
+      agents: [
+        agent('preset-agent-claude-code', 'Claude Code', [
+          { ...builtIn('preset-builtin-read', 'Read'), tag_ids: ['preset-tag-vcs'] },
+        ]),
+        agent('preset-agent-codex', 'Codex CLI', [
+          { ...builtIn('preset-builtin-shell', 'shell'), tag_ids: ['preset-tag-vcs'] },
+        ]),
+      ],
+    });
+    const mine = workspace({
+      tags: [{ id: 'my-vcs', key: 'vcs', name: '我的版本控制' }],
+      // 已有的工具保持不变，即使它还引用着预设标签的 ID。
+      command_tools: [
+        { id: 'preset-command-ls', key: 'ls', description: '', tag_ids: ['preset-tag-vcs'], high_risk: false },
+      ],
+      agents: [agent('preset-agent-claude-code', 'Claude Code', [])],
+    });
+
+    const { workspace: merged, report } = mergePresets(mine, preset, ctx);
+
+    expect(merged.tags.map((tag) => tag.id)).toEqual(['my-vcs', 'preset-tag-net']);
+    expect(merged.command_tools.map(({ id, tag_ids }) => ({ id, tag_ids }))).toEqual([
+      { id: 'preset-command-ls', tag_ids: ['preset-tag-vcs'] },
+      { id: 'preset-command-git', tag_ids: ['my-vcs', 'preset-tag-net'] },
+      { id: 'preset-command-hg', tag_ids: ['my-vcs'] },
+    ]);
+    expect(merged.mcp_servers[0]?.tag_ids).toEqual(['my-vcs']);
+    expect(merged.agents.map((entry) => entry.built_in_tools.map((tool) => tool.tag_ids))).toEqual([
+      [['my-vcs']],
+      [['my-vcs']],
+    ]);
+    expect(report.skipped).toEqual([
+      { kind: 'tag', id: 'preset-tag-vcs', key: 'vcs', reason: 'keyConflict', mergedInto: 'my-vcs' },
+    ]);
+    // 合并前后的预设对象不受影响。
+    expect(preset.command_tools[0]?.tag_ids).toEqual(['preset-tag-vcs', 'preset-tag-net']);
   });
 
   it('命令工具与 MCP Server 同样只新增缺少的，已修改的保持不变，标识冲突时跳过', () => {
@@ -242,15 +315,8 @@ describe('合并预设', () => {
 });
 
 describe('重置为预设', () => {
-  it('用站点预设整体替换工作区，修改时间取当前时间', () => {
-    const mine = workspace({
-      tags: [{ id: 'my-tag', key: 'mine', name: '我的' }],
-      command_tools: [{ id: 'preset-command-git', key: 'git', description: '我改过', tag_ids: [], high_risk: true }],
-      agents: [agent('my-agent', 'Codex CLI', [builtIn('my-shell', 'shell')])],
-      rules: [rule('my-rule', 'command', 'preset-command-git', 'push', 'deny')],
-    });
-
-    const { workspace: reset } = resetToPresets(mine, ctx);
+  it('得到站点预设的全部内容，修改时间取当前时间', () => {
+    const { workspace: reset } = resetToPresets(ctx);
 
     expect(reset).toEqual({ ...createPresetWorkspace(), updated_at: NOW });
   });

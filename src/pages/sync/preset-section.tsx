@@ -35,7 +35,7 @@ export function PresetSection() {
   }
 
   function reset() {
-    runOperation((current) => resetToPresets(current));
+    runOperation(() => resetToPresets());
     setSkipped([]);
     setResetOpen(false);
     toast.success(t('presets.resetDone'));
