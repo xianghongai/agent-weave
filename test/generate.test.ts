@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { generate } from '@/lib/generate';
+import { createPresetWorkspace } from '@/lib/presets';
 import {
   type Agent,
   type CommandTool,
@@ -195,5 +196,141 @@ describe('生成：空决策', () => {
       { decision: 'ask', entries: [], copyInnerText: '' },
       { decision: 'deny', entries: [], copyInnerText: '' },
     ]);
+  });
+});
+
+/** 在 Claude Code 的基础上改动权限输出，得到另一个 Agent 定义。 */
+function agentWith(changes: Partial<NonNullable<Agent['permission_output']>>): Agent {
+  const base = claude.permission_output;
+  if (!base) {
+    throw new Error('基准 Agent 必须有权限输出');
+  }
+  return { ...claude, permission_output: { ...base, ...changes } };
+}
+
+describe('生成：多层属性路径', () => {
+  const nested = agentWith({
+    property_path: 'userSettings.globalPermissionGrants',
+    command_templates: { with_pattern: 'command({command} {pattern})', without_pattern: 'command({command})' },
+  });
+  const ws = workspace(['git'], [rule('git', '', 'allow'), rule('git', 'push --force', 'deny')], nested);
+  const permission = generate(ws, claude.id, EMPTY_DEVICE_SETTINGS)?.permission;
+
+  it('预览按点分的每一段逐层嵌套', () => {
+    expect(permission?.preview).toBe(
+      [
+        '{',
+        '  "userSettings": {',
+        '    "globalPermissionGrants": {',
+        '      "allow": [',
+        '        "command(git)"',
+        '      ],',
+        '      "ask": [],',
+        '      "deny": [',
+        '        "command(git push --force)"',
+        '      ]',
+        '    }',
+        '  }',
+        '}',
+      ].join('\n')
+    );
+  });
+
+  it('“复制”只到属性路径的最末一段', () => {
+    expect(permission?.copyText).toBe(
+      [
+        '"globalPermissionGrants": {',
+        '  "allow": [',
+        '    "command(git)"',
+        '  ],',
+        '  "ask": [],',
+        '  "deny": [',
+        '    "command(git push --force)"',
+        '  ]',
+        '}',
+      ].join('\n')
+    );
+  });
+});
+
+describe('生成：跳过的规则', () => {
+  it('决策键名为空时，该决策不出现在输出中，它的规则进入跳过的规则', () => {
+    const noAsk = agentWith({ decision_keys: { allow: 'allow', ask: '', deny: 'deny' } });
+    const push = rule('git', 'push', 'ask');
+    const ws = workspace(['git'], [rule('git', '', 'allow'), push], noAsk);
+    const output = generate(ws, claude.id, EMPTY_DEVICE_SETTINGS);
+
+    expect(output?.permission?.decisions.map((d) => d.decision)).toEqual(['allow', 'deny']);
+    expect(output?.permission?.copyText).toBe(
+      ['"permissions": {', '  "allow": [', '    "Bash(git *)"', '  ],', '  "deny": []', '}'].join('\n')
+    );
+    expect(output?.skippedRules).toEqual([{ ruleId: push.id, reason: 'decisionKeyMissing' }]);
+  });
+
+  it('所需模板为空时，规则进入跳过的规则，另一种模板的规则照常输出', () => {
+    const wholeOnly = agentWith({ command_templates: { with_pattern: '', without_pattern: 'Bash({command} *)' } });
+    const push = rule('git', 'push', 'deny');
+    const ws = workspace(['git'], [rule('git', '', 'allow'), push], wholeOnly);
+    const output = generate(ws, claude.id, EMPTY_DEVICE_SETTINGS);
+
+    expect(output?.permission?.decisions.map((d) => [d.decision, d.entries])).toEqual([
+      ['allow', ['Bash(git *)']],
+      ['ask', []],
+      ['deny', []],
+    ]);
+    expect(output?.skippedRules).toEqual([{ ruleId: push.id, reason: 'templateMissing' }]);
+  });
+
+  it('跳过的规则按规则列表的顺序排列', () => {
+    const allowOnly = agentWith({
+      decision_keys: { allow: 'allow', ask: '', deny: '' },
+      command_templates: { with_pattern: 'Bash({command} {pattern} *)', without_pattern: '' },
+    });
+    const rmDeny = rule('rm', '', 'deny');
+    const gitWhole = rule('git', '', 'allow');
+    const gitPush = rule('git', 'push', 'ask');
+    const ws = workspace(['git', 'rm'], [rmDeny, gitWhole, gitPush], allowOnly);
+
+    expect(generate(ws, claude.id, EMPTY_DEVICE_SETTINGS)?.skippedRules).toEqual([
+      { ruleId: gitWhole.id, reason: 'templateMissing' },
+      { ruleId: gitPush.id, reason: 'decisionKeyMissing' },
+      { ruleId: rmDeny.id, reason: 'decisionKeyMissing' },
+    ]);
+  });
+});
+
+describe('生成：预设 Antigravity', () => {
+  const preset = createPresetWorkspace();
+  const antigravity = preset.agents.find((agent) => agent.name === 'Antigravity');
+  const output = antigravity ? generate(preset, antigravity.id, EMPTY_DEVICE_SETTINGS) : null;
+
+  it('预览显示完整的 userSettings.globalPermissionGrants 嵌套，“复制”只到 globalPermissionGrants', () => {
+    expect(output?.permission?.preview.startsWith('{\n  "userSettings": {\n    "globalPermissionGrants": {\n')).toBe(
+      true
+    );
+    expect(output?.permission?.copyText.startsWith('"globalPermissionGrants": {\n  "allow": [\n')).toBe(true);
+  });
+
+  it('命令工具写成 command(...)', () => {
+    const deny = output?.permission?.decisions.find((d) => d.decision === 'deny');
+    expect(deny?.entries).toContain('command(git push --force)');
+    expect(deny?.entries).toContain('command(sudo)');
+    expect(output?.skippedRules).toEqual([]);
+  });
+
+  it('主作用域是共享配置，第二个作用域是 CLI 设置文件并注明其属性名为 permissions', () => {
+    const [shared, cli] = output?.permission?.scopes ?? [];
+    expect(shared?.path).toBe('~/.gemini/config/config.json');
+    expect(cli?.path).toBe('~/.gemini/antigravity-cli/settings.json');
+    expect(cli?.note).toContain('permissions');
+  });
+});
+
+describe('生成：没有权限输出的 Agent', () => {
+  it('不输出权限，也不产生跳过的规则', () => {
+    const mcpOnly: Agent = { ...claude, permission_output: null };
+    const output = generate(workspace(['git'], [rule('git', '', 'allow')], mcpOnly), claude.id, EMPTY_DEVICE_SETTINGS);
+    expect(output?.permission).toBeNull();
+    expect(output?.skippedRules).toEqual([]);
   });
 });

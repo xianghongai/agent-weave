@@ -1,15 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
 import { generate } from '@/lib/generate';
-import { EMPTY_DEVICE_SETTINGS, type Workspace } from '@/lib/workspace';
+import { EMPTY_DEVICE_SETTINGS, type PermissionOutput, type Workspace } from '@/lib/workspace';
 import {
+  type AgentInput,
   type OperationContext,
+  addAgent,
   addCommandTool,
   addRule,
+  countRulesForAgent,
   countRulesForTool,
+  deleteAgent,
   deleteCommandTool,
   deleteRule,
   listRules,
+  newPermissionOutput,
+  updateAgent,
   updateCommandTool,
   updateRule,
 } from '@/lib/workspace-operations';
@@ -185,5 +191,154 @@ describe('工作区操作：权限规则', () => {
     );
     expect(ws.rules).toEqual([]);
     expect(ws.updated_at).toBe(NOW);
+  });
+});
+
+/** Antigravity 风格的权限输出，用于新增、编辑 Agent 的用例。 */
+const grants: PermissionOutput = {
+  property_path: 'userSettings.globalPermissionGrants',
+  scopes: [{ name: '共享配置', path: '~/.gemini/config/config.json', note: '' }],
+  decision_keys: { allow: 'allow', ask: 'ask', deny: 'deny' },
+  command_templates: { with_pattern: 'command({command} {pattern})', without_pattern: 'command({command})' },
+  mcp_templates: { with_pattern: 'mcp({server}/{pattern})', without_pattern: 'mcp({server}/*)' },
+};
+
+function agentInput(changes: Partial<AgentInput> = {}): AgentInput {
+  return { name: 'Antigravity', description: '', permission_output: grants, mcp_output: null, ...changes };
+}
+
+/** 带一个内置工具 `Read` 的 Claude Code。 */
+const withRead: Workspace = {
+  ...empty,
+  agents: empty.agents.map((agent) => ({
+    ...agent,
+    built_in_tools: [
+      {
+        id: 'read',
+        key: 'Read',
+        description: '',
+        tag_ids: [],
+        high_risk: false,
+        writes: false,
+        templates: { with_pattern: 'Read({pattern})', without_pattern: 'Read' },
+      },
+    ],
+  })),
+};
+
+describe('工作区操作：Agent', () => {
+  it('新 Agent 的决策键名映射默认为 allow、ask、deny', () => {
+    expect(newPermissionOutput().decision_keys).toEqual({ allow: 'allow', ask: 'ask', deny: 'deny' });
+  });
+
+  it('新增 Agent 时去掉各字段首尾的空白，丢弃全部为空的作用域，并更新修改时间', () => {
+    const input = agentInput({
+      name: ' Antigravity ',
+      description: ' 共享配置 ',
+      permission_output: {
+        ...grants,
+        property_path: ' userSettings.globalPermissionGrants ',
+        scopes: [
+          { name: ' 共享配置 ', path: ' ~/.gemini/config/config.json ', note: ' IDE、CLI 共用 ' },
+          { name: ' ', path: '', note: '' },
+        ],
+        decision_keys: { allow: ' allow ', ask: '', deny: 'deny' },
+      },
+    });
+    const ws = apply(empty, (w) => addAgent(w, input, context()));
+    expect(ws.agents[1]).toEqual({
+      id: 'new-1',
+      name: 'Antigravity',
+      description: '共享配置',
+      built_in_tools: [],
+      permission_output: {
+        ...grants,
+        scopes: [{ name: '共享配置', path: '~/.gemini/config/config.json', note: 'IDE、CLI 共用' }],
+        decision_keys: { allow: 'allow', ask: '', deny: 'deny' },
+      },
+      mcp_output: null,
+    });
+    expect(ws.updated_at).toBe(NOW);
+  });
+
+  it('新增的 Agent 立即可以生成输出', () => {
+    const ctx = context();
+    const ws = apply(
+      empty,
+      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
+      (w) => addRule(w, { tool: { type: 'command', id: 'new-1' }, pattern: 'status', decision: 'allow' }, ctx),
+      (w) => addAgent(w, agentInput(), ctx)
+    );
+    expect(generate(ws, 'new-3', EMPTY_DEVICE_SETTINGS)?.permission?.decisions[0]?.entries).toEqual([
+      'command(git status)',
+    ]);
+  });
+
+  it('名称为空或与其他 Agent 重复时返回原因码', () => {
+    expect(addAgent(empty, agentInput({ name: ' ' }), context())).toEqual({ problem: 'nameEmpty' });
+    expect(addAgent(empty, agentInput({ name: 'Claude Code' }), context())).toEqual({ problem: 'nameDuplicate' });
+  });
+
+  it('属性路径为空或含有空段时返回原因码', () => {
+    for (const property_path of ['', ' ', 'a..b', '.permissions', 'permissions.']) {
+      expect(addAgent(empty, agentInput({ permission_output: { ...grants, property_path } }), context())).toEqual({
+        problem: 'propertyPathInvalid',
+      });
+    }
+    const mcp_output = { style: 'json', property_path: 'mcp..servers', scopes: [] } as const;
+    expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'propertyPathInvalid' });
+  });
+
+  it('两个决策映射到同一个键名时返回原因码，留空的决策不算重复', () => {
+    const duplicate = { ...grants, decision_keys: { allow: 'allow', ask: 'allow', deny: 'deny' } };
+    expect(addAgent(empty, agentInput({ permission_output: duplicate }), context())).toEqual({
+      problem: 'decisionKeyDuplicate',
+    });
+    const blanks = { ...grants, decision_keys: { allow: 'allow', ask: '', deny: '' } };
+    expect('workspace' in addAgent(empty, agentInput({ permission_output: blanks }), context())).toBe(true);
+  });
+
+  it('可以没有权限输出', () => {
+    const ws = apply(empty, (w) => addAgent(w, agentInput({ permission_output: null }), context()));
+    expect(ws.agents[1]?.permission_output).toBeNull();
+    expect(generate(ws, 'new-1', EMPTY_DEVICE_SETTINGS)?.permission).toBeNull();
+  });
+
+  it('编辑时可以保留自己的名称，但不能改成别人的名称，内置工具保持不变', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addAgent(w, agentInput(), ctx),
+      (w) => updateAgent(w, 'agent-claude', agentInput({ name: 'Claude Code', description: '命令行' }), ctx)
+    );
+    expect(ws.agents[0]).toMatchObject({ name: 'Claude Code', description: '命令行', permission_output: grants });
+    expect(ws.agents[0]?.built_in_tools.map((tool) => tool.key)).toEqual(['Read']);
+    expect(updateAgent(ws, 'agent-claude', agentInput(), ctx)).toEqual({ problem: 'nameDuplicate' });
+  });
+
+  it('编辑不存在的 Agent 时返回原因码', () => {
+    expect(updateAgent(empty, 'missing', agentInput(), context())).toEqual({ problem: 'notFound' });
+  });
+
+  it('删除 Agent 时连同它的内置工具和指向这些内置工具的规则一起删除，共享规则保留', () => {
+    const ws: Workspace = {
+      ...withRead,
+      command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false }],
+      rules: [
+        { id: 'r1', tool: { type: 'command', id: 'git' }, pattern: '', decision: 'allow', high_risk: false },
+        { id: 'r2', tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'allow', high_risk: false },
+        { id: 'r3', tool: { type: 'built_in', id: 'read' }, pattern: '', decision: 'ask', high_risk: false },
+      ],
+    };
+    expect(countRulesForAgent(ws, 'agent-claude')).toBe(2);
+
+    const deleted = apply(ws, (w) => deleteAgent(w, 'agent-claude', context()));
+    expect(deleted.agents).toEqual([]);
+    expect(deleted.rules.map((rule) => rule.id)).toEqual(['r1']);
+    expect(deleted.updated_at).toBe(NOW);
+  });
+
+  it('删除不存在的 Agent 时返回原因码', () => {
+    expect(deleteAgent(empty, 'missing', context())).toEqual({ problem: 'notFound' });
   });
 });
