@@ -7,7 +7,7 @@ import { DECISION_TONE } from '@/components/decision-tone';
 import { HIGH_RISK_TONE } from '@/components/high-risk';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Notice } from '@/lib/generate';
+import type { Notice } from '@/lib/notices';
 import type { Rule, Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';

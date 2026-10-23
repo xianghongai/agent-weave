@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'wouter';
 
 import { Note } from '@/components/page';
-import type { Notice } from '@/lib/generate';
+import type { Notice } from '@/lib/notices';
 
 /**
  * “占位符未展开”的提示：本机设置不完整时，汇总受影响的规则和 MCP Server 数量，并引导到同步页填写。

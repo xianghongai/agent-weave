@@ -1,4 +1,4 @@
-import type { Notice } from '@/lib/generate';
+import type { Notice } from '@/lib/notices';
 import type { Rule } from '@/lib/workspace';
 import type { RuleListItem } from '@/lib/workspace-operations';
 

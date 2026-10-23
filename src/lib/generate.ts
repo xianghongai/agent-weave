@@ -11,6 +11,7 @@ import type {
   TemplatePair,
   Workspace,
 } from '@/lib/workspace';
+import type { Notice } from '@/lib/notices';
 import { expandContent, expandText } from '@/lib/placeholders';
 import { ruleNotices } from '@/lib/rule-notices';
 import { tomlTable } from '@/lib/toml';
@@ -59,12 +60,6 @@ export interface SkippedRule {
   ruleId: string;
   reason: SkipReason;
 }
-
-export type Notice =
-  | { type: 'highRisk'; ruleId: string }
-  | { type: 'conflict'; ruleIds: string[] }
-  | { type: 'placeholderUnexpanded'; ruleId: string | null; serverId: string | null }
-  | { type: 'tomlFieldSkipped'; serverId: string; field: string };
 
 export interface AgentOutput {
   /** 为 `null` 时该 Agent 不输出权限。 */
