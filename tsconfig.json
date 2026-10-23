@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "node"],
+    "types": ["vite/client", "vite-plugin-pwa/react", "node"],
     "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -19,5 +19,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "test", "build", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "test", "build", "vite.config.ts", "vitest.config.ts", "pwa-assets.config.ts"]
 }

@@ -4,8 +4,10 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { codeInspectorPlugin } from 'code-inspector-plugin';
 import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 import { contentSecurityPolicy } from './build/content-security-policy';
+import { PWA_OPTIONS } from './build/pwa';
 
 export default defineConfig({
   // 资源使用相对路径，同一份构建产物可以部署在 GitHub Pages 子路径、自定义域名或局域网地址下。
@@ -20,6 +22,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     contentSecurityPolicy(),
+    VitePWA(PWA_OPTIONS),
   ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
