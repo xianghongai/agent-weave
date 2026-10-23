@@ -12,6 +12,7 @@ import type {
   Workspace,
 } from '@/lib/workspace';
 import { ruleNotices } from '@/lib/rule-notices';
+import { tomlTable } from '@/lib/toml';
 import { DECISIONS } from '@/lib/workspace';
 import { type ResolvedTool, type RuleListItem, compareText, listRules } from '@/lib/workspace-operations';
 
@@ -189,17 +190,37 @@ function jsonMcpSection(servers: McpServer[], output: McpOutput): McpSection {
 
 /**
  * MCP 节：包含全部 MCP Server，按标识排序；描述不进入输出，内容中的 `${VAR}` 原样保留。
- * 每种风格一个分支，共用 Server 的选取与排序。
+ * 每种风格一个分支，共用 Server 的选取与排序；格式化中产生的提示随节一起返回。
  */
-function mcpSection(workspace: Workspace, output: McpOutput): McpSection | null {
+function mcpSection(workspace: Workspace, output: McpOutput): { section: McpSection; notices: Notice[] } {
   const servers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
   switch (output.style) {
     case 'json':
-      return jsonMcpSection(servers, output);
+      return { section: jsonMcpSection(servers, output), notices: [] };
     case 'toml':
-      // TOML 风格由 JSON 内容转换而来，随 Codex CLI 一起实现，在此之前不输出。
-      return null;
+      return tomlMcpSection(servers, output);
   }
+}
+
+/**
+ * TOML 风格：每个 Server 一个 `[<属性路径>.<标识>]` 表，可以直接追加到配置文件，因此没有“复制内部”。
+ * TOML 表达不了的字段（如 `null`）被跳过，每个字段产生一条提示。
+ */
+function tomlMcpSection(servers: McpServer[], output: McpOutput): { section: McpSection; notices: Notice[] } {
+  const path = output.property_path.split('.');
+  const notices: Notice[] = [];
+  const tables = servers.map((server) => {
+    const table = tomlTable([...path, server.key], server.content);
+    for (const field of table.skippedFields) {
+      notices.push({ type: 'tomlFieldSkipped', serverId: server.id, field });
+    }
+    return table.text;
+  });
+  const text = tables.join('\n\n');
+  return {
+    section: { style: 'toml', preview: text, copyText: text, copyInnerText: null, scopes: output.scopes },
+    notices,
+  };
 }
 
 /** 找不到该 Agent 时返回 `null`。 */
@@ -210,10 +231,11 @@ export function generate(workspace: Workspace, agentId: string, _device: DeviceS
   }
   // 没有权限输出的 Agent 不产生跳过的规则，界面只说明“不输出权限”。
   const permission = agent.permission_output ? permissionSection(workspace, agent.id, agent.permission_output) : null;
+  const mcp = agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null;
   return {
     permission: permission?.section ?? null,
-    mcp: agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null,
+    mcp: mcp?.section ?? null,
     skippedRules: permission?.skippedRules ?? [],
-    notices: ruleNotices(permission?.writtenRules ?? []),
+    notices: [...ruleNotices(permission?.writtenRules ?? []), ...(mcp?.notices ?? [])],
   };
 }
