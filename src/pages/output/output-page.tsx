@@ -10,20 +10,22 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { skipReasonMessage } from '@/i18n/problems';
 import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
-import { EMPTY_DEVICE_SETTINGS, type Scope, type Workspace } from '@/lib/workspace';
+import type { Scope, Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
+import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
+import { useDeviceSettings } from '@/state/device-settings-store';
 import { useWorkspace } from '@/state/workspace-store';
 
 export default function OutputPage() {
   const { t } = useTranslation();
   const workspace = useWorkspace();
+  const device = useDeviceSettings();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // 所选 Agent 不存在（首次打开或已被删除）时，回到第一个 Agent。
   const agent = workspace.agents.find((candidate) => candidate.id === selectedId) ?? workspace.agents[0];
-  // 本机设置随路径占位符一起接入，在此之前按未填写处理。
-  const output = agent ? generate(workspace, agent.id, EMPTY_DEVICE_SETTINGS) : null;
+  const output = agent ? generate(workspace, agent.id, device) : null;
 
   return (
     <Page icon={FileCodeIcon} title={t('pages.output.title')} description={t('pages.output.description')}>
@@ -40,6 +42,8 @@ export default function OutputPage() {
               ))}
             </TabsList>
           </Tabs>
+
+          <PlaceholderNotice notices={output.notices} />
 
           <section className="grid gap-3">
             <h2 className="flex items-center gap-2 font-medium">

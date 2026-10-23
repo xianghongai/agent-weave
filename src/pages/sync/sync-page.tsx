@@ -2,6 +2,7 @@ import { RefreshCwIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Page } from '@/components/page';
+import { DeviceSettingsSection } from '@/pages/sync/device-settings-section';
 import { PresetSection } from '@/pages/sync/preset-section';
 import { WorkspaceFileSection } from '@/pages/sync/workspace-file-section';
 
@@ -14,6 +15,7 @@ export default function SyncPage() {
       <div className="grid gap-10">
         <WorkspaceFileSection />
         <PresetSection />
+        <DeviceSettingsSection />
       </div>
     </Page>
   );

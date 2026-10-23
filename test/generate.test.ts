@@ -704,7 +704,10 @@ describe('生成：路径占位符', () => {
     const home = rule('ls', '{{home}}/projects/{{user}}', 'allow');
     const plain = rule('ls', '/tmp', 'allow');
     const output = generate(workspace(['ls'], [home, plain]), claude.id, device);
-    expect(output?.permission?.decisions[0]?.entries).toEqual(['Bash(ls /tmp *)', 'Bash(ls {{home}}/projects/{{user}} *)']);
+    expect(output?.permission?.decisions[0]?.entries).toEqual([
+      'Bash(ls /tmp *)',
+      'Bash(ls {{home}}/projects/{{user}} *)',
+    ]);
     expect(output?.notices).toEqual([{ type: 'placeholderUnexpanded', ruleId: home.id, serverId: null }]);
   });
 
@@ -734,7 +737,11 @@ describe('生成：路径占位符', () => {
     const filesystem = server('filesystem', {
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-filesystem', '{{home}}/notes'],
-      env: { OWNER: '{{user}}', TOKEN: '${FS_TOKEN}', nested: { roots: [{ path: '{{home}}' }], retries: 3, debug: null } },
+      env: {
+        OWNER: '{{user}}',
+        TOKEN: '${FS_TOKEN}',
+        nested: { roots: [{ path: '{{home}}' }], retries: 3, debug: null },
+      },
     });
     const plain = server('plain', { command: 'uvx', args: ['plain'] });
     const ws = withServers(workspace([], [], mcpAgent), [plain, filesystem]);
