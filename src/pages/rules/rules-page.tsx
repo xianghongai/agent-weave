@@ -20,6 +20,7 @@ import {
   matchesOwner,
   usePatternTexts,
 } from '@/pages/rules/rule-owner';
+import { RuleWarningIcons, ruleWarnings } from '@/pages/rules/rule-warnings';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 export default function RulesPage() {
@@ -28,6 +29,7 @@ export default function RulesPage() {
   const [owner, setOwner] = useState<OwnerFilter>('all');
   const allRules = listRules(workspace);
   const rules = allRules.filter(({ tool }) => matchesOwner(tool, owner));
+  const warnings = ruleWarnings(allRules);
 
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Rule | null>(null);
@@ -67,6 +69,7 @@ export default function RulesPage() {
                     )}
                     <OwnerBadge tool={tool} />
                   </div>
+                  <RuleWarningIcons warning={warnings.get(rule.id)} />
                   <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
                     {t(`decisions.${rule.decision}`)}
                   </span>

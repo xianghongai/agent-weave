@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -40,12 +41,15 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
   const [tool, setTool] = useState(rule.tool);
   const [pattern, setPattern] = useState(rule.pattern);
   const [decision, setDecision] = useState(rule.decision);
+  const [highRisk, setHighRisk] = useState(rule.high_risk);
   const [problem, setProblem] = useState<OperationProblem | null>(null);
   const patternTexts = usePatternTexts(resolveTool(workspace, tool));
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const result = runOperation((current) => updateRule(current, rule.id, { tool, pattern, decision }));
+    const result = runOperation((current) =>
+      updateRule(current, rule.id, { tool, pattern, decision, high_risk: highRisk })
+    );
     if (result) {
       setProblem(result);
     } else {
@@ -78,6 +82,12 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
           <FieldLabel>{t('rules.decision')}</FieldLabel>
           <DecisionToggle value={decision} onChange={setDecision} />
         </Field>
+        <HighRiskSwitch
+          id="rule-edit-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.ruleHighRiskHint')}
+        />
       </FieldGroup>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

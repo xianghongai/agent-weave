@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -53,11 +54,12 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
   const [writes, setWrites] = useState(tool?.writes ?? false);
+  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [templates, setTemplates] = useState(tool?.templates ?? { with_pattern: '', without_pattern: '' });
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { key, description, writes, templates };
+    const input = { key, description, writes, templates, high_risk: highRisk };
     return tool ? updateBuiltInTool(current, tool.id, input) : addBuiltInTool(current, agent.id, input);
   };
   // 操作是纯函数，可以边输入边试算，标识重复时立即提示。空标识只禁用保存，不提示。
@@ -117,6 +119,12 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
             <FieldDescription>{t('builtInTools.writesHint')}</FieldDescription>
           </FieldContent>
         </Field>
+        <HighRiskSwitch
+          id="built-in-tool-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
         <TemplatePairFields
           idPrefix="built-in-tool-templates"
           legend={t('agents.builtInTemplates')}
