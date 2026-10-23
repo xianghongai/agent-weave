@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next';
 
 import type { SkipReason } from '@/lib/generate';
+import type { GistContentFailure, GistRequestProblem } from '@/lib/gist';
 import type { PersistenceProblem } from '@/lib/persistence';
 import type { Rule, ToolType } from '@/lib/workspace';
 import type { ImportProblem } from '@/lib/workspace-file';
@@ -19,6 +20,17 @@ export function persistenceProblemMessage(t: TFunction, problem: PersistenceProb
 /** 把导入工作区的原因码翻译成界面文案。文案不提来源，导入文件和拉取 Gist 共用。 */
 export function importProblemMessage(t: TFunction, problem: ImportProblem): string {
   return t(`problems.import.${problem}`);
+}
+
+/** 把 Gist 同步的原因码翻译成界面文案；远端内容无效时附上导入流程给出的具体原因。 */
+export function gistProblemMessage(
+  t: TFunction,
+  failure: { problem: GistRequestProblem } | GistContentFailure
+): string {
+  if (failure.problem === 'invalidContent') {
+    return t('problems.gist.invalidContent', { reason: importProblemMessage(t, failure.importProblem) });
+  }
+  return t(`problems.gist.${failure.problem}`);
 }
 
 /** 把跳过的规则的原因码翻译成界面文案；文案指明是哪一档决策或哪一个模板。 */
