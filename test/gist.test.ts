@@ -11,6 +11,7 @@ interface RecordedRequest {
   method: string;
   headers: Record<string, string>;
   body: unknown;
+  cache: RequestCache | undefined;
 }
 
 /**
@@ -25,6 +26,7 @@ function fakeGitHub(...responses: (Response | (() => Response))[]) {
       method: init.method ?? 'GET',
       headers: Object.fromEntries(new Headers(init.headers).entries()),
       body: typeof init.body === 'string' ? JSON.parse(init.body) : undefined,
+      cache: init.cache,
     });
     const next = responses.shift();
     if (next === undefined) {
@@ -105,6 +107,14 @@ describe('Gist：拉取', () => {
     expect(request?.url).toBe('https://api.github.com/gists/my-gist');
     expect(request?.method).toBe('GET');
     expect(request?.headers.authorization).toBe(`Bearer ${TOKEN}`);
+  });
+
+  it('不使用浏览器缓存：GitHub 允许缓存 60 秒，刚在其他设备推送的内容会读不到', async () => {
+    const github = fakeGitHub(json(200, gist('my-gist', exportWorkspace(edited()).text)));
+
+    await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
+
+    expect(github.requests[0]?.cache).toBe('no-store');
   });
 
   it('Gist 中没有 agent-weave.json 时返回 fileMissing', async () => {

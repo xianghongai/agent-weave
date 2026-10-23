@@ -52,6 +52,17 @@ export type GistContentFailure =
   | { problem: 'fileMissing' | 'fileTruncated' }
   | { problem: 'invalidContent'; importProblem: ImportProblem };
 
+/** 请求本身成功，但远端内容无法使用：推送时仍可以整体覆盖它。 */
+export function isContentFailure(failure: { problem: string }): failure is GistContentFailure {
+  return CONTENT_PROBLEMS.has(failure.problem);
+}
+
+const CONTENT_PROBLEMS: ReadonlySet<string> = new Set<GistContentFailure['problem']>([
+  'fileMissing',
+  'fileTruncated',
+  'invalidContent',
+]);
+
 /** 推送成功时返回 Gist ID：新建时是新 ID，更新时与传入的相同。 */
 export type PushResult = { gistId: string } | { problem: GistRequestProblem };
 
@@ -110,6 +121,9 @@ export async function pullWorkspace(connection: GistConnection, gistId: string):
   return 'problem' in imported ? { problem: 'invalidContent', importProblem: imported.problem } : imported;
 }
 
+/** 浏览器的 `fetch`。每次调用时才访问它，并以 `globalThis` 调用，避免脱离宿主对象后报错。 */
+export const browserFetch: FetchLike = (url, init) => globalThis.fetch(url, init);
+
 /**
  * 从用户填写的内容中取出 Gist ID：可以是 ID 本身，也可以是 Gist 页面的网址。
  * 无法识别时返回 `null`。Gist ID 是十六进制串，检查它也避免了把其他路径拼进请求网址。
@@ -142,6 +156,8 @@ async function request(
       method: init.method,
       headers: headers(connection.token),
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      // GitHub API 的响应允许浏览器缓存一段时间，不跳过缓存就可能读到其他设备推送之前的内容。
+      cache: 'no-store',
     });
   } catch {
     // 离线、DNS 失败、被 CORS 或 CSP 拦截时，`fetch` 都以异常结束，浏览器不提供更多细节。
