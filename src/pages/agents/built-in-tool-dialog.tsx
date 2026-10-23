@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -60,6 +61,7 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
   const [writes, setWrites] = useState(tool?.writes ?? false);
+  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [templates, setTemplates] = useState(tool?.templates ?? { with_pattern: '', without_pattern: '' });
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
@@ -67,7 +69,7 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
   const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, description, writes, templates };
+    const input = { key, description, writes, templates, high_risk: highRisk };
     const result = tool
       ? updateBuiltInTool(current, tool.id, input)
       : addBuiltInTool(current, agent.id, input, { ...systemContext, newId: () => newId });
@@ -132,6 +134,12 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
             <FieldDescription>{t('builtInTools.writesHint')}</FieldDescription>
           </FieldContent>
         </Field>
+        <HighRiskSwitch
+          id="built-in-tool-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
         <TemplatePairFields
           idPrefix="built-in-tool-templates"
           legend={t('agents.builtInTemplates')}

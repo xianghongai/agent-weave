@@ -9,9 +9,10 @@ import { Note, Page } from '@/components/page';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { skipReasonMessage } from '@/i18n/problems';
-import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
+import { type McpSection, type Notice, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
 import { EMPTY_DEVICE_SETTINGS, type Scope, type Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
+import { RuleNoticeList } from '@/pages/output/rule-notice-list';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { useWorkspace } from '@/state/workspace-store';
 
@@ -41,6 +42,9 @@ export default function OutputPage() {
             </TabsList>
           </Tabs>
 
+          {/* 复制前最后检查一遍：高危与冲突提示放在输出之前。 */}
+          <RuleNoticeList workspace={workspace} notices={output.notices} />
+
           <section className="grid gap-3">
             <h2 className="flex items-center gap-2 font-medium">
               <ShieldCheckIcon className="size-4 text-brand" />
@@ -62,7 +66,12 @@ export default function OutputPage() {
               {t('output.mcp')}
             </h2>
             {output.mcp ? (
-              <McpOutputView section={output.mcp} lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''} />
+              <McpOutputView
+                section={output.mcp}
+                lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
+                workspace={workspace}
+                notices={output.notices}
+              />
             ) : (
               <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
             )}
@@ -154,8 +163,18 @@ function PermissionOutputView({ section, lastKey }: { section: PermissionSection
   );
 }
 
-/** MCP 节：“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。 */
-function McpOutputView({ section, lastKey }: { section: McpSection; lastKey: string }) {
+/** MCP 节：“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。TOML 风格附带跳过的字段。 */
+function McpOutputView({
+  section,
+  lastKey,
+  workspace,
+  notices,
+}: {
+  section: McpSection;
+  lastKey: string;
+  workspace: Workspace;
+  notices: Notice[];
+}) {
   const { t } = useTranslation();
 
   return (
@@ -179,9 +198,46 @@ function McpOutputView({ section, lastKey }: { section: McpSection; lastKey: str
         </pre>
       </div>
 
-      {section.style === 'json' && (
-        <p className="text-sm text-muted-foreground text-pretty">{t('output.mcpCopyHint', { key: `"${lastKey}"` })}</p>
-      )}
+      <p className="text-sm text-muted-foreground text-pretty">
+        {section.style === 'json' ? t('output.mcpCopyHint', { key: `"${lastKey}"` }) : t('output.mcpTomlCopyHint')}
+      </p>
+
+      <TomlSkippedFieldList workspace={workspace} notices={notices} />
+    </div>
+  );
+}
+
+/** TOML 表达不了而被跳过的字段，按 Server 标识与字段路径列出。没有时不显示。 */
+function TomlSkippedFieldList({ workspace, notices }: { workspace: Workspace; notices: Notice[] }) {
+  const { t } = useTranslation();
+  const fields = notices.flatMap((notice) => {
+    if (notice.type !== 'tomlFieldSkipped') {
+      return [];
+    }
+    const server = workspace.mcp_servers.find((candidate) => candidate.id === notice.serverId);
+    return server ? [{ id: `${notice.serverId}:${notice.field}`, server: server.key, field: notice.field }] : [];
+  });
+  if (fields.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="grid gap-2 rounded-xl border p-3 text-sm">
+      <span className="flex items-center gap-2 font-medium">
+        <CircleSlashIcon className="size-4 text-brand" />
+        {t('output.tomlFieldSkipped')}
+        <Badge variant="secondary">{fields.length}</Badge>
+      </span>
+      <p className="text-muted-foreground">{t('output.tomlFieldSkippedHint')}</p>
+      <ul className="grid gap-1">
+        {fields.map(({ id, server, field }) => (
+          <li key={id}>
+            <code className="font-mono break-all">
+              {server} · {field}
+            </code>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

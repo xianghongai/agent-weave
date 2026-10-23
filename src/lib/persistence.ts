@@ -1,3 +1,4 @@
+import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
 import { createPresetWorkspace } from '@/lib/presets';
 import type { Workspace } from '@/lib/workspace';
 import { type ImportProblem, importWorkspace } from '@/lib/workspace-file';
@@ -57,6 +58,37 @@ export function loadWorkspace(storage: KeyValueStorage): { workspace: Workspace;
 export function saveWorkspace(storage: KeyValueStorage, workspace: Workspace): SaveProblem | null {
   try {
     storage.setItem(STORAGE_KEYS.workspace, JSON.stringify(workspace));
+    return null;
+  } catch {
+    return 'writeFailed';
+  }
+}
+
+/**
+ * 读取 Gist 设置。没有数据、无法读取或无效时返回空的设置：
+ * 这时用户重新填写即可，存储不可用的情况已由工作区的读取结果提示。
+ */
+export function loadGistSettings(storage: KeyValueStorage): GistSettings {
+  let value: unknown;
+  try {
+    value = JSON.parse(storage.getItem(STORAGE_KEYS.gistSettings) ?? 'null');
+  } catch {
+    return { ...EMPTY_GIST_SETTINGS };
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return { ...EMPTY_GIST_SETTINGS };
+  }
+  const { token, gist_id } = value as Record<string, unknown>;
+  return {
+    token: typeof token === 'string' ? token : '',
+    gist_id: typeof gist_id === 'string' ? gist_id : '',
+  };
+}
+
+/** 保存 Gist 设置。成功时返回 `null`。 */
+export function saveGistSettings(storage: KeyValueStorage, settings: GistSettings): SaveProblem | null {
+  try {
+    storage.setItem(STORAGE_KEYS.gistSettings, JSON.stringify({ token: settings.token, gist_id: settings.gist_id }));
     return null;
   } catch {
     return 'writeFailed';

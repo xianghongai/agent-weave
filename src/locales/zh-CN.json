@@ -88,6 +88,42 @@
     "resetConfirm": "重置",
     "resetDone": "已重置为预设。"
   },
+  "gist": {
+    "title": "Gist 同步",
+    "hint": "通过你自己的 GitHub Gist，在多台设备之间手动同步工作区。推送和拉取都是整体覆盖，不合并双方的修改。",
+    "tokenGuide": "需要一个只有 Gist 权限的 Token：经典 Token 只勾选 gist；Fine-grained Token 在 Account permissions 中把 Gists 设为 Read and write。",
+    "createClassicToken": "创建经典 Token",
+    "createFineGrainedToken": "创建 Fine-grained Token",
+    "secretWarning": "Secret Gist 不是加密存储：它不出现在公开列表和搜索结果中，但知道链接的人都可以访问。不要在工作区中放入密钥。",
+    "localOnly": "Token 和 Gist ID 只保存在本浏览器中，不进入工作区，也不进入导出文件。",
+    "token": "Token",
+    "tokenHint": "推送需要 Token；只拉取时可以不填。",
+    "gistId": "Gist ID",
+    "gistIdPlaceholder": "留空，第一次推送时自动创建",
+    "gistIdHint": "在另一台设备上填写同一个 ID 或 Gist 网址，就可以拉取。",
+    "gistIdInvalid": "无法识别 Gist ID，请填写 ID 本身或 Gist 页面的网址。",
+    "openGist": "在 GitHub 上查看",
+    "push": "推送",
+    "pull": "拉取",
+    "working": "正在连接 GitHub…",
+    "created": "已创建 Secret Gist 并推送，Gist ID 已保存。",
+    "pushed": "已推送到 Gist。",
+    "pulled": "已从 Gist 拉取工作区。",
+    "pushFailed": "推送失败",
+    "pullFailed": "拉取失败",
+    "settingsNotSaved": "无法保存 Token 和 Gist ID，刷新页面后需要重新填写。",
+    "confirmPushTitle": "用本地工作区覆盖 Gist？",
+    "confirmPushDescription": "Gist 中的 agent-weave.json 会被本地工作区整体替换，不会合并。",
+    "confirmPullTitle": "用 Gist 中的工作区替换本地工作区？",
+    "confirmPullDescription": "本地工作区的全部内容会被替换，无法撤销。需要保留时，先导出备份。",
+    "remote": "远端（Gist）",
+    "local": "本地",
+    "remoteUnreadable": "无法读取：{{reason}}",
+    "remoteNewer": "远端比本地新，推送会覆盖远端较新的修改。",
+    "localNewer": "本地比远端新，拉取会丢弃本地较新的修改。",
+    "confirmPush": "覆盖 Gist",
+    "confirmPull": "替换本地"
+  },
   "problems": {
     "operation": {
       "keyEmpty": "标识不能为空。",
@@ -122,6 +158,16 @@
       "duplicateId": "同一类条目中有重复的内部 ID。",
       "duplicateKey": "同一类条目中有重复的标识，或有重名的 Agent。",
       "danglingReference": "有权限规则指向不存在的工具。"
+    },
+    "gist": {
+      "unauthorized": "Token 无效、已过期，或没有 Gist 的读写权限。",
+      "notFound": "找不到这个 Gist，请检查 Gist ID。推送时也可能是 Token 无权修改它。",
+      "rateLimited": "超出了 GitHub API 的调用频率限制，请稍后再试。",
+      "networkFailed": "无法连接 GitHub，请检查网络后重试。",
+      "unexpectedResponse": "GitHub 返回了意外的响应，请稍后再试。",
+      "fileMissing": "Gist 中没有 agent-weave.json 文件。",
+      "fileTruncated": "Gist 中的 agent-weave.json 超过 1 MB，GitHub API 只返回了部分内容。",
+      "invalidContent": "Gist 中的 agent-weave.json 不是有效的工作区。{{reason}}"
     }
   },
   "storage": {
@@ -209,7 +255,10 @@
     "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。",
     "mcp": "MCP",
     "noMcp": "该 Agent 不输出 MCP 配置。",
-    "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。"
+    "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。",
+    "mcpTomlCopyHint": "“复制”的内容是若干 TOML 表，可以直接追加到配置文件末尾；文件中已有同名的 Server 表时需要先删除旧表。",
+    "tomlFieldSkipped": "TOML 表达不了的字段",
+    "tomlFieldSkippedHint": "这些字段的值（如 null）无法写成 TOML，没有写进输出。"
   },
   "workspaceFile": {
     "title": "导入与导出",
@@ -342,5 +391,19 @@
       "built_in": "内置工具"
     },
     "noMatch": "没有符合筛选条件的工具。"
+  },
+  "notices": {
+    "highRiskFlag": "高危",
+    "toolHighRiskHint": "允许指向它的规则时产生高危提示。",
+    "ruleHighRiskHint": "决策为“允许”时产生高危提示，即使所指工具不是高危工具。",
+    "highRiskRule": "高危：允许了高危操作",
+    "conflictRule": "冲突：同一工具、同一模式还有其他决策",
+    "title": "提示",
+    "hint": "只提醒，不影响输出。可以直接编辑相关的规则。",
+    "highRisk": "允许了高危操作",
+    "highRiskDetail": "所指工具或规则本身被标记为高危，或允许写入类内置工具写入任意位置、根目录或主目录。",
+    "conflict": "决策冲突",
+    "conflictDetail": "同一工具、同一模式出现了不同的决策。各决策照常输出，实际生效哪一个取决于 Agent 自身的优先级。",
+    "editRule": "编辑这条规则"
   }
 }

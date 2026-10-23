@@ -177,7 +177,12 @@ export function resolveTags(workspace: Workspace, tagIds: readonly string[]): Ta
 
 /* 命令工具 */
 
-export interface CommandToolInput {
+/** 各类表单都可附带的高危标记。省略时新增为 `false`、编辑时保持不变。 */
+interface HighRiskInput {
+  high_risk?: boolean;
+}
+
+export interface CommandToolInput extends HighRiskInput {
   key: string;
   description: string;
 }
@@ -212,7 +217,7 @@ export function addCommandTool(
     key,
     description: input.description.trim(),
     tag_ids: [],
-    high_risk: false,
+    high_risk: input.high_risk ?? false,
   };
   return commit(workspace, { command_tools: [...workspace.command_tools, tool] }, ctx);
 }
@@ -232,7 +237,9 @@ export function updateCommandTool(
     return { problem };
   }
   const command_tools = workspace.command_tools.map((tool) =>
-    tool.id === id ? { ...tool, key, description: input.description.trim() } : tool
+    tool.id === id
+      ? { ...tool, key, description: input.description.trim(), high_risk: input.high_risk ?? tool.high_risk }
+      : tool
   );
   return commit(workspace, { command_tools }, ctx);
 }
@@ -269,7 +276,7 @@ export function deleteCommandTool(
 /* MCP Server */
 
 /** MCP Server 表单提交的内容。`content` 是用户输入的 JSON 文本，由操作负责解析。 */
-export interface McpServerInput {
+export interface McpServerInput extends HighRiskInput {
   key: string;
   content: string;
   description: string;
@@ -313,7 +320,12 @@ export function addMcpServer(
   if ('problem' in checked) {
     return checked;
   }
-  const server: McpServer = { id: ctx.newId(), ...checked.fields, tag_ids: [], high_risk: false };
+  const server: McpServer = {
+    id: ctx.newId(),
+    ...checked.fields,
+    tag_ids: [],
+    high_risk: input.high_risk ?? false,
+  };
   return commit(workspace, { mcp_servers: [...workspace.mcp_servers, server] }, ctx);
 }
 
@@ -331,7 +343,7 @@ export function updateMcpServer(
     return checked;
   }
   const mcp_servers = workspace.mcp_servers.map((server) =>
-    server.id === id ? { ...server, ...checked.fields } : server
+    server.id === id ? { ...server, ...checked.fields, high_risk: input.high_risk ?? server.high_risk } : server
   );
   return commit(workspace, { mcp_servers }, ctx);
 }
@@ -512,8 +524,8 @@ export function deleteAgent(workspace: Workspace, id: string, ctx: OperationCont
 
 /* 内置工具 */
 
-/** 内置工具表单提交的内容。高危标记和标签不经过这里，编辑时保持不变。 */
-export interface BuiltInToolInput {
+/** 内置工具表单提交的内容。标签不经过这里，编辑时保持不变。 */
+export interface BuiltInToolInput extends HighRiskInput {
   key: string;
   description: string;
   writes: boolean;
@@ -558,7 +570,7 @@ export function addBuiltInTool(
     key,
     description: input.description.trim(),
     tag_ids: [],
-    high_risk: false,
+    high_risk: input.high_risk ?? false,
     writes: input.writes,
     templates: trimTemplates(input.templates),
   };
@@ -587,6 +599,7 @@ export function updateBuiltInTool(
           ...tool,
           key,
           description: input.description.trim(),
+          high_risk: input.high_risk ?? tool.high_risk,
           writes: input.writes,
           templates: trimTemplates(input.templates),
         }
@@ -633,7 +646,7 @@ export function findBuiltInTool(workspace: Workspace, id: string): Extract<Resol
 
 /* 权限规则 */
 
-export interface RuleInput {
+export interface RuleInput extends HighRiskInput {
   tool: ToolRef;
   pattern: string;
   decision: Decision;
@@ -652,7 +665,7 @@ export function addRule(
     tool: { ...input.tool },
     pattern: input.pattern.trim(),
     decision: input.decision,
-    high_risk: false,
+    high_risk: input.high_risk ?? false,
   };
   return commit(workspace, { rules: [...workspace.rules, rule] }, ctx);
 }
@@ -671,7 +684,13 @@ export function updateRule(
   }
   const rules = workspace.rules.map((rule) =>
     rule.id === id
-      ? { ...rule, tool: { ...input.tool }, pattern: input.pattern.trim(), decision: input.decision }
+      ? {
+          ...rule,
+          tool: { ...input.tool },
+          pattern: input.pattern.trim(),
+          decision: input.decision,
+          high_risk: input.high_risk ?? rule.high_risk,
+        }
       : rule
   );
   return commit(workspace, { rules }, ctx);

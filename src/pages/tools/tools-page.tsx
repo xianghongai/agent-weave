@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { HighRiskBadge } from '@/components/high-risk';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { CommandTool } from '@/lib/workspace';
@@ -95,6 +96,7 @@ export default function ToolsPage() {
                     )}
                     <TagBadges tagIds={tool.tag_ids} />
                   </div>
+                  {tool.high_risk && <HighRiskBadge />}
                   {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
                   <Button
                     variant="ghost"

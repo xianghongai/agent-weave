@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -46,13 +47,14 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
   const workspace = useWorkspace();
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
+  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
   // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
   const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, description };
+    const input = { key, description, high_risk: highRisk };
     const result = tool
       ? updateCommandTool(current, tool.id, input)
       : addCommandTool(current, input, { ...systemContext, newId: () => newId });
@@ -110,6 +112,12 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
             onChange={(event) => setDescription(event.target.value)}
           />
         </Field>
+        <HighRiskSwitch
+          id="command-tool-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
         <TagPicker value={tagIds} onChange={setTagIds} />
       </FieldGroup>
       <DialogFooter>

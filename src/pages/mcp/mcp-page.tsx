@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { HighRiskBadge } from '@/components/high-risk';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { McpServer } from '@/lib/workspace';
@@ -93,6 +94,7 @@ export default function McpPage() {
                     </code>
                     <TagBadges tagIds={server.tag_ids} />
                   </div>
+                  {server.high_risk && <HighRiskBadge />}
                   {ruleCount > 0 && <Badge variant="secondary">{t('mcp.ruleCount', { n: ruleCount })}</Badge>}
                   <Button
                     variant="ghost"

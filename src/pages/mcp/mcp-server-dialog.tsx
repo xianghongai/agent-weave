@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,13 +51,14 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
   const [key, setKey] = useState(server?.key ?? '');
   const [content, setContent] = useState(server ? JSON.stringify(server.content, null, 2) : '');
   const [description, setDescription] = useState(server?.description ?? '');
+  const [highRisk, setHighRisk] = useState(server?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(server?.tag_ids ?? []);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
   // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
   const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, content, description };
+    const input = { key, content, description, high_risk: highRisk };
     const result = server
       ? updateMcpServer(current, server.id, input)
       : addMcpServer(current, input, { ...systemContext, newId: () => newId });
@@ -140,6 +142,12 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
           />
           <FieldDescription>{t('mcp.descriptionHint')}</FieldDescription>
         </Field>
+        <HighRiskSwitch
+          id="mcp-server-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
         <TagPicker value={tagIds} onChange={setTagIds} />
       </FieldGroup>
       <DialogFooter>
