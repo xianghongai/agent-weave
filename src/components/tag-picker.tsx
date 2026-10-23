@@ -1,4 +1,3 @@
-import { cn } from 'cn';
 import { TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,7 +15,7 @@ interface TagPickerProps {
 
 /**
  * 工具对话框中的标签多选：全部标签按标识排序，点击切换。
- * 工具上残留的已删除标签排在最后，带警告符号，取消选中即可移除；不能再次选中。
+ * 工具上残留的已删除标签排在最后，显示为带警告符号的“已删除的标签”，取消选中即可移除；不能再次选中。
  */
 export function TagPicker({ value, onChange }: TagPickerProps) {
   const { t } = useTranslation();
@@ -49,15 +48,9 @@ export function TagPicker({ value, onChange }: TagPickerProps) {
               </ToggleGroupItem>
             ))}
             {dangling.map((id) => (
-              <ToggleGroupItem
-                key={id}
-                value={id}
-                className={cn('font-mono', DANGLING_TAG_TONE)}
-                title={t('tags.dangling')}
-                aria-label={t('tags.danglingLabel', { id })}
-              >
+              <ToggleGroupItem key={id} value={id} className={DANGLING_TAG_TONE} title={t('tags.dangling')}>
                 <TriangleAlertIcon />
-                {id}
+                {t('tags.deletedLabel')}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>

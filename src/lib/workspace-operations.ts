@@ -106,7 +106,7 @@ export function updateTag(
   );
 }
 
-/** 删除标签。引用它的工具保持不变，残留的标签 ID 由界面显示为悬空引用。 */
+/** 删除标签。引用它的工具保持不变，残留的标签 ID 由界面显示为带警告符号的“已删除的标签”。 */
 export function deleteTag(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
   if (!workspace.tags.some((tag) => tag.id === id)) {
     return { problem: 'notFound' };
