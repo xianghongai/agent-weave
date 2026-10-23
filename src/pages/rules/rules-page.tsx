@@ -12,13 +12,22 @@ import { operationProblemMessage } from '@/i18n/problems';
 import type { Decision, Rule, ToolRef } from '@/lib/workspace';
 import { type OperationProblem, addRule, deleteRule, listRules, resolveTool } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
-import { DecisionToggle, ToolSelect, ToolTypeBadge, patternTexts } from '@/pages/rules/rule-fields';
+import { DecisionToggle, ToolSelect, ToolTypeBadge } from '@/pages/rules/rule-fields';
+import {
+  type OwnerFilter,
+  OwnerBadge,
+  OwnerFilterSelect,
+  matchesOwner,
+  usePatternTexts,
+} from '@/pages/rules/rule-owner';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 export default function RulesPage() {
   const { t } = useTranslation();
   const workspace = useWorkspace();
-  const rules = listRules(workspace);
+  const [owner, setOwner] = useState<OwnerFilter>('all');
+  const allRules = listRules(workspace);
+  const rules = allRules.filter(({ tool }) => matchesOwner(tool, owner));
 
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Rule | null>(null);
@@ -29,16 +38,21 @@ export default function RulesPage() {
         <AddRuleForm />
 
         <section className="grid gap-3">
-          <div className="grid gap-1">
-            <h2 className="flex items-center gap-2 font-medium">
-              <ListIcon className="size-4 text-brand" />
-              {t('rules.listTitle')}
-            </h2>
-            <p className="text-sm text-muted-foreground">{t('rules.listHint')}</p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="grid gap-1">
+              <h2 className="flex items-center gap-2 font-medium">
+                <ListIcon className="size-4 text-brand" />
+                {t('rules.listTitle')}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t('rules.listHint')}</p>
+            </div>
+            <OwnerFilterSelect workspace={workspace} value={owner} onChange={setOwner} />
           </div>
 
-          {rules.length === 0 ? (
+          {allRules.length === 0 ? (
             <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
+          ) : rules.length === 0 ? (
+            <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
           ) : (
             <ul className="divide-y rounded-xl border">
               {rules.map(({ rule, tool }) => (
@@ -51,6 +65,7 @@ export default function RulesPage() {
                     ) : (
                       <span className="font-sans text-muted-foreground">{t('rules.wholeTool')}</span>
                     )}
+                    <OwnerBadge tool={tool} />
                   </div>
                   <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
                     {t(`decisions.${rule.decision}`)}
@@ -102,9 +117,13 @@ function AddRuleForm() {
   const [problem, setProblem] = useState<OperationProblem | null>(null);
 
   // 所选工具被删除后，表单回到未选状态。
-  const selected = tool && resolveTool(workspace, tool) ? tool : null;
-  const hasTools = workspace.command_tools.length > 0 || workspace.mcp_servers.length > 0;
-  const patternText = patternTexts(selected?.type);
+  const resolved = tool ? resolveTool(workspace, tool) : null;
+  const selected = resolved ? tool : null;
+  const patternTexts = usePatternTexts(resolved);
+  const hasTools =
+    workspace.command_tools.length > 0 ||
+    workspace.mcp_servers.length > 0 ||
+    workspace.agents.some((agent) => agent.built_in_tools.length > 0);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -155,11 +174,11 @@ function AddRuleForm() {
               value={pattern}
               autoComplete="off"
               spellCheck={false}
-              placeholder={t(patternText.placeholder)}
+              placeholder={patternTexts.placeholder}
               className="font-mono"
               onChange={(event) => setPattern(event.target.value)}
             />
-            <FieldDescription>{t(patternText.hint)}</FieldDescription>
+            <FieldDescription>{patternTexts.hint}</FieldDescription>
           </Field>
           <Field>
             <FieldLabel>{t('rules.decision')}</FieldLabel>

@@ -1,5 +1,6 @@
 import type {
   Agent,
+  BuiltInTool,
   CommandTool,
   Decision,
   JsonObject,
@@ -384,6 +385,127 @@ export function deleteAgent(workspace: Workspace, id: string, ctx: OperationCont
   );
 }
 
+/* 内置工具 */
+
+/** 内置工具表单提交的内容。高危标记和标签不经过这里，编辑时保持不变。 */
+export interface BuiltInToolInput {
+  key: string;
+  description: string;
+  writes: boolean;
+  /** 模板中使用 `{pattern}`，如 `Read({pattern}**)` 与 `Read`。 */
+  templates: TemplatePair;
+}
+
+/** 检查标识：去掉首尾空白后不能为空，也不能与同一 Agent 的其他内置工具重复。 */
+function checkBuiltInToolKey(agent: Agent, key: string, selfId: string | null): OperationProblem | null {
+  if (key === '') {
+    return 'keyEmpty';
+  }
+  if (agent.built_in_tools.some((tool) => tool.key === key && tool.id !== selfId)) {
+    return 'keyDuplicate';
+  }
+  return null;
+}
+
+/** 把一个 Agent 的内置工具清单替换为新清单。 */
+function withBuiltInTools(workspace: Workspace, agentId: string, built_in_tools: BuiltInTool[]): Agent[] {
+  return workspace.agents.map((agent) => (agent.id === agentId ? { ...agent, built_in_tools } : agent));
+}
+
+/** 给某个 Agent 新增内置工具。标识只需在该 Agent 内唯一。 */
+export function addBuiltInTool(
+  workspace: Workspace,
+  agentId: string,
+  input: BuiltInToolInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const agent = workspace.agents.find((candidate) => candidate.id === agentId);
+  if (!agent) {
+    return { problem: 'notFound' };
+  }
+  const key = input.key.trim();
+  const problem = checkBuiltInToolKey(agent, key, null);
+  if (problem) {
+    return { problem };
+  }
+  const tool: BuiltInTool = {
+    id: ctx.newId(),
+    key,
+    description: input.description.trim(),
+    tag_ids: [],
+    high_risk: false,
+    writes: input.writes,
+    templates: trimTemplates(input.templates),
+  };
+  return commit(workspace, { agents: withBuiltInTools(workspace, agentId, [...agent.built_in_tools, tool]) }, ctx);
+}
+
+/** 编辑内置工具。所属 Agent 不变，指向它的规则随之输出新的模板。 */
+export function updateBuiltInTool(
+  workspace: Workspace,
+  id: string,
+  input: BuiltInToolInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const found = findBuiltInTool(workspace, id);
+  if (!found) {
+    return { problem: 'notFound' };
+  }
+  const key = input.key.trim();
+  const problem = checkBuiltInToolKey(found.agent, key, id);
+  if (problem) {
+    return { problem };
+  }
+  const built_in_tools = found.agent.built_in_tools.map((tool) =>
+    tool.id === id
+      ? {
+          ...tool,
+          key,
+          description: input.description.trim(),
+          writes: input.writes,
+          templates: trimTemplates(input.templates),
+        }
+      : tool
+  );
+  return commit(workspace, { agents: withBuiltInTools(workspace, found.agent.id, built_in_tools) }, ctx);
+}
+
+/** 删除内置工具，同时删除指向它的规则。受影响的规则数量用 `countRulesForTool` 查询。 */
+export function deleteBuiltInTool(
+  workspace: Workspace,
+  id: string,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const found = findBuiltInTool(workspace, id);
+  if (!found) {
+    return { problem: 'notFound' };
+  }
+  const ref: ToolRef = { type: 'built_in', id };
+  return commit(
+    workspace,
+    {
+      agents: withBuiltInTools(
+        workspace,
+        found.agent.id,
+        found.agent.built_in_tools.filter((tool) => tool.id !== id)
+      ),
+      rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
+    },
+    ctx
+  );
+}
+
+/** 在全部 Agent 的内置工具中按内部 ID 查找，同时返回所属的 Agent。 */
+export function findBuiltInTool(workspace: Workspace, id: string): Extract<ResolvedTool, { type: 'built_in' }> | null {
+  for (const agent of workspace.agents) {
+    const tool = agent.built_in_tools.find((candidate) => candidate.id === id);
+    if (tool) {
+      return { type: 'built_in', tool, agent };
+    }
+  }
+  return null;
+}
+
 /* 权限规则 */
 
 export interface RuleInput {
@@ -439,8 +561,14 @@ export function deleteRule(workspace: Workspace, id: string, ctx: OperationConte
 
 /* 查询 */
 
-/** 规则指向的工具。工具已被删除时解析不到。MCP 工具即 MCP Server 本身。 */
-export type ResolvedTool = { type: 'command'; tool: CommandTool } | { type: 'mcp'; tool: McpServer };
+/**
+ * 规则指向的工具。工具已被删除时解析不到。MCP 工具即 MCP Server 本身。
+ * 内置工具同时带上所属的 Agent：指向它的规则只属于这个 Agent。
+ */
+export type ResolvedTool =
+  | { type: 'command'; tool: CommandTool }
+  | { type: 'mcp'; tool: McpServer }
+  | { type: 'built_in'; tool: BuiltInTool; agent: Agent };
 
 export function resolveTool(workspace: Workspace, ref: ToolRef): ResolvedTool | null {
   if (ref.type === 'command') {
@@ -450,6 +578,9 @@ export function resolveTool(workspace: Workspace, ref: ToolRef): ResolvedTool | 
   if (ref.type === 'mcp') {
     const tool = workspace.mcp_servers.find((candidate) => candidate.id === ref.id);
     return tool ? { type: 'mcp', tool } : null;
+  }
+  if (ref.type === 'built_in') {
+    return findBuiltInTool(workspace, ref.id);
   }
   return null;
 }

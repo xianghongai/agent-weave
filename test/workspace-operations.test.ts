@@ -4,14 +4,17 @@ import { generate } from '@/lib/generate';
 import { EMPTY_DEVICE_SETTINGS, type McpOutput, type PermissionOutput, type Workspace } from '@/lib/workspace';
 import {
   type AgentInput,
+  type BuiltInToolInput,
   type OperationContext,
   addAgent,
+  addBuiltInTool,
   addCommandTool,
   addMcpServer,
   addRule,
   countRulesForAgent,
   countRulesForTool,
   deleteAgent,
+  deleteBuiltInTool,
   deleteCommandTool,
   deleteMcpServer,
   deleteRule,
@@ -19,6 +22,7 @@ import {
   newMcpOutput,
   newPermissionOutput,
   updateAgent,
+  updateBuiltInTool,
   updateCommandTool,
   updateMcpServer,
   updateRule,
@@ -493,5 +497,99 @@ describe('工作区操作：Agent', () => {
 
   it('删除不存在的 Agent 时返回原因码', () => {
     expect(deleteAgent(empty, 'missing', context())).toEqual({ problem: 'notFound' });
+  });
+});
+
+function builtInInput(changes: Partial<BuiltInToolInput> = {}): BuiltInToolInput {
+  return {
+    key: 'Edit',
+    description: '',
+    writes: true,
+    templates: { with_pattern: 'Edit({pattern}**)', without_pattern: 'Edit' },
+    ...changes,
+  };
+}
+
+describe('工作区操作：内置工具', () => {
+  it('新增内置工具时去掉各字段首尾的空白，加入所属 Agent，并更新修改时间', () => {
+    const input = builtInInput({
+      key: ' Edit ',
+      description: ' 修改文件 ',
+      templates: { with_pattern: ' Edit({pattern}**) ', without_pattern: ' Edit ' },
+    });
+    const ws = apply(withRead, (w) => addBuiltInTool(w, 'agent-claude', input, context()));
+    expect(ws.agents[0]?.built_in_tools[1]).toEqual({
+      id: 'new-1',
+      key: 'Edit',
+      description: '修改文件',
+      tag_ids: [],
+      high_risk: false,
+      writes: true,
+      templates: { with_pattern: 'Edit({pattern}**)', without_pattern: 'Edit' },
+    });
+    expect(ws.updated_at).toBe(NOW);
+  });
+
+  it('标识只需在所属 Agent 内唯一：同一 Agent 内重复或为空时返回原因码，其他 Agent 可以同名', () => {
+    expect(addBuiltInTool(withRead, 'agent-claude', builtInInput({ key: 'Read' }), context())).toEqual({
+      problem: 'keyDuplicate',
+    });
+    expect(addBuiltInTool(withRead, 'agent-claude', builtInInput({ key: ' ' }), context())).toEqual({
+      problem: 'keyEmpty',
+    });
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addAgent(w, agentInput(), ctx),
+      (w) => addBuiltInTool(w, 'new-1', builtInInput({ key: 'Read' }), ctx)
+    );
+    expect(ws.agents.map((agent) => agent.built_in_tools.map((tool) => tool.key))).toEqual([['Read'], ['Read']]);
+  });
+
+  it('所属 Agent 不存在时返回原因码', () => {
+    expect(addBuiltInTool(withRead, 'missing', builtInInput(), context())).toEqual({ problem: 'notFound' });
+  });
+
+  it('编辑时可以保留自己的标识，但不能改成同一 Agent 内别人的标识；修改模板后输出随之变化', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addBuiltInTool(w, 'agent-claude', builtInInput(), ctx),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'allow' }, ctx),
+      (w) =>
+        updateBuiltInTool(
+          w,
+          'read',
+          builtInInput({ key: 'Read', templates: { with_pattern: 'Read({pattern}**)', without_pattern: 'Read' } }),
+          ctx
+        )
+    );
+    expect(ws.agents[0]?.built_in_tools.map(({ key, writes }) => ({ key, writes }))).toEqual([
+      { key: 'Read', writes: true },
+      { key: 'Edit', writes: true },
+    ]);
+    expect(allowEntries(ws)).toEqual(['Read(./src/**)']);
+    expect(updateBuiltInTool(ws, 'read', builtInInput({ key: 'Edit' }), ctx)).toEqual({ problem: 'keyDuplicate' });
+    expect(updateBuiltInTool(ws, 'missing', builtInInput(), ctx)).toEqual({ problem: 'notFound' });
+  });
+
+  it('删除内置工具时连同指向它的规则一起删除，删除前可以查询受影响的规则数量', () => {
+    const ctx = context();
+    const ws = apply(
+      { ...withRead, command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false }] },
+      (w) => addBuiltInTool(w, 'agent-claude', builtInInput(), ctx),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: '', decision: 'allow' }, ctx),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'deny' }, ctx),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'new-1' }, pattern: '', decision: 'ask' }, ctx),
+      (w) => addRule(w, { tool: { type: 'command', id: 'git' }, pattern: '', decision: 'allow' }, ctx)
+    );
+    expect(countRulesForTool(ws, { type: 'built_in', id: 'read' })).toBe(2);
+
+    const deleted = apply(ws, (w) => deleteBuiltInTool(w, 'read', ctx));
+    expect(deleted.agents[0]?.built_in_tools.map((tool) => tool.key)).toEqual(['Edit']);
+    expect(deleted.rules.map((rule) => rule.id)).toEqual(['new-4', 'new-5']);
+    expect(allowEntries(deleted)).toEqual(['Bash(git *)']);
+    expect(deleted.updated_at).toBe(NOW);
+    expect(deleteBuiltInTool(deleted, 'read', ctx)).toEqual({ problem: 'notFound' });
   });
 });

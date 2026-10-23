@@ -109,6 +109,9 @@ function templatesFor(tool: ResolvedTool, output: PermissionOutput): { pair: Tem
       return { pair: output.command_templates, values: { command: tool.tool.key } };
     case 'mcp':
       return { pair: output.mcp_templates, values: { server: tool.tool.key } };
+    case 'built_in':
+      // 内置工具的模板属于工具本身，只代入模式；路径的 glob 由模板补全。
+      return { pair: tool.tool.templates, values: {} };
   }
 }
 
@@ -128,6 +131,7 @@ function ruleEntry(rule: Rule, tool: ResolvedTool, output: PermissionOutput): { 
 
 function permissionSection(
   workspace: Workspace,
+  agentId: string,
   output: PermissionOutput
 ): { section: PermissionSection; skippedRules: SkippedRule[] } {
   const skippedRules: SkippedRule[] = [];
@@ -135,6 +139,10 @@ function permissionSection(
   const entries = new Map<Decision, Set<string>>(DECISIONS.map((decision) => [decision, new Set()]));
 
   for (const { rule, tool } of listRules(workspace)) {
+    // 指向内置工具的规则只属于该内置工具所在的 Agent，其他 Agent 既不输出也不算跳过。
+    if (tool.type === 'built_in' && tool.agent.id !== agentId) {
+      continue;
+    }
     const result = ruleEntry(rule, tool, output);
     if ('skip' in result) {
       skippedRules.push({ ruleId: rule.id, reason: result.skip });
@@ -195,7 +203,7 @@ export function generate(workspace: Workspace, agentId: string, _device: DeviceS
     return null;
   }
   // 没有权限输出的 Agent 不产生跳过的规则，界面只说明“不输出权限”。
-  const permission = agent.permission_output ? permissionSection(workspace, agent.permission_output) : null;
+  const permission = agent.permission_output ? permissionSection(workspace, agent.id, agent.permission_output) : null;
   return {
     permission: permission?.section ?? null,
     mcp: agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null,
