@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { type KeyValueStorage, STORAGE_KEYS, loadWorkspace, saveWorkspace } from '@/lib/persistence';
+import {
+  type KeyValueStorage,
+  STORAGE_KEYS,
+  loadGistSettings,
+  loadWorkspace,
+  saveGistSettings,
+  saveWorkspace,
+} from '@/lib/persistence';
 import { createPresetWorkspace } from '@/lib/presets';
 import { parseWorkspace } from '@/lib/workspace-validation';
 
@@ -98,6 +105,43 @@ describe('持久化：工作区', () => {
     saveWorkspace(storage, edited());
     expect(items.get(STORAGE_KEYS.deviceSettings)).toBe('device');
     expect(items.get(STORAGE_KEYS.gistSettings)).toBe('gist');
+  });
+});
+
+describe('持久化：Gist 设置', () => {
+  const settings = { token: 'test-token', gist_id: 'aa5a315d61ae9438b18d' };
+
+  it('保存后再读取，得到同样的设置；只写自己的键，不进入工作区', () => {
+    const { storage, items } = memoryStorage();
+    saveWorkspace(storage, edited());
+    expect(saveGistSettings(storage, settings)).toBeNull();
+    expect(loadGistSettings(storage)).toEqual(settings);
+    expect(items.get(STORAGE_KEYS.workspace)).not.toContain('test-token');
+    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
+  });
+
+  it.each([
+    ['没有本地数据', undefined],
+    ['数据无法解析', '{"token": '],
+    ['数据不是对象', '[]'],
+  ])('%s时返回空的设置', (_, text) => {
+    const { storage, items } = memoryStorage();
+    if (text !== undefined) {
+      items.set(STORAGE_KEYS.gistSettings, text);
+    }
+    expect(loadGistSettings(storage)).toEqual({ token: '', gist_id: '' });
+  });
+
+  it('只取认识的字符串属性，其余视为空', () => {
+    const { storage, items } = memoryStorage();
+    items.set(STORAGE_KEYS.gistSettings, JSON.stringify({ token: 'test-token', gist_id: 42, extra: 'x' }));
+    expect(loadGistSettings(storage)).toEqual({ token: 'test-token', gist_id: '' });
+  });
+
+  it('存储不可用时读取返回空的设置，写入返回 writeFailed', () => {
+    const { storage } = memoryStorage({ failRead: true, failWrite: true });
+    expect(loadGistSettings(storage)).toEqual({ token: '', gist_id: '' });
+    expect(saveGistSettings(storage, settings)).toBe('writeFailed');
   });
 });
 

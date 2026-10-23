@@ -1,0 +1,185 @@
+import type { Workspace } from '@/lib/workspace';
+import { type ImportProblem, exportWorkspace, importWorkspace } from '@/lib/workspace-file';
+
+/*
+ * Gist 客户端：通过用户自己的 GitHub Gist 手动同步工作区。
+ * `fetch` 由调用方注入，测试时使用假的实现；运行时只访问 `api.github.com`。
+ * 出错时返回原因码，不抛异常，由界面层翻译成提示。
+ */
+
+/** 工作区在 Gist 中的文件名。 */
+export const GIST_FILE_NAME = 'agent-weave.json';
+
+const API_ROOT = 'https://api.github.com';
+
+/** `fetch` 中本模块用到的部分。 */
+export type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
+
+/** 访问 GitHub API 所需的依赖。 */
+export interface GistConnection {
+  fetch: FetchLike;
+  /** 只有 Gist 权限的 Token。拉取时可以为空串，推送必须提供。 */
+  token: string;
+}
+
+/** 只保存在本机的 Gist 设置，与工作区分开存储，不进入导出文件。 */
+export interface GistSettings {
+  /** 只有 Gist 权限的 Token，空串表示未填写。 */
+  token: string;
+  /** 用户填写或推送时自动创建的 Gist ID，空串表示还没有。 */
+  gist_id: string;
+}
+
+export const EMPTY_GIST_SETTINGS: Readonly<GistSettings> = { token: '', gist_id: '' };
+
+/**
+ * 请求 GitHub API 失败的原因：
+ * - `unauthorized`：Token 无效、已过期或权限不足；
+ * - `notFound`：Gist 不存在，或 Token 无权修改它；
+ * - `rateLimited`：超出 GitHub API 的调用频率限制，稍后再试；
+ * - `networkFailed`：请求没有得到响应，如离线；
+ * - `unexpectedResponse`：GitHub 返回了其他错误，或响应不是预期的格式。
+ */
+export type GistRequestProblem = 'unauthorized' | 'notFound' | 'rateLimited' | 'networkFailed' | 'unexpectedResponse';
+
+/**
+ * 远端内容无法使用的原因：
+ * - `fileMissing`：Gist 中没有 `agent-weave.json`；
+ * - `fileTruncated`：文件超过 API 返回内容的上限（1 MB），内容被截断；
+ * - `invalidContent`：文件没有通过导入流程，具体原因见 `importProblem`。
+ */
+export type GistContentFailure =
+  | { problem: 'fileMissing' | 'fileTruncated' }
+  | { problem: 'invalidContent'; importProblem: ImportProblem };
+
+/** 推送成功时返回 Gist ID：新建时是新 ID，更新时与传入的相同。 */
+export type PushResult = { gistId: string } | { problem: GistRequestProblem };
+
+export type PullResult = { workspace: Workspace } | { problem: GistRequestProblem } | GistContentFailure;
+
+/**
+ * 推送工作区，整体覆盖远端。
+ * `gistId` 为 `null` 时创建 Secret Gist，返回新 ID，由调用方保存。
+ */
+export async function pushWorkspace(
+  connection: GistConnection,
+  gistId: string | null,
+  workspace: Workspace
+): Promise<PushResult> {
+  const files = { [GIST_FILE_NAME]: { content: exportWorkspace(workspace).text } };
+  // 更新时只提交这一个文件，Gist 中的其他文件保持不变。
+  const response =
+    gistId === null
+      ? await request(connection, `${API_ROOT}/gists`, {
+          method: 'POST',
+          body: { description: GIST_DESCRIPTION, public: false, files },
+        })
+      : await request(connection, gistUrl(gistId), { method: 'PATCH', body: { files } });
+  if ('problem' in response) {
+    return response;
+  }
+  const id = isRecord(response.body) ? response.body.id : undefined;
+  if (typeof id !== 'string' || id === '') {
+    return { problem: 'unexpectedResponse' };
+  }
+  return { gistId: id };
+}
+
+/** 拉取工作区：读取 Gist 中的 `agent-weave.json`，交给导入流程解析、迁移和校验。 */
+export async function pullWorkspace(connection: GistConnection, gistId: string): Promise<PullResult> {
+  const response = await request(connection, gistUrl(gistId), { method: 'GET' });
+  if ('problem' in response) {
+    return response;
+  }
+  const files = isRecord(response.body) ? response.body.files : undefined;
+  if (!isRecord(files)) {
+    return { problem: 'unexpectedResponse' };
+  }
+  const file = files[GIST_FILE_NAME];
+  if (file === undefined || file === null) {
+    return { problem: 'fileMissing' };
+  }
+  // 完整内容在 `raw_url` 指向的其他域名上，CSP 只放行 `api.github.com`，因此不去读取。
+  if (!isRecord(file) || file.truncated === true) {
+    return { problem: 'fileTruncated' };
+  }
+  if (typeof file.content !== 'string') {
+    return { problem: 'unexpectedResponse' };
+  }
+  const imported = importWorkspace(file.content);
+  return 'problem' in imported ? { problem: 'invalidContent', importProblem: imported.problem } : imported;
+}
+
+/**
+ * 从用户填写的内容中取出 Gist ID：可以是 ID 本身，也可以是 Gist 页面的网址。
+ * 无法识别时返回 `null`。Gist ID 是十六进制串，检查它也避免了把其他路径拼进请求网址。
+ */
+export function parseGistId(input: string): string | null {
+  const path = input
+    .trim()
+    .replace(/[?#].*$/, '')
+    .replace(/\/+$/, '');
+  const id = path.slice(path.lastIndexOf('/') + 1);
+  return /^[0-9a-f]+$/i.test(id) ? id : null;
+}
+
+/** 新建 Gist 的描述，说明它的来源。 */
+const GIST_DESCRIPTION = 'agent-weave 工作区（由 agent-weave 创建，用于在设备之间同步）';
+
+function gistUrl(gistId: string): string {
+  return `${API_ROOT}/gists/${encodeURIComponent(gistId)}`;
+}
+
+/** 发出请求并读取 JSON 响应。请求失败时返回原因码。 */
+async function request(
+  connection: GistConnection,
+  url: string,
+  init: { method: 'GET' | 'POST' | 'PATCH'; body?: unknown }
+): Promise<{ body: unknown } | { problem: GistRequestProblem }> {
+  let response: Response;
+  try {
+    response = await connection.fetch(url, {
+      method: init.method,
+      headers: headers(connection.token),
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+  } catch {
+    // 离线、DNS 失败、被 CORS 或 CSP 拦截时，`fetch` 都以异常结束，浏览器不提供更多细节。
+    return { problem: 'networkFailed' };
+  }
+  // GitHub 用 403 同时表示权限不足和超出频率限制，后者的剩余次数为 0。
+  if (response.status === 429 || (response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0')) {
+    return { problem: 'rateLimited' };
+  }
+  if (response.status === 401 || response.status === 403) {
+    return { problem: 'unauthorized' };
+  }
+  // 对没有写入权限的 Gist，GitHub 也可能返回 404 而不是 403，以免泄露它是否存在。
+  if (response.status === 404) {
+    return { problem: 'notFound' };
+  }
+  if (!response.ok) {
+    return { problem: 'unexpectedResponse' };
+  }
+  try {
+    return { body: (await response.json()) as unknown };
+  } catch {
+    return { problem: 'unexpectedResponse' };
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function headers(token: string): Record<string, string> {
+  const result: Record<string, string> = {
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2026-03-10',
+  };
+  // 知道 ID 就能匿名读取 Secret Gist；没有 Token 时不带认证，GitHub 按匿名请求处理。
+  if (token.trim() !== '') {
+    result.Authorization = `Bearer ${token.trim()}`;
+  }
+  return result;
+}
