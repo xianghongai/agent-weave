@@ -17,12 +17,21 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { operationProblemMessage } from '@/i18n/problems';
-import { type Agent, DECISIONS, type PermissionOutput, type Workspace } from '@/lib/workspace';
+import {
+  type Agent,
+  DECISIONS,
+  type McpOutput,
+  type McpStyle,
+  type PermissionOutput,
+  type Workspace,
+} from '@/lib/workspace';
 import {
   type AgentInput,
   type OperationProblem,
   addAgent,
+  newMcpOutput,
   newPermissionOutput,
   updateAgent,
 } from '@/lib/workspace-operations';
@@ -58,7 +67,11 @@ export function AgentDialog({ open, onOpenChange, agent }: AgentDialogProps) {
 }
 
 /** 只能在“高级”区修改的字段出错时，自动展开高级区，避免保存按钮无故不可用。 */
-const ADVANCED_PROBLEMS: readonly OperationProblem[] = ['propertyPathInvalid', 'decisionKeyDuplicate'];
+const ADVANCED_PROBLEMS: readonly OperationProblem[] = [
+  'propertyPathInvalid',
+  'decisionKeyDuplicate',
+  'mcpPropertyPathInvalid',
+];
 
 function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void }) {
   const { t } = useTranslation();
@@ -68,6 +81,9 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
   // 关闭权限输出时保留已填写的内容，重新打开后可以继续使用。
   const [permissionEnabled, setPermissionEnabled] = useState(agent ? agent.permission_output !== null : true);
   const [permission, setPermission] = useState<PermissionOutput>(agent?.permission_output ?? newPermissionOutput());
+  // MCP 输出同理：关闭时保留已填写的内容。
+  const [mcpEnabled, setMcpEnabled] = useState(agent ? agent.mcp_output !== null : true);
+  const [mcp, setMcp] = useState<McpOutput>(agent?.mcp_output ?? newMcpOutput());
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
@@ -75,8 +91,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
     name,
     description,
     permission_output: permissionEnabled ? permission : null,
-    // MCP 输出的编辑随 MCP Server 一起加入，在此之前原样保留。
-    mcp_output: agent?.mcp_output ?? null,
+    mcp_output: mcpEnabled ? mcp : null,
   };
   const operation = (current: Workspace) => (agent ? updateAgent(current, agent.id, input) : addAgent(current, input));
   // 操作是纯函数，可以边输入边试算，立即提示重复名称和无效的高级字段。空名称只禁用保存，不提示。
@@ -87,6 +102,11 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
 
   function changePermission(changes: Partial<PermissionOutput>) {
     setPermission((current) => ({ ...current, ...changes }));
+    setSubmitProblem(null);
+  }
+
+  function changeMcp(changes: Partial<McpOutput>) {
+    setMcp((current) => ({ ...current, ...changes }));
     setSubmitProblem(null);
   }
 
@@ -154,9 +174,32 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
             onChange={(scopes) => changePermission({ scopes })}
           />
         )}
+        <Field orientation="horizontal">
+          <Switch
+            id="agent-mcp-enabled"
+            className="mt-0.5"
+            checked={mcpEnabled}
+            onCheckedChange={(checked) => {
+              setMcpEnabled(checked);
+              setSubmitProblem(null);
+            }}
+          />
+          <FieldContent>
+            <FieldLabel htmlFor="agent-mcp-enabled">{t('agents.mcpOutput')}</FieldLabel>
+            <FieldDescription>{t('agents.mcpOutputHint')}</FieldDescription>
+          </FieldContent>
+        </Field>
+        {mcpEnabled && (
+          <ScopeListEditor
+            idPrefix="agent-mcp-scope"
+            legend={t('agents.mcpScopes')}
+            scopes={mcp.scopes}
+            onChange={(scopes) => changeMcp({ scopes })}
+          />
+        )}
       </FieldGroup>
 
-      {/* 高级区：以后 MCP 输出的风格、属性路径也放在这里，与权限输出并列成一个 FieldSet。 */}
+      {/* 高级区：权限输出与 MCP 输出各一个 FieldSet，并列排放。 */}
       <Collapsible open={advancedOpen || advancedProblem !== null} onOpenChange={setAdvancedOpen}>
         <CollapsibleTrigger
           render={
@@ -167,11 +210,16 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
             </Button>
           }
         />
-        <CollapsibleContent className="pt-3">
+        <CollapsibleContent className="grid gap-6 pt-3">
           {permissionEnabled ? (
             <PermissionAdvancedFields value={permission} onChange={changePermission} problem={advancedProblem} />
           ) : (
             <p className="text-sm text-muted-foreground">{t('agents.noPermissionOutput')}</p>
+          )}
+          {mcpEnabled ? (
+            <McpAdvancedFields value={mcp} onChange={changeMcp} problem={advancedProblem} />
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('agents.noMcpOutput')}</p>
           )}
         </CollapsibleContent>
       </Collapsible>
@@ -185,6 +233,67 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+const MCP_STYLES: readonly McpStyle[] = ['json', 'toml'];
+
+interface McpAdvancedFieldsProps {
+  value: McpOutput;
+  onChange: (changes: Partial<McpOutput>) => void;
+  problem: OperationProblem | null;
+}
+
+/** MCP 输出的高级字段：风格与属性路径。 */
+function McpAdvancedFields({ value, onChange, problem }: McpAdvancedFieldsProps) {
+  const { t } = useTranslation();
+  const pathProblem = problem === 'mcpPropertyPathInvalid';
+
+  return (
+    <FieldSet>
+      <FieldLegend>{t('agents.mcpOutput')}</FieldLegend>
+      <FieldGroup>
+        <Field>
+          <FieldLabel>{t('agents.mcpStyle')}</FieldLabel>
+          <ToggleGroup
+            variant="outline"
+            value={[value.style]}
+            onValueChange={(next) => {
+              // 单选；再次点击当前项会得到空数组，此时保持原风格。
+              const style = MCP_STYLES.find((candidate) => next.includes(candidate));
+              if (style) {
+                onChange({ style });
+              }
+            }}
+            aria-label={t('agents.mcpStyle')}
+          >
+            {MCP_STYLES.map((style) => (
+              <ToggleGroupItem key={style} value={style}>
+                {t(`agents.mcpStyles.${style}`)}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <FieldDescription>{t('agents.mcpStyleHint')}</FieldDescription>
+        </Field>
+        <Field data-invalid={pathProblem ? true : undefined}>
+          <FieldLabel htmlFor="agent-mcp-path">{t('agents.propertyPath')}</FieldLabel>
+          <Input
+            id="agent-mcp-path"
+            value={value.property_path}
+            autoComplete="off"
+            spellCheck={false}
+            className="font-mono"
+            aria-invalid={pathProblem ? true : undefined}
+            onChange={(event) => onChange({ property_path: event.target.value })}
+          />
+          {pathProblem ? (
+            <FieldError>{operationProblemMessage(t, 'mcpPropertyPathInvalid')}</FieldError>
+          ) : (
+            <FieldDescription>{t('agents.mcpPropertyPathHint')}</FieldDescription>
+          )}
+        </Field>
+      </FieldGroup>
+    </FieldSet>
   );
 }
 

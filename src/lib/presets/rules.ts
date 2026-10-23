@@ -4,6 +4,17 @@ function commandRule(id: string, toolId: string, pattern: string, decision: Deci
   return { id, tool: { type: 'command', id: toolId }, pattern, decision, high_risk: false };
 }
 
+/** 允许整个 MCP Server。每个预设 MCP Server 各有一条，不设“全部 MCP”的规则。 */
+function mcpAllowRule(serverKey: string): Rule {
+  return {
+    id: `preset-rule-mcp-${serverKey}-allow`,
+    tool: { type: 'mcp', id: `preset-mcp-${serverKey}` },
+    pattern: '',
+    decision: 'allow',
+    high_risk: false,
+  };
+}
+
 /** 预设的共享权限规则，所有 Agent 共用。 */
 export const PRESET_RULES: Rule[] = [
   commandRule('preset-rule-git-allow', 'preset-command-git', '', 'allow'),
@@ -15,4 +26,7 @@ export const PRESET_RULES: Rule[] = [
   commandRule('preset-rule-rg-allow', 'preset-command-rg', '', 'allow'),
   commandRule('preset-rule-rm-ask', 'preset-command-rm', '', 'ask'),
   commandRule('preset-rule-sudo-deny', 'preset-command-sudo', '', 'deny'),
+  mcpAllowRule('context7'),
+  mcpAllowRule('filesystem'),
+  mcpAllowRule('sequential-thinking'),
 ];

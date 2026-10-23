@@ -12,7 +12,7 @@ import { operationProblemMessage } from '@/i18n/problems';
 import type { Decision, Rule, ToolRef } from '@/lib/workspace';
 import { type OperationProblem, addRule, deleteRule, listRules, resolveTool } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
-import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
+import { DecisionToggle, ToolSelect, ToolTypeBadge } from '@/pages/rules/rule-fields';
 import {
   type OwnerFilter,
   OwnerBadge,
@@ -59,6 +59,7 @@ export default function RulesPage() {
                 <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
                   <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
                     <code className="font-medium">{tool.tool.key}</code>
+                    <ToolTypeBadge type={tool.type} />
                     {rule.pattern ? (
                       <code className="break-all">{rule.pattern}</code>
                     ) : (
@@ -120,7 +121,9 @@ function AddRuleForm() {
   const selected = resolved ? tool : null;
   const patternTexts = usePatternTexts(resolved);
   const hasTools =
-    workspace.command_tools.length > 0 || workspace.agents.some((agent) => agent.built_in_tools.length > 0);
+    workspace.command_tools.length > 0 ||
+    workspace.mcp_servers.length > 0 ||
+    workspace.agents.some((agent) => agent.built_in_tools.length > 0);
 
   function submit(event: FormEvent) {
     event.preventDefault();

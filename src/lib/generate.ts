@@ -2,6 +2,8 @@ import type {
   Decision,
   DeviceSettings,
   JsonValue,
+  McpOutput,
+  McpServer,
   McpStyle,
   PermissionOutput,
   Rule,
@@ -10,7 +12,7 @@ import type {
   Workspace,
 } from '@/lib/workspace';
 import { DECISIONS } from '@/lib/workspace';
-import { type ResolvedTool, listRules } from '@/lib/workspace-operations';
+import { type ResolvedTool, compareText, listRules } from '@/lib/workspace-operations';
 
 /*
  * 生成：输入工作区、Agent 的内部 ID 和本机设置，返回该 Agent 的完整输出结果。
@@ -84,15 +86,17 @@ function fillTemplate(template: string, values: TemplateValues): string {
 
 const INDENT = 2;
 
+/** 一个不带外层花括号的 JSON 键值对，如 `"permissions": {...}`。 */
+function jsonPair(key: string, value: JsonValue): string {
+  return `${JSON.stringify(key)}: ${JSON.stringify(value, null, INDENT)}`;
+}
+
 /** 把值按点分属性路径层层嵌套，返回完整预览和最末一段的键值对。 */
 function nestedJson(propertyPath: string, value: JsonValue): { preview: string; copyText: string } {
   const segments = propertyPath.split('.');
   const lastKey = segments.at(-1) ?? '';
   const nested = segments.reduceRight<JsonValue>((inner, segment) => ({ [segment]: inner }), value);
-  return {
-    preview: JSON.stringify(nested, null, INDENT),
-    copyText: `${JSON.stringify(lastKey)}: ${JSON.stringify(value, null, INDENT)}`,
-  };
+  return { preview: JSON.stringify(nested, null, INDENT), copyText: jsonPair(lastKey, value) };
 }
 
 /**
@@ -103,6 +107,8 @@ function templatesFor(tool: ResolvedTool, output: PermissionOutput): { pair: Tem
   switch (tool.type) {
     case 'command':
       return { pair: output.command_templates, values: { command: tool.tool.key } };
+    case 'mcp':
+      return { pair: output.mcp_templates, values: { server: tool.tool.key } };
     case 'built_in':
       // 内置工具的模板属于工具本身，只代入模式；路径的 glob 由模板补全。
       return { pair: tool.tool.templates, values: {} };
@@ -164,6 +170,32 @@ function permissionSection(
   };
 }
 
+/** JSON 风格：Server 标识到内容的对象。“复制内部”是各 Server 的键值对，以逗号和换行分隔。 */
+function jsonMcpSection(servers: McpServer[], output: McpOutput): McpSection {
+  const body = Object.fromEntries(servers.map((server) => [server.key, server.content]));
+  return {
+    style: 'json',
+    ...nestedJson(output.property_path, body),
+    copyInnerText: servers.map((server) => jsonPair(server.key, server.content)).join(',\n'),
+    scopes: output.scopes,
+  };
+}
+
+/**
+ * MCP 节：包含全部 MCP Server，按标识排序；描述不进入输出，内容中的 `${VAR}` 原样保留。
+ * 每种风格一个分支，共用 Server 的选取与排序。
+ */
+function mcpSection(workspace: Workspace, output: McpOutput): McpSection | null {
+  const servers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
+  switch (output.style) {
+    case 'json':
+      return jsonMcpSection(servers, output);
+    case 'toml':
+      // TOML 风格由 JSON 内容转换而来，随 Codex CLI 一起实现，在此之前不输出。
+      return null;
+  }
+}
+
 /** 找不到该 Agent 时返回 `null`。 */
 export function generate(workspace: Workspace, agentId: string, _device: DeviceSettings): AgentOutput | null {
   const agent = workspace.agents.find((candidate) => candidate.id === agentId);
@@ -174,8 +206,7 @@ export function generate(workspace: Workspace, agentId: string, _device: DeviceS
   const permission = agent.permission_output ? permissionSection(workspace, agent.id, agent.permission_output) : null;
   return {
     permission: permission?.section ?? null,
-    // MCP 节随 MCP Server 一起实现，在此之前不输出。
-    mcp: null,
+    mcp: agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null,
     skippedRules: permission?.skippedRules ?? [],
     notices: [],
   };

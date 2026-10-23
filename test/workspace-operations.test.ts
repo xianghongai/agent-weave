@@ -9,18 +9,22 @@ import {
   addAgent,
   addBuiltInTool,
   addCommandTool,
+  addMcpServer,
   addRule,
   countRulesForAgent,
   countRulesForTool,
   deleteAgent,
   deleteBuiltInTool,
   deleteCommandTool,
+  deleteMcpServer,
   deleteRule,
   listRules,
+  newMcpOutput,
   newPermissionOutput,
   updateAgent,
   updateBuiltInTool,
   updateCommandTool,
+  updateMcpServer,
   updateRule,
 } from '@/lib/workspace-operations';
 
@@ -78,6 +82,18 @@ function apply(workspace: Workspace, ...steps: ((ws: Workspace) => ReturnType<ty
 function allowEntries(ws: Workspace): string[] {
   return generate(ws, 'agent-claude', EMPTY_DEVICE_SETTINGS)?.permission?.decisions[0]?.entries ?? [];
 }
+
+/** 带 Claude Code MCP 工具模板的工作区。 */
+const withMcpTemplates: Workspace = {
+  ...empty,
+  agents: empty.agents.map((agent) => ({
+    ...agent,
+    permission_output: agent.permission_output && {
+      ...agent.permission_output,
+      mcp_templates: { with_pattern: 'mcp__{server}__{pattern}', without_pattern: 'mcp__{server}' },
+    },
+  })),
+};
 
 describe('工作区操作：命令工具', () => {
   it('新增命令工具时去掉首尾空白，并更新修改时间', () => {
@@ -147,6 +163,117 @@ describe('工作区操作：命令工具', () => {
     expect(deleted.command_tools.map((tool) => tool.key)).toEqual(['ls']);
     expect(deleted.rules.map((rule) => rule.id)).toEqual(['new-5']);
     expect(allowEntries(deleted)).toEqual(['Bash(ls *)']);
+  });
+});
+
+describe('工作区操作：MCP Server', () => {
+  const context7 = '{ "command": "npx", "args": ["-y", "@upstash/context7-mcp"] }';
+
+  it('新增 MCP Server 时解析 JSON 内容，去掉标识和描述首尾的空白，并更新修改时间', () => {
+    const ws = apply(empty, (w) =>
+      addMcpServer(w, { key: ' context7 ', content: context7, description: ' 查询文档 ' }, context())
+    );
+    expect(ws.mcp_servers).toEqual([
+      {
+        id: 'new-1',
+        key: 'context7',
+        content: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+        description: '查询文档',
+        tag_ids: [],
+        high_risk: false,
+      },
+    ]);
+    expect(ws.updated_at).toBe(NOW);
+  });
+
+  it('内容不是合法的 JSON 对象时返回原因码', () => {
+    for (const content of ['', '{ "command": ', '"context7": {}', '[]', 'null', '42']) {
+      expect(addMcpServer(empty, { key: 'context7', content, description: '' }, context())).toEqual({
+        problem: 'contentInvalid',
+      });
+    }
+  });
+
+  it('内容中的字段不做校验，只要是 JSON 对象就可以保存', () => {
+    const ws = apply(empty, (w) =>
+      addMcpServer(w, { key: 'odd', content: '{ "anything": [null] }', description: '' }, context())
+    );
+    expect(ws.mcp_servers[0]?.content).toEqual({ anything: [null] });
+  });
+
+  it('标识为空或与其他 MCP Server 重复时返回原因码，与命令工具同名不算重复', () => {
+    const ctx = context();
+    const ws = apply(
+      empty,
+      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx)
+    );
+    expect(addMcpServer(ws, { key: ' ', content: '{}', description: '' }, ctx)).toEqual({ problem: 'keyEmpty' });
+    expect(addMcpServer(ws, { key: 'context7', content: '{}', description: '' }, ctx)).toEqual({
+      problem: 'keyDuplicate',
+    });
+    expect('workspace' in addMcpServer(ws, { key: 'git', content: '{}', description: '' }, ctx)).toBe(true);
+  });
+
+  it('编辑时可以保留自己的标识并替换内容，但不能改成别人的标识', () => {
+    const ctx = context();
+    const ws = apply(
+      empty,
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
+      (w) => addMcpServer(w, { key: 'memory', content: '{}', description: '' }, ctx)
+    );
+    const edited = apply(ws, (w) =>
+      updateMcpServer(w, 'new-1', { key: 'context7', content: context7, description: '文档' }, ctx)
+    );
+    expect(edited.mcp_servers[0]).toMatchObject({
+      key: 'context7',
+      content: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
+      description: '文档',
+    });
+    expect(updateMcpServer(ws, 'new-1', { key: 'memory', content: '{}', description: '' }, ctx)).toEqual({
+      problem: 'keyDuplicate',
+    });
+    expect(updateMcpServer(ws, 'new-1', { key: 'context7', content: '[', description: '' }, ctx)).toEqual({
+      problem: 'contentInvalid',
+    });
+    expect(updateMcpServer(ws, 'missing', { key: 'x', content: '{}', description: '' }, ctx)).toEqual({
+      problem: 'notFound',
+    });
+  });
+
+  it('可以对 MCP Server 写规则，修改标识后输出随之变化', () => {
+    const ctx = context();
+    const ws = apply(
+      withMcpTemplates,
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
+      (w) => addRule(w, { tool: { type: 'mcp', id: 'new-1' }, pattern: '', decision: 'allow' }, ctx),
+      (w) => updateMcpServer(w, 'new-1', { key: 'docs', content: '{}', description: '' }, ctx)
+    );
+    expect(allowEntries(ws)).toEqual(['mcp__docs']);
+  });
+
+  it('删除 MCP Server 时连同引用它的规则一起删除，删除前可以查询受影响的规则数量', () => {
+    const ctx = context();
+    const ws = apply(
+      withMcpTemplates,
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
+      (w) => addMcpServer(w, { key: 'memory', content: '{}', description: '' }, ctx),
+      (w) => addRule(w, { tool: { type: 'mcp', id: 'new-1' }, pattern: '', decision: 'allow' }, ctx),
+      (w) => addRule(w, { tool: { type: 'mcp', id: 'new-1' }, pattern: 'resolve-library-id', decision: 'ask' }, ctx),
+      (w) => addRule(w, { tool: { type: 'mcp', id: 'new-2' }, pattern: '', decision: 'allow' }, ctx)
+    );
+    expect(countRulesForTool(ws, { type: 'mcp', id: 'new-1' })).toBe(2);
+
+    const deleted = apply(ws, (w) => deleteMcpServer(w, 'new-1', ctx));
+    expect(deleted.mcp_servers.map((server) => server.key)).toEqual(['memory']);
+    expect(deleted.rules.map((rule) => rule.id)).toEqual(['new-5']);
+    expect(allowEntries(deleted)).toEqual(['mcp__memory']);
+    expect(deleteMcpServer(deleted, 'new-1', ctx)).toEqual({ problem: 'notFound' });
+  });
+
+  it('所选 MCP Server 不存在时不能新增规则', () => {
+    const missing = { tool: { type: 'mcp', id: 'missing' }, pattern: '', decision: 'allow' } as const;
+    expect(addRule(empty, missing, context())).toEqual({ problem: 'toolMissing' });
   });
 });
 
@@ -289,8 +416,34 @@ describe('工作区操作：Agent', () => {
         problem: 'propertyPathInvalid',
       });
     }
-    const mcp_output: McpOutput = { style: 'json', property_path: 'mcp..servers', scopes: [] };
-    expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'propertyPathInvalid' });
+  });
+
+  it('MCP 输出的属性路径无效时返回单独的原因码，便于界面定位到对应字段', () => {
+    for (const property_path of ['', 'mcp..servers', 'mcpServers.']) {
+      const mcp_output: McpOutput = { style: 'json', property_path, scopes: [] };
+      expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'mcpPropertyPathInvalid' });
+    }
+  });
+
+  it('可以设置 MCP 输出：去掉属性路径与作用域首尾的空白，丢弃全部为空的作用域', () => {
+    const mcp_output: McpOutput = {
+      style: 'toml',
+      property_path: ' mcp_servers ',
+      scopes: [
+        { name: ' 用户级 ', path: ' ~/.codex/config.toml ', note: '' },
+        { name: '', path: ' ', note: '' },
+      ],
+    };
+    const ws = apply(empty, (w) => addAgent(w, agentInput({ permission_output: null, mcp_output }), context()));
+    expect(ws.agents[1]?.mcp_output).toEqual({
+      style: 'toml',
+      property_path: 'mcp_servers',
+      scopes: [{ name: '用户级', path: '~/.codex/config.toml', note: '' }],
+    });
+  });
+
+  it('新开启的 MCP 输出默认为 JSON 风格，属性路径为 mcpServers', () => {
+    expect(newMcpOutput()).toEqual({ style: 'json', property_path: 'mcpServers', scopes: [] });
   });
 
   it('两个决策映射到同一个键名时返回原因码，留空的决策不算重复', () => {

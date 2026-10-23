@@ -85,5 +85,9 @@ export function usePatternTexts(tool: ResolvedTool | null): { placeholder: strin
       hint: t('rules.builtInPatternHint', { agent: tool.agent.name }),
     };
   }
+  // MCP 工具的模式是该 Server 提供的工具名。
+  if (tool?.type === 'mcp') {
+    return { placeholder: t('rules.mcpPatternPlaceholder'), hint: t('rules.mcpPatternHint') };
+  }
   return { placeholder: t('rules.patternPlaceholder'), hint: t('rules.patternHint') };
 }

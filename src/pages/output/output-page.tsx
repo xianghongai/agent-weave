@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, ShieldCheckIcon } from 'lucide-react';
+import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -9,9 +9,10 @@ import { Note, Page } from '@/components/page';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { skipReasonMessage } from '@/i18n/problems';
-import { type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
+import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
 import { EMPTY_DEVICE_SETTINGS, type Scope, type Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
+import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { useWorkspace } from '@/state/workspace-store';
 
 export default function OutputPage() {
@@ -55,6 +56,18 @@ export default function OutputPage() {
             )}
           </section>
 
+          <section className="grid gap-3">
+            <h2 className="flex items-center gap-2 font-medium">
+              <PlugIcon className="size-4 text-brand" />
+              {t('output.mcp')}
+            </h2>
+            {output.mcp ? (
+              <McpOutputView section={output.mcp} lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''} />
+            ) : (
+              <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
+            )}
+          </section>
+
           <SkippedRuleList workspace={workspace} skippedRules={output.skippedRules} />
         </div>
       )}
@@ -90,6 +103,7 @@ function SkippedRuleList({ workspace, skippedRules }: { workspace: Workspace; sk
             <li key={ruleId} className="grid gap-1 px-3 py-2">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
                 <code className="font-mono font-medium">{tool.tool.key}</code>
+                <ToolTypeBadge type={tool.type} />
                 {rule.pattern ? (
                   <code className="font-mono break-all">{rule.pattern}</code>
                 ) : (
@@ -136,6 +150,38 @@ function PermissionOutputView({ section, lastKey }: { section: PermissionSection
       </div>
 
       <p className="text-sm text-muted-foreground text-pretty">{t('output.copyHint', { key: `"${lastKey}"` })}</p>
+    </div>
+  );
+}
+
+/** MCP 节：“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。 */
+function McpOutputView({ section, lastKey }: { section: McpSection; lastKey: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="grid gap-3">
+      <ScopeList scopes={section.scopes} />
+
+      <div className="overflow-hidden rounded-xl border">
+        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-3 py-2">
+          <span className="mr-auto text-sm font-medium">{t('output.preview')}</span>
+          {section.copyInnerText !== null && (
+            <CopyButton
+              text={section.copyInnerText}
+              disabled={section.copyInnerText === ''}
+              label={t('copy.copyInner')}
+            />
+          )}
+          <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
+        </div>
+        <pre className="max-h-[32rem] overflow-auto p-3 font-mono text-xs leading-relaxed sm:text-sm">
+          {section.preview}
+        </pre>
+      </div>
+
+      {section.style === 'json' && (
+        <p className="text-sm text-muted-foreground text-pretty">{t('output.mcpCopyHint', { key: `"${lastKey}"` })}</p>
+      )}
     </div>
   );
 }

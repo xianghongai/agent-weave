@@ -2,6 +2,7 @@ import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { DECISIONS, type Decision, type ToolRef, type Workspace } from '@/lib/workspace';
@@ -14,15 +15,23 @@ function encodeToolRef(ref: ToolRef): string {
 
 type ToolOption = { value: string; label: string; ref: ToolRef };
 
-/** 规则可以指向的工具：先按工具类型，同类内按标识排序。 */
+/** 规则可以指向的工具：先按工具类型（命令、MCP、内置），同类内按标识排序，与规则列表一致。 */
 function toolOptions(workspace: Workspace): ToolOption[] {
-  const commands = workspace.command_tools
+  return [
+    ...sharedToolOptions('command', workspace.command_tools),
+    ...sharedToolOptions('mcp', workspace.mcp_servers),
+    ...builtInToolOptions(workspace),
+  ];
+}
+
+/** 共享工具（命令工具、MCP 工具）的选项，按标识排序。 */
+function sharedToolOptions(type: 'command' | 'mcp', tools: { id: string; key: string }[]): ToolOption[] {
+  return tools
     .toSorted((a, b) => compareText(a.key, b.key))
     .map((tool) => {
-      const ref: ToolRef = { type: 'command', id: tool.id };
+      const ref: ToolRef = { type, id: tool.id };
       return { value: encodeToolRef(ref), label: tool.key, ref };
     });
-  return [...commands, ...builtInToolOptions(workspace)];
 }
 
 /** 内置工具按 Agent 的顺序排列，标签带上所属 Agent 的名称，以便区分同名工具并标明规则归属。 */
@@ -67,10 +76,24 @@ export function ToolSelect({ id, workspace, value, onChange, className }: ToolSe
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value} className="font-mono">
             {option.label}
+            <ToolTypeBadge type={option.ref.type} />
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+/** 区分同名的命令工具与 MCP 工具；命令工具不加标记。 */
+export function ToolTypeBadge({ type }: { type: ToolRef['type'] }) {
+  const { t } = useTranslation();
+  if (type !== 'mcp') {
+    return null;
+  }
+  return (
+    <Badge variant="outline" className="font-sans">
+      {t('rules.mcpBadge')}
+    </Badge>
   );
 }
 

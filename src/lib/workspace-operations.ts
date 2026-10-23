@@ -3,7 +3,9 @@ import type {
   BuiltInTool,
   CommandTool,
   Decision,
+  JsonObject,
   McpOutput,
+  McpServer,
   PermissionOutput,
   Rule,
   Scope,
@@ -36,7 +38,9 @@ export type OperationProblem =
   | 'nameEmpty'
   | 'nameDuplicate'
   | 'propertyPathInvalid'
+  | 'mcpPropertyPathInvalid'
   | 'decisionKeyDuplicate'
+  | 'contentInvalid'
   | 'notFound'
   | 'toolMissing';
 
@@ -53,15 +57,19 @@ export interface CommandToolInput {
   description: string;
 }
 
-/** 检查标识：去掉首尾空白后不能为空，也不能与其他命令工具重复。 */
-function checkCommandToolKey(workspace: Workspace, key: string, selfId: string | null): OperationProblem | null {
+/** 检查标识：去掉首尾空白后不能为空，也不能与同一类的其他条目重复。 */
+function checkKey(entries: { id: string; key: string }[], key: string, selfId: string | null): OperationProblem | null {
   if (key === '') {
     return 'keyEmpty';
   }
-  if (workspace.command_tools.some((tool) => tool.key === key && tool.id !== selfId)) {
+  if (entries.some((entry) => entry.key === key && entry.id !== selfId)) {
     return 'keyDuplicate';
   }
   return null;
+}
+
+function checkCommandToolKey(workspace: Workspace, key: string, selfId: string | null): OperationProblem | null {
+  return checkKey(workspace.command_tools, key, selfId);
 }
 
 export function addCommandTool(
@@ -133,6 +141,96 @@ export function deleteCommandTool(
   );
 }
 
+/* MCP Server */
+
+/** MCP Server 表单提交的内容。`content` 是用户输入的 JSON 文本，由操作负责解析。 */
+export interface McpServerInput {
+  key: string;
+  content: string;
+  description: string;
+}
+
+/** 把内容解析成 JSON 对象。只校验是不是 JSON 对象，不校验其中的字段。 */
+function parseMcpContent(text: string): JsonObject | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as JsonObject) : null;
+}
+
+/** 整理并检查 MCP Server 表单的内容，返回要写入的字段。 */
+function checkMcpServerInput(
+  workspace: Workspace,
+  input: McpServerInput,
+  selfId: string | null
+): { problem: OperationProblem } | { fields: Pick<McpServer, 'key' | 'content' | 'description'> } {
+  const key = input.key.trim();
+  const problem = checkKey(workspace.mcp_servers, key, selfId);
+  if (problem) {
+    return { problem };
+  }
+  const content = parseMcpContent(input.content);
+  if (!content) {
+    return { problem: 'contentInvalid' };
+  }
+  return { fields: { key, content, description: input.description.trim() } };
+}
+
+export function addMcpServer(
+  workspace: Workspace,
+  input: McpServerInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const checked = checkMcpServerInput(workspace, input, null);
+  if ('problem' in checked) {
+    return checked;
+  }
+  const server: McpServer = { id: ctx.newId(), ...checked.fields, tag_ids: [], high_risk: false };
+  return commit(workspace, { mcp_servers: [...workspace.mcp_servers, server] }, ctx);
+}
+
+export function updateMcpServer(
+  workspace: Workspace,
+  id: string,
+  input: McpServerInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  if (!workspace.mcp_servers.some((server) => server.id === id)) {
+    return { problem: 'notFound' };
+  }
+  const checked = checkMcpServerInput(workspace, input, id);
+  if ('problem' in checked) {
+    return checked;
+  }
+  const mcp_servers = workspace.mcp_servers.map((server) =>
+    server.id === id ? { ...server, ...checked.fields } : server
+  );
+  return commit(workspace, { mcp_servers }, ctx);
+}
+
+/** 删除 MCP Server，同时删除指向它（即同名 MCP 工具）的规则。 */
+export function deleteMcpServer(
+  workspace: Workspace,
+  id: string,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  if (!workspace.mcp_servers.some((server) => server.id === id)) {
+    return { problem: 'notFound' };
+  }
+  const ref: ToolRef = { type: 'mcp', id };
+  return commit(
+    workspace,
+    {
+      mcp_servers: workspace.mcp_servers.filter((server) => server.id !== id),
+      rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
+    },
+    ctx
+  );
+}
+
 /* Agent */
 
 /**
@@ -155,6 +253,11 @@ export function newPermissionOutput(): PermissionOutput {
     command_templates: { with_pattern: '', without_pattern: '' },
     mcp_templates: { with_pattern: '', without_pattern: '' },
   };
+}
+
+/** 开启 MCP 输出时的初始值：主流 Agent 采用的 Claude 风格 `mcpServers` JSON。 */
+export function newMcpOutput(): McpOutput {
+  return { style: 'json', property_path: 'mcpServers', scopes: [] };
 }
 
 function trimTemplates(pair: TemplatePair): TemplatePair {
@@ -207,10 +310,12 @@ function checkAgentInput(
 
   const permission_output = input.permission_output && normalizePermissionOutput(input.permission_output);
   const mcp_output = input.mcp_output && normalizeMcpOutput(input.mcp_output);
-  for (const output of [permission_output, mcp_output]) {
-    if (output && !isValidPropertyPath(output.property_path)) {
-      return { problem: 'propertyPathInvalid' };
-    }
+  // 两种输出的属性路径分别给出原因码，界面据此定位到出错的字段。
+  if (permission_output && !isValidPropertyPath(permission_output.property_path)) {
+    return { problem: 'propertyPathInvalid' };
+  }
+  if (mcp_output && !isValidPropertyPath(mcp_output.property_path)) {
+    return { problem: 'mcpPropertyPathInvalid' };
   }
   if (permission_output) {
     // 同一个键名出现两次时，JSON 中后一个决策会覆盖前一个；留空的决策不输出，不算重复。
@@ -457,17 +562,22 @@ export function deleteRule(workspace: Workspace, id: string, ctx: OperationConte
 /* 查询 */
 
 /**
- * 规则指向的工具。工具已被删除时解析不到。
+ * 规则指向的工具。工具已被删除时解析不到。MCP 工具即 MCP Server 本身。
  * 内置工具同时带上所属的 Agent：指向它的规则只属于这个 Agent。
  */
 export type ResolvedTool =
   | { type: 'command'; tool: CommandTool }
+  | { type: 'mcp'; tool: McpServer }
   | { type: 'built_in'; tool: BuiltInTool; agent: Agent };
 
 export function resolveTool(workspace: Workspace, ref: ToolRef): ResolvedTool | null {
   if (ref.type === 'command') {
     const tool = workspace.command_tools.find((candidate) => candidate.id === ref.id);
     return tool ? { type: 'command', tool } : null;
+  }
+  if (ref.type === 'mcp') {
+    const tool = workspace.mcp_servers.find((candidate) => candidate.id === ref.id);
+    return tool ? { type: 'mcp', tool } : null;
   }
   if (ref.type === 'built_in') {
     return findBuiltInTool(workspace, ref.id);
