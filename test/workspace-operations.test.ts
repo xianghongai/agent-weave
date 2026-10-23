@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { generate } from '@/lib/generate';
-import { EMPTY_DEVICE_SETTINGS, type PermissionOutput, type Workspace } from '@/lib/workspace';
+import { EMPTY_DEVICE_SETTINGS, type McpOutput, type PermissionOutput, type Workspace } from '@/lib/workspace';
 import {
   type AgentInput,
   type OperationContext,
@@ -285,7 +285,7 @@ describe('工作区操作：Agent', () => {
         problem: 'propertyPathInvalid',
       });
     }
-    const mcp_output = { style: 'json', property_path: 'mcp..servers', scopes: [] } as const;
+    const mcp_output: McpOutput = { style: 'json', property_path: 'mcp..servers', scopes: [] };
     expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'propertyPathInvalid' });
   });
 

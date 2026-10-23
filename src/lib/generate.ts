@@ -107,11 +107,7 @@ function templatesFor(tool: ResolvedTool, output: PermissionOutput): { pair: Tem
 }
 
 /** 把一条规则写成输出中的字符串；该 Agent 表达不了时返回跳过原因。 */
-function ruleEntry(
-  rule: Rule,
-  tool: ResolvedTool,
-  output: PermissionOutput
-): { entry: string } | { skip: SkipReason } {
+function ruleEntry(rule: Rule, tool: ResolvedTool, output: PermissionOutput): { entry: string } | { skip: SkipReason } {
   // 决策键名为空表示该 Agent 不支持这一档，先于模板判定。
   if (output.decision_keys[rule.decision] === '') {
     return { skip: 'decisionKeyMissing' };

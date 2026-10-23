@@ -1,14 +1,17 @@
 import { cn } from 'cn';
-import { FileCodeIcon, FolderOpenIcon, InfoIcon, ShieldCheckIcon } from 'lucide-react';
+import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, ShieldCheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CopyButton } from '@/components/copy-button';
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page } from '@/components/page';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { type PermissionSection, generate } from '@/lib/generate';
-import { EMPTY_DEVICE_SETTINGS, type Scope } from '@/lib/workspace';
+import { skipReasonMessage } from '@/i18n/problems';
+import { type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
+import { EMPTY_DEVICE_SETTINGS, type Scope, type Workspace } from '@/lib/workspace';
+import { resolveTool } from '@/lib/workspace-operations';
 import { useWorkspace } from '@/state/workspace-store';
 
 export default function OutputPage() {
@@ -51,9 +54,57 @@ export default function OutputPage() {
               <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
             )}
           </section>
+
+          <SkippedRuleList workspace={workspace} skippedRules={output.skippedRules} />
         </div>
       )}
     </Page>
+  );
+}
+
+/** 跳过的规则：该 Agent 定义表达不了的规则，附带原因。没有时不显示。 */
+function SkippedRuleList({ workspace, skippedRules }: { workspace: Workspace; skippedRules: SkippedRule[] }) {
+  const { t } = useTranslation();
+  if (skippedRules.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="grid gap-3">
+      <div className="grid gap-1">
+        <h2 className="flex items-center gap-2 font-medium">
+          <CircleSlashIcon className="size-4 text-brand" />
+          {t('output.skippedRules')}
+          <Badge variant="secondary">{skippedRules.length}</Badge>
+        </h2>
+        <p className="text-sm text-muted-foreground">{t('output.skippedRulesHint')}</p>
+      </div>
+      <ul className="divide-y rounded-xl border">
+        {skippedRules.map(({ ruleId, reason }) => {
+          const rule = workspace.rules.find((candidate) => candidate.id === ruleId);
+          const tool = rule ? resolveTool(workspace, rule.tool) : null;
+          if (!rule || !tool) {
+            return null;
+          }
+          return (
+            <li key={ruleId} className="grid gap-1 px-3 py-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+                <code className="font-mono font-medium">{tool.tool.key}</code>
+                {rule.pattern ? (
+                  <code className="font-mono break-all">{rule.pattern}</code>
+                ) : (
+                  <span className="text-muted-foreground">{t('rules.wholeTool')}</span>
+                )}
+                <span className={cn('font-medium', DECISION_TONE[rule.decision])}>
+                  {t(`decisions.${rule.decision}`)}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">{skipReasonMessage(t, reason, rule)}</p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
