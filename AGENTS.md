@@ -15,6 +15,7 @@
 
 - `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动出现在顶部导航和路由中。登记顺序就是导航顺序，第一项也是首页；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
 - `src/lib/`：纯函数，不依赖 React 和 DOM（`theme.ts` 除外），全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
+- `src/state/`：界面订阅的内存状态。`workspace-store.ts` 保存当前工作区，界面用 `useWorkspace()` 读取，用 `runOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作；这里只保存结果、通知订阅者，不写业务逻辑。
 - `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数放在 `src/i18n/` 中。
 - `src/components/`：站点外壳（页眉、页脚、主题切换）和页面容器 `page.tsx`。
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。

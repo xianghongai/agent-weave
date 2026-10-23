@@ -185,7 +185,7 @@ export interface RuleListItem {
 }
 
 /** 按码位比较，保证不同设备、不同语言环境下排序一致。 */
-function compareText(a: string, b: string): number {
+export function compareText(a: string, b: string): number {
   if (a === b) {
     return 0;
   }

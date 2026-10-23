@@ -43,5 +43,77 @@
   },
   "placeholder": {
     "comingSoon": "这一页还在建设中。"
+  },
+  "common": {
+    "add": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "cancel": "取消",
+    "save": "保存",
+    "optional": "可选"
+  },
+  "copy": {
+    "copy": "复制",
+    "copyInner": "复制内部",
+    "copied": "已复制",
+    "failed": "复制失败，请手动选择文本"
+  },
+  "decisions": {
+    "allow": "允许",
+    "ask": "询问",
+    "deny": "拒绝"
+  },
+  "problems": {
+    "operation": {
+      "keyEmpty": "标识不能为空。",
+      "keyDuplicate": "已有相同标识的条目，标识不能重复。",
+      "notFound": "该条目已不存在，可能已被删除。",
+      "toolMissing": "所选工具已不存在，请重新选择。"
+    }
+  },
+  "tools": {
+    "commandTools": "命令工具",
+    "commandToolsHint": "通过 Agent 的 Shell 执行的程序。命令工具由所有 Agent 共享。",
+    "add": "新增命令工具",
+    "addTitle": "新增命令工具",
+    "editTitle": "编辑命令工具",
+    "empty": "还没有命令工具。",
+    "key": "标识",
+    "keyPlaceholder": "如 git、./gradlew",
+    "keyHint": "即命令本身。权限规则的模式只填它之后的参数。",
+    "description": "描述",
+    "ruleCount": "{{n}} 条规则",
+    "editLabel": "编辑 {{key}}",
+    "deleteLabel": "删除 {{key}}",
+    "deleteTitle": "删除命令工具 {{key}}？",
+    "deleteWithRules": "有 {{n}} 条权限规则指向它，这些规则会一并删除。",
+    "deleteNoRules": "没有权限规则指向它。"
+  },
+  "rules": {
+    "addTitle": "新增权限规则",
+    "addHint": "添加后保留所选工具，可以在同一工具下连续添加多条规则。",
+    "tool": "工具",
+    "toolPlaceholder": "选择工具",
+    "noTools": "还没有工具，先到“工具”页新增命令工具。",
+    "pattern": "模式",
+    "patternPlaceholder": "如 push --force，留空表示整个工具",
+    "patternHint": "只填工具标识之后的参数前缀，其中的 * 原样代入。",
+    "decision": "决策",
+    "listTitle": "规则列表",
+    "listHint": "按工具标识、模式自动排序，输出顺序与它一致。",
+    "empty": "还没有权限规则。",
+    "wholeTool": "整个工具",
+    "editTitle": "编辑权限规则",
+    "editLabel": "编辑规则",
+    "deleteLabel": "删除规则"
+  },
+  "output": {
+    "noAgents": "还没有 Agent。",
+    "permission": "权限",
+    "noPermission": "该 Agent 不输出权限。",
+    "scopes": "粘贴到",
+    "preview": "预览",
+    "copyHint": "“复制”只复制 {{key}} 这一层的键值对，可以在编辑器里折叠原属性后整体替换；“复制内部”只复制该决策数组的元素，可以追加到已有数组后自行去重。",
+    "entryCount": "{{n}} 条"
   }
 }
