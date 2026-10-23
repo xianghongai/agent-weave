@@ -63,6 +63,31 @@
     "ask": "询问",
     "deny": "拒绝"
   },
+  "presets": {
+    "title": "预设",
+    "hint": "预设是随站点发布的初始内容。站点更新预设后，可以把新增的条目合并进来，也可以整体重置。",
+    "merge": "合并预设",
+    "mergeHint": "只新增工作区中还没有的条目，不覆盖你修改过的内容。",
+    "mergedSome": "已从预设新增 {{n}} 个条目。",
+    "mergedNone": "预设中的条目都已在工作区中，没有新增。",
+    "skippedTitle": "以下 {{n}} 个预设条目已跳过",
+    "skippedHint": "它们与工作区中已有的条目重名。如果需要，可以先修改已有条目的标识，再合并一次。",
+    "skipped": {
+      "tag": "标签 {{key}}：已有同名标识的标签。",
+      "command_tool": "命令工具 {{key}}：已有同名标识的命令工具。",
+      "mcp_server": "MCP Server {{key}}：已有同名标识的 MCP Server。",
+      "agent": "Agent {{key}}：已有同名的 Agent。",
+      "built_in_tool": "{{agent}} 的内置工具 {{key}}：该 Agent 已有同名标识的内置工具。",
+      "rule": "权限规则 {{tool}} {{pattern}}：所指工具已跳过。"
+    },
+    "dismissReport": "知道了",
+    "reset": "重置为预设",
+    "resetHint": "用预设替换整个工作区，你新增和修改的所有内容都会丢失。",
+    "resetTitle": "重置为预设？",
+    "resetDescription": "工作区中的全部标签、工具、MCP Server、Agent 和权限规则都会被预设替换，无法撤销。如需保留，请先导出工作区。",
+    "resetConfirm": "重置",
+    "resetDone": "已重置为预设。"
+  },
   "problems": {
     "operation": {
       "keyEmpty": "标识不能为空。",
