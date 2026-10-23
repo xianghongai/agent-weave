@@ -31,7 +31,6 @@ import {
   newMcpOutput,
   newPermissionOutput,
   resolveTags,
-  setToolTags,
   updateAgent,
   updateBuiltInTool,
   updateCommandTool,
@@ -648,35 +647,48 @@ describe('工作区操作：标签', () => {
     expect(deleteTag(deleted, 'new-1', ctx)).toEqual({ problem: 'notFound' });
   });
 
-  it('三类工具都可以打多个标签，重复的标签只保留一次', () => {
+  it('新增三类工具时可以同时打多个标签，重复的标签只保留一次', () => {
     const ctx = context();
     const ws = apply(
       withRead,
-      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
-      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
-      (w) => setToolTags(w, { type: 'command', id: 'new-1' }, ['vcs', 'net', 'vcs'], ctx),
-      (w) => setToolTags(w, { type: 'mcp', id: 'new-2' }, ['search'], ctx),
-      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['fs', 'search'], ctx)
+      (w) => addCommandTool(w, { key: 'git', description: '', tag_ids: ['vcs', 'net', 'vcs'] }, ctx),
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '', tag_ids: ['search'] }, ctx),
+      (w) => addBuiltInTool(w, 'agent-claude', builtInInput({ tag_ids: ['fs', 'search', 'fs'] }), ctx)
     );
     expect(ws.command_tools[0]?.tag_ids).toEqual(['vcs', 'net']);
     expect(ws.mcp_servers[0]?.tag_ids).toEqual(['search']);
-    expect(ws.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs', 'search']);
+    expect(ws.agents[0]?.built_in_tools[1]?.tag_ids).toEqual(['fs', 'search']);
     expect(ws.updated_at).toBe(NOW);
-    expect(setToolTags(ws, { type: 'built_in', id: 'missing' }, [], ctx)).toEqual({ problem: 'notFound' });
   });
 
-  it('编辑工具时保留它的标签', () => {
+  it('新增工具时省略标签，得到空的标签列表', () => {
+    const ws = apply(withRead, (w) => addCommandTool(w, { key: 'git', description: '' }, context()));
+    expect(ws.command_tools[0]?.tag_ids).toEqual([]);
+  });
+
+  it('编辑工具时可以整体替换标签；省略标签时保留原有的标签', () => {
     const ctx = context();
     const ws = apply(
       withRead,
-      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
-      (w) => setToolTags(w, { type: 'command', id: 'new-1' }, ['vcs'], ctx),
-      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['fs'], ctx),
-      (w) => updateCommandTool(w, 'new-1', { key: 'git', description: '版本控制' }, ctx),
-      (w) => updateBuiltInTool(w, 'read', builtInInput(), ctx)
+      (w) => addCommandTool(w, { key: 'git', description: '', tag_ids: ['vcs'] }, ctx),
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '', tag_ids: ['search'] }, ctx),
+      (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read', tag_ids: ['fs'] }), ctx)
     );
-    expect(ws.command_tools[0]?.tag_ids).toEqual(['vcs']);
-    expect(ws.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs']);
+    const replaced = apply(
+      ws,
+      (w) => updateCommandTool(w, 'new-1', { key: 'git', description: '', tag_ids: ['net', 'vcs', 'net'] }, ctx),
+      (w) => updateMcpServer(w, 'new-2', { key: 'context7', content: '{}', description: '', tag_ids: [] }, ctx)
+    );
+    expect(replaced.command_tools[0]?.tag_ids).toEqual(['net', 'vcs']);
+    expect(replaced.mcp_servers[0]?.tag_ids).toEqual([]);
+
+    const kept = apply(
+      ws,
+      (w) => updateCommandTool(w, 'new-1', { key: 'git', description: '版本控制' }, ctx),
+      (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read' }), ctx)
+    );
+    expect(kept.command_tools[0]?.tag_ids).toEqual(['vcs']);
+    expect(kept.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs']);
   });
 
   it('删除标签时不修改引用它的工具，残留的标签 ID 成为悬空引用', () => {
@@ -685,9 +697,8 @@ describe('工作区操作：标签', () => {
       withRead,
       (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
       (w) => addTag(w, { key: 'fs', name: '文件系统' }, ctx),
-      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
-      (w) => setToolTags(w, { type: 'command', id: 'new-3' }, ['new-1', 'new-2'], ctx),
-      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['new-2'], ctx)
+      (w) => addCommandTool(w, { key: 'git', description: '', tag_ids: ['new-1', 'new-2'] }, ctx),
+      (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read', tag_ids: ['new-2'] }), ctx)
     );
     expect(countToolsForTag(ws, 'new-2')).toBe(2);
 
@@ -711,14 +722,15 @@ describe('工作区操作：标签', () => {
       preset,
       (w) => addTag(w, { key: 'mine', name: '我的' }, ctx),
       ...preset.command_tools.map(
-        (tool) => (w: Workspace) => setToolTags(w, { type: 'command', id: tool.id }, ['new-1'], ctx)
+        (tool) => (w: Workspace) => updateCommandTool(w, tool.id, { ...tool, tag_ids: ['new-1'] }, ctx)
       ),
       ...preset.mcp_servers.map(
-        (server) => (w: Workspace) => setToolTags(w, { type: 'mcp', id: server.id }, ['new-1'], ctx)
+        (server) => (w: Workspace) =>
+          updateMcpServer(w, server.id, { ...server, content: JSON.stringify(server.content), tag_ids: ['new-1'] }, ctx)
       ),
       ...preset.agents.flatMap((agent) =>
         agent.built_in_tools.map(
-          (tool) => (w: Workspace) => setToolTags(w, { type: 'built_in', id: tool.id }, ['new-1'], ctx)
+          (tool) => (w: Workspace) => updateBuiltInTool(w, tool.id, { ...tool, tag_ids: ['new-1'] }, ctx)
         )
       ),
       (w) => updateTag(w, 'new-1', { key: 'renamed', name: '改名' }, ctx),
@@ -736,13 +748,10 @@ describe('查询：筛选', () => {
     withRead,
     (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
     (w) => addTag(w, { key: 'net', name: '网络' }, ctx),
-    (w) => addCommandTool(w, { key: 'git', description: '分布式版本控制' }, ctx),
-    (w) => addCommandTool(w, { key: 'curl', description: '传输数据' }, ctx),
-    (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
-    (w) => setToolTags(w, { type: 'command', id: 'new-3' }, ['new-1'], ctx),
-    (w) => setToolTags(w, { type: 'command', id: 'new-4' }, ['new-2'], ctx),
-    (w) => setToolTags(w, { type: 'mcp', id: 'new-5' }, ['new-2'], ctx),
-    (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['new-1'], ctx),
+    (w) => addCommandTool(w, { key: 'git', description: '分布式版本控制', tag_ids: ['new-1'] }, ctx),
+    (w) => addCommandTool(w, { key: 'curl', description: '传输数据', tag_ids: ['new-2'] }, ctx),
+    (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '', tag_ids: ['new-2'] }, ctx),
+    (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read', tag_ids: ['new-1'] }), ctx),
     (w) => addRule(w, { tool: { type: 'command', id: 'new-3' }, pattern: 'status', decision: 'allow' }, ctx),
     (w) => addRule(w, { tool: { type: 'command', id: 'new-3' }, pattern: 'push', decision: 'ask' }, ctx),
     (w) => addRule(w, { tool: { type: 'command', id: 'new-4' }, pattern: '', decision: 'deny' }, ctx),

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { HighRiskSwitch } from '@/components/high-risk';
@@ -7,16 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { CommandTool, Workspace } from '@/lib/workspace';
-import {
-  type OperationProblem,
-  addCommandTool,
-  setToolTags,
-  systemContext,
-  updateCommandTool,
-} from '@/lib/workspace-operations';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { addCommandTool, updateCommandTool } from '@/lib/workspace-operations';
 
 interface CommandToolDialogProps {
   open: boolean;
@@ -44,38 +38,20 @@ export function CommandToolDialog({ open, onOpenChange, tool }: CommandToolDialo
 
 function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
   const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
-  const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
-  // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
-  const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, description, high_risk: highRisk };
-    const result = tool
-      ? updateCommandTool(current, tool.id, input)
-      : addCommandTool(current, input, { ...systemContext, newId: () => newId });
-    return 'problem' in result
-      ? result
-      : setToolTags(result.workspace, { type: 'command', id: tool?.id ?? newId }, tagIds);
+    const input = { key, description, high_risk: highRisk, tag_ids: tagIds };
+    return tool ? updateCommandTool(current, tool.id, input) : addCommandTool(current, input);
   };
-  // 操作是纯函数，可以边输入边试算，标识重复时立即提示。空标识只禁用保存，不提示。
-  const trial = operation(workspace);
-  const liveProblem = 'problem' in trial && trial.problem !== 'keyEmpty' ? trial.problem : null;
-  const problem = submitProblem ?? liveProblem;
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const result = runOperation(operation);
-    if (result) {
-      setSubmitProblem(result);
-    } else {
-      onDone();
-    }
-  }
+  // 标识重复时立即提示；空标识只禁用保存，不提示。
+  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+    quiet: (candidate) => candidate === 'keyEmpty',
+    onDone,
+  });
 
   return (
     <form onSubmit={submit} className="grid gap-4">
@@ -93,7 +69,7 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
             className="font-mono"
             onChange={(event) => {
               setKey(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {problem ? (
@@ -124,7 +100,7 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={'problem' in trial}>
+        <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
       </DialogFooter>

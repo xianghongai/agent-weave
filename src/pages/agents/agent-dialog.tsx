@@ -1,5 +1,5 @@
 import { ChevronRightIcon } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import {
   type Agent,
@@ -37,7 +38,6 @@ import {
 } from '@/lib/workspace-operations';
 import { ScopeListEditor } from '@/pages/agents/scope-list-editor';
 import { TemplatePairFields } from '@/pages/agents/template-pair-fields';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 interface AgentDialogProps {
   open: boolean;
@@ -75,7 +75,6 @@ const ADVANCED_PROBLEMS: readonly OperationProblem[] = [
 
 function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
   const [name, setName] = useState(agent?.name ?? '');
   const [description, setDescription] = useState(agent?.description ?? '');
   // 关闭权限输出时保留已填写的内容，重新打开后可以继续使用。
@@ -85,7 +84,6 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
   const [mcpEnabled, setMcpEnabled] = useState(agent ? agent.mcp_output !== null : true);
   const [mcp, setMcp] = useState<McpOutput>(agent?.mcp_output ?? newMcpOutput());
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const input: AgentInput = {
     name,
@@ -94,30 +92,21 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
     mcp_output: mcpEnabled ? mcp : null,
   };
   const operation = (current: Workspace) => (agent ? updateAgent(current, agent.id, input) : addAgent(current, input));
-  // 操作是纯函数，可以边输入边试算，立即提示重复名称和无效的高级字段。空名称只禁用保存，不提示。
-  const trial = operation(workspace);
-  const liveProblem = 'problem' in trial && trial.problem !== 'nameEmpty' ? trial.problem : null;
-  const problem = submitProblem ?? liveProblem;
+  // 重复名称和无效的高级字段立即提示；空名称只禁用保存，不提示。
+  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+    quiet: (candidate) => candidate === 'nameEmpty',
+    onDone,
+  });
   const advancedProblem = problem && ADVANCED_PROBLEMS.includes(problem) ? problem : null;
 
   function changePermission(changes: Partial<PermissionOutput>) {
     setPermission((current) => ({ ...current, ...changes }));
-    setSubmitProblem(null);
+    clearSubmitProblem();
   }
 
   function changeMcp(changes: Partial<McpOutput>) {
     setMcp((current) => ({ ...current, ...changes }));
-    setSubmitProblem(null);
-  }
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const result = runOperation(operation);
-    if (result) {
-      setSubmitProblem(result);
-    } else {
-      onDone();
-    }
+    clearSubmitProblem();
   }
 
   const nameProblem = problem === 'nameDuplicate' || problem === 'notFound' ? problem : null;
@@ -136,7 +125,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
             aria-invalid={nameProblem ? true : undefined}
             onChange={(event) => {
               setName(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {nameProblem && <FieldError>{operationProblemMessage(t, nameProblem)}</FieldError>}
@@ -158,7 +147,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
             checked={permissionEnabled}
             onCheckedChange={(checked) => {
               setPermissionEnabled(checked);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           <FieldContent>
@@ -181,7 +170,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
             checked={mcpEnabled}
             onCheckedChange={(checked) => {
               setMcpEnabled(checked);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           <FieldContent>
@@ -228,7 +217,7 @@ function AgentForm({ agent, onDone }: { agent: Agent | null; onDone: () => void 
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={'problem' in trial}>
+        <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
       </DialogFooter>

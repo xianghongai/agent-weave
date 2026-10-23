@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { HighRiskSwitch } from '@/components/high-risk';
@@ -8,16 +8,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { McpServer, Workspace } from '@/lib/workspace';
-import {
-  type OperationProblem,
-  addMcpServer,
-  setToolTags,
-  systemContext,
-  updateMcpServer,
-} from '@/lib/workspace-operations';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { addMcpServer, updateMcpServer } from '@/lib/workspace-operations';
 
 interface McpServerDialogProps {
   open: boolean;
@@ -47,44 +41,23 @@ const CONTENT_PLACEHOLDER = '{\n  "command": "npx",\n  "args": ["-y", "@upstash/
 
 function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
   const [key, setKey] = useState(server?.key ?? '');
   const [content, setContent] = useState(server ? JSON.stringify(server.content, null, 2) : '');
   const [description, setDescription] = useState(server?.description ?? '');
   const [highRisk, setHighRisk] = useState(server?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(server?.tag_ids ?? []);
-  const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
-  // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
-  const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, content, description, high_risk: highRisk };
-    const result = server
-      ? updateMcpServer(current, server.id, input)
-      : addMcpServer(current, input, { ...systemContext, newId: () => newId });
-    return 'problem' in result
-      ? result
-      : setToolTags(result.workspace, { type: 'mcp', id: server?.id ?? newId }, tagIds);
+    const input = { key, content, description, high_risk: highRisk, tag_ids: tagIds };
+    return server ? updateMcpServer(current, server.id, input) : addMcpServer(current, input);
   };
-  // 操作是纯函数，可以边输入边试算，立即提示重复标识和无效内容。空标识、空内容只禁用保存，不提示。
-  const trial = operation(workspace);
-  const liveProblem =
-    'problem' in trial && trial.problem !== 'keyEmpty' && !(trial.problem === 'contentInvalid' && content.trim() === '')
-      ? trial.problem
-      : null;
-  const problem = submitProblem ?? liveProblem;
+  // 重复标识和无效内容立即提示；空标识、空内容只禁用保存，不提示。
+  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+    quiet: (candidate) => candidate === 'keyEmpty' || (candidate === 'contentInvalid' && content.trim() === ''),
+    onDone,
+  });
   const keyProblem = problem && problem !== 'contentInvalid' ? problem : null;
   const contentProblem = problem === 'contentInvalid' ? problem : null;
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const result = runOperation(operation);
-    if (result) {
-      setSubmitProblem(result);
-    } else {
-      onDone();
-    }
-  }
 
   return (
     <form onSubmit={submit} className="grid gap-4">
@@ -102,7 +75,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
             className="font-mono"
             onChange={(event) => {
               setKey(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {keyProblem ? (
@@ -122,7 +95,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
             className="max-h-80 min-h-32 font-mono text-xs sm:text-sm"
             onChange={(event) => {
               setContent(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {contentProblem ? (
@@ -154,7 +127,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={'problem' in trial}>
+        <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
       </DialogFooter>

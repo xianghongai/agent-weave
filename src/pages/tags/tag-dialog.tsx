@@ -1,14 +1,14 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Tag, Workspace } from '@/lib/workspace';
-import { type OperationProblem, addTag, updateTag } from '@/lib/workspace-operations';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { addTag, updateTag } from '@/lib/workspace-operations';
 
 interface TagDialogProps {
   open: boolean;
@@ -36,32 +36,20 @@ export function TagDialog({ open, onOpenChange, tag }: TagDialogProps) {
 
 function TagForm({ tag, onDone }: { tag: Tag | null; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
   const [key, setKey] = useState(tag?.key ?? '');
   const [name, setName] = useState(tag?.name ?? '');
-  const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const operation = (current: Workspace) => {
     const input = { key, name };
     return tag ? updateTag(current, tag.id, input) : addTag(current, input);
   };
-  // 操作是纯函数，可以边输入边试算，标识重复时立即提示。空标识、空名称只禁用保存，不提示。
-  const trial = operation(workspace);
-  const liveProblem =
-    'problem' in trial && trial.problem !== 'keyEmpty' && trial.problem !== 'nameEmpty' ? trial.problem : null;
-  const problem = submitProblem ?? liveProblem;
+  // 标识重复时立即提示；空标识、空名称只禁用保存，不提示。
+  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+    quiet: (candidate) => candidate === 'keyEmpty' || candidate === 'nameEmpty',
+    onDone,
+  });
   const keyProblem = problem && problem !== 'nameEmpty' ? problem : null;
   const nameProblem = problem === 'nameEmpty' ? problem : null;
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const result = runOperation(operation);
-    if (result) {
-      setSubmitProblem(result);
-    } else {
-      onDone();
-    }
-  }
 
   return (
     <form onSubmit={submit} className="grid gap-4">
@@ -79,7 +67,7 @@ function TagForm({ tag, onDone }: { tag: Tag | null; onDone: () => void }) {
             className="font-mono"
             onChange={(event) => {
               setKey(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {keyProblem ? (
@@ -98,7 +86,7 @@ function TagForm({ tag, onDone }: { tag: Tag | null; onDone: () => void }) {
             aria-invalid={nameProblem ? true : undefined}
             onChange={(event) => {
               setName(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {nameProblem ? (
@@ -112,7 +100,7 @@ function TagForm({ tag, onDone }: { tag: Tag | null; onDone: () => void }) {
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={'problem' in trial}>
+        <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
       </DialogFooter>

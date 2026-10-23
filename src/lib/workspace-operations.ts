@@ -115,39 +115,16 @@ export function deleteTag(workspace: Workspace, id: string, ctx: OperationContex
 }
 
 /**
- * 设置一个工具（命令工具、MCP Server 或内置工具）的标签，整体替换原有的标签列表。
- * 不检查标签是否存在：编辑时保留的悬空引用照常写回。重复的 ID 只保留第一次出现。
+ * 工具（命令工具、MCP Server、内置工具）表单中的标签，整体替换原有的标签列表。
+ * 省略时新增为空列表、编辑时保持不变。不检查标签是否存在：编辑时保留的已删除标签照常写回。
  */
-export function setToolTags(
-  workspace: Workspace,
-  ref: ToolRef,
-  tagIds: readonly string[],
-  ctx: OperationContext = systemContext
-): OperationResult {
-  const tag_ids = [...new Set(tagIds)];
-  const withTags = <T extends { id: string }>(tool: T): T => (tool.id === ref.id ? { ...tool, tag_ids } : tool);
+interface TagIdsInput {
+  tag_ids?: readonly string[];
+}
 
-  if (ref.type === 'command') {
-    if (!workspace.command_tools.some((tool) => tool.id === ref.id)) {
-      return { problem: 'notFound' };
-    }
-    return commit(workspace, { command_tools: workspace.command_tools.map(withTags) }, ctx);
-  }
-  if (ref.type === 'mcp') {
-    if (!workspace.mcp_servers.some((server) => server.id === ref.id)) {
-      return { problem: 'notFound' };
-    }
-    return commit(workspace, { mcp_servers: workspace.mcp_servers.map(withTags) }, ctx);
-  }
-  const found = findBuiltInTool(workspace, ref.id);
-  if (!found) {
-    return { problem: 'notFound' };
-  }
-  return commit(
-    workspace,
-    { agents: withBuiltInTools(workspace, found.agent.id, found.agent.built_in_tools.map(withTags)) },
-    ctx
-  );
+/** 表单给出的标签列表，重复的 ID 只保留第一次出现；省略时沿用 `current`。 */
+function inputTagIds(input: TagIdsInput, current: string[]): string[] {
+  return input.tag_ids ? [...new Set(input.tag_ids)] : current;
 }
 
 /** 全部工具（命令工具、MCP Server、各 Agent 的内置工具），用于按标签统计。 */
@@ -164,7 +141,7 @@ export function countToolsForTag(workspace: Workspace, tagId: string): number {
   return allTools(workspace).filter((tool) => tool.tag_ids.includes(tagId)).length;
 }
 
-/** 工具上的一个标签引用。标签已被删除时 `tag` 为 `null`，界面只能显示残留的 ID。 */
+/** 工具上的一个标签引用。标签已被删除时 `tag` 为 `null`，界面显示为“已删除的标签”。 */
 export interface TagRef {
   id: string;
   tag: Tag | null;
@@ -182,7 +159,7 @@ interface HighRiskInput {
   high_risk?: boolean;
 }
 
-export interface CommandToolInput extends HighRiskInput {
+export interface CommandToolInput extends HighRiskInput, TagIdsInput {
   key: string;
   description: string;
 }
@@ -198,17 +175,13 @@ function checkKey(entries: { id: string; key: string }[], key: string, selfId: s
   return null;
 }
 
-function checkCommandToolKey(workspace: Workspace, key: string, selfId: string | null): OperationProblem | null {
-  return checkKey(workspace.command_tools, key, selfId);
-}
-
 export function addCommandTool(
   workspace: Workspace,
   input: CommandToolInput,
   ctx: OperationContext = systemContext
 ): OperationResult {
   const key = input.key.trim();
-  const problem = checkCommandToolKey(workspace, key, null);
+  const problem = checkKey(workspace.command_tools, key, null);
   if (problem) {
     return { problem };
   }
@@ -216,7 +189,7 @@ export function addCommandTool(
     id: ctx.newId(),
     key,
     description: input.description.trim(),
-    tag_ids: [],
+    tag_ids: inputTagIds(input, []),
     high_risk: input.high_risk ?? false,
   };
   return commit(workspace, { command_tools: [...workspace.command_tools, tool] }, ctx);
@@ -232,13 +205,19 @@ export function updateCommandTool(
     return { problem: 'notFound' };
   }
   const key = input.key.trim();
-  const problem = checkCommandToolKey(workspace, key, id);
+  const problem = checkKey(workspace.command_tools, key, id);
   if (problem) {
     return { problem };
   }
   const command_tools = workspace.command_tools.map((tool) =>
     tool.id === id
-      ? { ...tool, key, description: input.description.trim(), high_risk: input.high_risk ?? tool.high_risk }
+      ? {
+          ...tool,
+          key,
+          description: input.description.trim(),
+          tag_ids: inputTagIds(input, tool.tag_ids),
+          high_risk: input.high_risk ?? tool.high_risk,
+        }
       : tool
   );
   return commit(workspace, { command_tools }, ctx);
@@ -253,6 +232,16 @@ export function countRulesForTool(workspace: Workspace, ref: ToolRef): number {
   return workspace.rules.filter((rule) => refersTo(rule, ref)).length;
 }
 
+/** 删除一个工具：写入去掉该工具后的清单 `changes`，同时删除指向它的规则。 */
+function deleteTool(
+  workspace: Workspace,
+  ref: ToolRef,
+  changes: Partial<Workspace>,
+  ctx: OperationContext
+): OperationResult {
+  return commit(workspace, { ...changes, rules: workspace.rules.filter((rule) => !refersTo(rule, ref)) }, ctx);
+}
+
 /** 删除命令工具，同时删除指向它的规则。 */
 export function deleteCommandTool(
   workspace: Workspace,
@@ -262,13 +251,10 @@ export function deleteCommandTool(
   if (!workspace.command_tools.some((tool) => tool.id === id)) {
     return { problem: 'notFound' };
   }
-  const ref: ToolRef = { type: 'command', id };
-  return commit(
+  return deleteTool(
     workspace,
-    {
-      command_tools: workspace.command_tools.filter((tool) => tool.id !== id),
-      rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
-    },
+    { type: 'command', id },
+    { command_tools: workspace.command_tools.filter((tool) => tool.id !== id) },
     ctx
   );
 }
@@ -276,7 +262,7 @@ export function deleteCommandTool(
 /* MCP Server */
 
 /** MCP Server 表单提交的内容。`content` 是用户输入的 JSON 文本，由操作负责解析。 */
-export interface McpServerInput extends HighRiskInput {
+export interface McpServerInput extends HighRiskInput, TagIdsInput {
   key: string;
   content: string;
   description: string;
@@ -323,7 +309,7 @@ export function addMcpServer(
   const server: McpServer = {
     id: ctx.newId(),
     ...checked.fields,
-    tag_ids: [],
+    tag_ids: inputTagIds(input, []),
     high_risk: input.high_risk ?? false,
   };
   return commit(workspace, { mcp_servers: [...workspace.mcp_servers, server] }, ctx);
@@ -343,7 +329,14 @@ export function updateMcpServer(
     return checked;
   }
   const mcp_servers = workspace.mcp_servers.map((server) =>
-    server.id === id ? { ...server, ...checked.fields, high_risk: input.high_risk ?? server.high_risk } : server
+    server.id === id
+      ? {
+          ...server,
+          ...checked.fields,
+          tag_ids: inputTagIds(input, server.tag_ids),
+          high_risk: input.high_risk ?? server.high_risk,
+        }
+      : server
   );
   return commit(workspace, { mcp_servers }, ctx);
 }
@@ -357,13 +350,10 @@ export function deleteMcpServer(
   if (!workspace.mcp_servers.some((server) => server.id === id)) {
     return { problem: 'notFound' };
   }
-  const ref: ToolRef = { type: 'mcp', id };
-  return commit(
+  return deleteTool(
     workspace,
-    {
-      mcp_servers: workspace.mcp_servers.filter((server) => server.id !== id),
-      rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
-    },
+    { type: 'mcp', id },
+    { mcp_servers: workspace.mcp_servers.filter((server) => server.id !== id) },
     ctx
   );
 }
@@ -524,8 +514,8 @@ export function deleteAgent(workspace: Workspace, id: string, ctx: OperationCont
 
 /* 内置工具 */
 
-/** 内置工具表单提交的内容。标签不经过这里，编辑时保持不变。 */
-export interface BuiltInToolInput extends HighRiskInput {
+/** 内置工具表单提交的内容。 */
+export interface BuiltInToolInput extends HighRiskInput, TagIdsInput {
   key: string;
   description: string;
   writes: boolean;
@@ -569,7 +559,7 @@ export function addBuiltInTool(
     id: ctx.newId(),
     key,
     description: input.description.trim(),
-    tag_ids: [],
+    tag_ids: inputTagIds(input, []),
     high_risk: input.high_risk ?? false,
     writes: input.writes,
     templates: trimTemplates(input.templates),
@@ -599,6 +589,7 @@ export function updateBuiltInTool(
           ...tool,
           key,
           description: input.description.trim(),
+          tag_ids: inputTagIds(input, tool.tag_ids),
           high_risk: input.high_risk ?? tool.high_risk,
           writes: input.writes,
           templates: trimTemplates(input.templates),
@@ -618,16 +609,15 @@ export function deleteBuiltInTool(
   if (!found) {
     return { problem: 'notFound' };
   }
-  const ref: ToolRef = { type: 'built_in', id };
-  return commit(
+  return deleteTool(
     workspace,
+    { type: 'built_in', id },
     {
       agents: withBuiltInTools(
         workspace,
         found.agent.id,
         found.agent.built_in_tools.filter((tool) => tool.id !== id)
       ),
-      rules: workspace.rules.filter((rule) => !refersTo(rule, ref)),
     },
     ctx
   );

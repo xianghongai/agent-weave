@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { HighRiskSwitch } from '@/components/high-risk';
@@ -8,17 +8,11 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Agent, BuiltInTool, Workspace } from '@/lib/workspace';
-import {
-  type OperationProblem,
-  addBuiltInTool,
-  setToolTags,
-  systemContext,
-  updateBuiltInTool,
-} from '@/lib/workspace-operations';
+import { addBuiltInTool, updateBuiltInTool } from '@/lib/workspace-operations';
 import { TemplatePairFields } from '@/pages/agents/template-pair-fields';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 interface BuiltInToolDialogProps {
   open: boolean;
@@ -57,40 +51,22 @@ export function BuiltInToolDialog({ open, onOpenChange, agent, tool }: BuiltInTo
 
 function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInTool | null; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
   const [writes, setWrites] = useState(tool?.writes ?? false);
   const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [templates, setTemplates] = useState(tool?.templates ?? { with_pattern: '', without_pattern: '' });
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
-  const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
-  // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
-  const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
-    const input = { key, description, writes, templates, high_risk: highRisk };
-    const result = tool
-      ? updateBuiltInTool(current, tool.id, input)
-      : addBuiltInTool(current, agent.id, input, { ...systemContext, newId: () => newId });
-    return 'problem' in result
-      ? result
-      : setToolTags(result.workspace, { type: 'built_in', id: tool?.id ?? newId }, tagIds);
+    const input = { key, description, writes, templates, high_risk: highRisk, tag_ids: tagIds };
+    return tool ? updateBuiltInTool(current, tool.id, input) : addBuiltInTool(current, agent.id, input);
   };
-  // 操作是纯函数，可以边输入边试算，标识重复时立即提示。空标识只禁用保存，不提示。
-  const trial = operation(workspace);
-  const liveProblem = 'problem' in trial && trial.problem !== 'keyEmpty' ? trial.problem : null;
-  const problem = submitProblem ?? liveProblem;
-
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const result = runOperation(operation);
-    if (result) {
-      setSubmitProblem(result);
-    } else {
-      onDone();
-    }
-  }
+  // 标识重复时立即提示；空标识只禁用保存，不提示。
+  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+    quiet: (candidate) => candidate === 'keyEmpty',
+    onDone,
+  });
 
   return (
     <form onSubmit={submit} className="grid gap-4">
@@ -108,7 +84,7 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
             className="font-mono"
             onChange={(event) => {
               setKey(event.target.value);
-              setSubmitProblem(null);
+              clearSubmitProblem();
             }}
           />
           {problem ? (
@@ -153,7 +129,7 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
-        <Button type="submit" disabled={'problem' in trial}>
+        <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
       </DialogFooter>
