@@ -4,10 +4,12 @@ import { generate } from '@/lib/generate';
 import { createPresetWorkspace } from '@/lib/presets';
 import {
   type Agent,
+  type BuiltInTool,
   type CommandTool,
   type Decision,
   EMPTY_DEVICE_SETTINGS,
   type Rule,
+  type TemplatePair,
   type Workspace,
 } from '@/lib/workspace';
 
@@ -318,6 +320,31 @@ describe('生成：预设 Antigravity', () => {
     expect(output?.skippedRules).toEqual([]);
   });
 
+  it('对预设内置工具写的规则按各自的模板输出，只出现在所属 Agent 中', () => {
+    const builtInIds = (name: string) =>
+      Object.fromEntries(
+        preset.agents.find((agent) => agent.name === name)?.built_in_tools.map((tool) => [tool.key, tool.id]) ?? []
+      );
+    const claudeTools = builtInIds('Claude Code');
+    const antigravityTools = builtInIds('Antigravity');
+    const ws: Workspace = {
+      ...preset,
+      rules: [
+        builtInRule('r1', claudeTools.Read ?? '', './src/', 'allow'),
+        builtInRule('r2', claudeTools.WebFetch ?? '', 'example.com', 'allow'),
+        builtInRule('r3', antigravityTools.write_file ?? '', 'src/', 'allow'),
+        builtInRule('r4', antigravityTools.read_url ?? '', '', 'allow'),
+      ],
+    };
+    const allowOf = (agentId: string | undefined) =>
+      generate(ws, agentId ?? '', EMPTY_DEVICE_SETTINGS)?.permission?.decisions[0]?.entries;
+    expect(allowOf(preset.agents.find((agent) => agent.name === 'Claude Code')?.id)).toEqual([
+      'Read(./src/**)',
+      'WebFetch(domain:example.com)',
+    ]);
+    expect(allowOf(antigravity?.id)).toEqual(['read_url(*)', 'write_file(src/)']);
+  });
+
   it('主作用域是共享配置，第二个作用域是 CLI 设置文件并注明其属性名为 permissions', () => {
     const [shared, cli] = output?.permission?.scopes ?? [];
     expect(shared?.path).toBe('~/.gemini/config/config.json');
@@ -332,5 +359,97 @@ describe('生成：没有权限输出的 Agent', () => {
     const output = generate(workspace(['git'], [rule('git', '', 'allow')], mcpOnly), claude.id, EMPTY_DEVICE_SETTINGS);
     expect(output?.permission).toBeNull();
     expect(output?.skippedRules).toEqual([]);
+  });
+});
+
+function builtIn(id: string, key: string, templates: TemplatePair): BuiltInTool {
+  return { id, key, description: '', tag_ids: [], high_risk: false, writes: false, templates };
+}
+
+function builtInRule(id: string, toolId: string, pattern: string, decision: Decision): Rule {
+  return { id, tool: { type: 'built_in', id: toolId }, pattern, decision, high_risk: false };
+}
+
+describe('生成：内置工具', () => {
+  /** 两个各带内置工具的 Agent，外加一条共享的命令工具规则。 */
+  const claudeWithTools: Agent = {
+    ...claude,
+    built_in_tools: [
+      builtIn('read', 'Read', { with_pattern: 'Read({pattern}**)', without_pattern: 'Read' }),
+      builtIn('web-search', 'WebSearch', { with_pattern: '', without_pattern: 'WebSearch' }),
+    ],
+  };
+  const antigravity: Agent = {
+    ...agentWith({
+      property_path: 'userSettings.globalPermissionGrants',
+      command_templates: { with_pattern: 'command({command} {pattern})', without_pattern: 'command({command})' },
+    }),
+    id: 'agent-antigravity',
+    name: 'Antigravity',
+    built_in_tools: [
+      builtIn('read-file', 'read_file', { with_pattern: 'read_file({pattern})', without_pattern: 'read_file(*)' }),
+    ],
+  };
+  const ws: Workspace = {
+    ...workspace(['git'], []),
+    agents: [claudeWithTools, antigravity],
+    rules: [
+      builtInRule('claude-read-src', 'read', './src/', 'allow'),
+      builtInRule('antigravity-read', 'read-file', '', 'allow'),
+      rule('git', '', 'allow'),
+    ],
+  };
+
+  function allowOf(agentId: string): string[] {
+    return generate(ws, agentId, EMPTY_DEVICE_SETTINGS)?.permission?.decisions[0]?.entries ?? [];
+  }
+
+  it('内置工具的规则只出现在所属 Agent 的输出中，共享规则出现在所有 Agent 中', () => {
+    expect(allowOf(claude.id)).toEqual(['Bash(git *)', 'Read(./src/**)']);
+    expect(allowOf(antigravity.id)).toEqual(['command(git)', 'read_file(*)']);
+  });
+
+  it('按模式是否为空选用内置工具自己的模板，以 / 结尾的目录前缀由模板补全 glob', () => {
+    const both: Workspace = {
+      ...ws,
+      rules: [
+        builtInRule('read-all', 'read', '', 'ask'),
+        builtInRule('read-docs', 'read', './docs/', 'ask'),
+        builtInRule('read-file-src', 'read-file', 'src/', 'ask'),
+      ],
+    };
+    const ask = (agentId: string) =>
+      generate(both, agentId, EMPTY_DEVICE_SETTINGS)?.permission?.decisions.find((d) => d.decision === 'ask')?.entries;
+    expect(ask(claude.id)).toEqual(['Read', 'Read(./docs/**)']);
+    expect(ask(antigravity.id)).toEqual(['read_file(src/)']);
+  });
+
+  it('所需模板为空时只在所属 Agent 中跳过，其他 Agent 不受影响', () => {
+    const search: Workspace = {
+      ...ws,
+      rules: [
+        builtInRule('search-docs', 'web-search', 'docs', 'allow'),
+        builtInRule('search', 'web-search', '', 'deny'),
+      ],
+    };
+    const claudeOutput = generate(search, claude.id, EMPTY_DEVICE_SETTINGS);
+    expect(claudeOutput?.skippedRules).toEqual([{ ruleId: 'search-docs', reason: 'templateMissing' }]);
+    expect(claudeOutput?.permission?.decisions.find((d) => d.decision === 'deny')?.entries).toEqual(['WebSearch']);
+
+    const antigravityOutput = generate(search, antigravity.id, EMPTY_DEVICE_SETTINGS);
+    expect(antigravityOutput?.skippedRules).toEqual([]);
+    expect(antigravityOutput?.permission?.decisions.map((d) => d.entries)).toEqual([[], [], []]);
+  });
+
+  it('内置工具的规则排在命令工具之后，与标识的字母顺序无关', () => {
+    const ordered: Workspace = {
+      ...workspace(['zip'], []),
+      agents: [claudeWithTools],
+      rules: [builtInRule('read-all', 'read', '', 'allow'), rule('zip', '', 'allow')],
+    };
+    expect(generate(ordered, claude.id, EMPTY_DEVICE_SETTINGS)?.permission?.decisions[0]?.entries).toEqual([
+      'Bash(zip *)',
+      'Read',
+    ]);
   });
 });
