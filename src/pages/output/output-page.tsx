@@ -12,6 +12,7 @@ import { skipReasonMessage } from '@/i18n/problems';
 import { type McpSection, type Notice, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
 import { EMPTY_DEVICE_SETTINGS, type Scope, type Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
+import { RuleNoticeList } from '@/pages/output/rule-notice-list';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { useWorkspace } from '@/state/workspace-store';
 
@@ -40,6 +41,9 @@ export default function OutputPage() {
               ))}
             </TabsList>
           </Tabs>
+
+          {/* 复制前最后检查一遍：高危与冲突提示放在输出之前。 */}
+          <RuleNoticeList workspace={workspace} notices={output.notices} />
 
           <section className="grid gap-3">
             <h2 className="flex items-center gap-2 font-medium">
