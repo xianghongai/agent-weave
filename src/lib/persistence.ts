@@ -1,6 +1,6 @@
 import { createPresetWorkspace } from '@/lib/presets';
 import type { Workspace } from '@/lib/workspace';
-import { type WorkspaceProblem, parseWorkspace } from '@/lib/workspace-validation';
+import { type ImportProblem, importWorkspace } from '@/lib/workspace-file';
 
 /*
  * 持久化：在浏览器本地存储中读写工作区、本机设置和 Gist 设置，三者分键存储。
@@ -23,10 +23,9 @@ export const STORAGE_KEYS = {
 
 /**
  * - `readFailed`：存储不可用或读取时出错，如浏览器禁用了站点数据；
- * - `parseFailed`：保存的内容不是合法的 JSON，如被截断；
- * - 其余见 `WorkspaceProblem`。
+ * - 其余见 `ImportProblem`：本地数据与导入文件走同一套解析、迁移和校验。
  */
-export type LoadProblem = 'readFailed' | 'parseFailed' | WorkspaceProblem;
+export type LoadProblem = 'readFailed' | ImportProblem;
 
 /** `writeFailed`：存储不可用或写入时出错，如隐私模式、配额已满。 */
 export type SaveProblem = 'writeFailed';
@@ -47,13 +46,7 @@ export function loadWorkspace(storage: KeyValueStorage): { workspace: Workspace;
   if (text === null) {
     return { workspace: createPresetWorkspace(), problem: null };
   }
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    return { workspace: createPresetWorkspace(), problem: 'parseFailed' };
-  }
-  const parsed = parseWorkspace(value);
+  const parsed = importWorkspace(text);
   if ('problem' in parsed) {
     return { workspace: createPresetWorkspace(), problem: parsed.problem };
   }

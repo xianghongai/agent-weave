@@ -13,37 +13,95 @@ import {
   type Scope,
   TOOL_TYPES,
   type Tag,
+  type ToolType,
   type TemplatePair,
   type Workspace,
 } from '@/lib/workspace';
+import { WORKSPACE_MIGRATIONS, type WorkspaceMigration, migrateWorkspace } from '@/lib/workspace-migrations';
 
 /*
- * 工作区的结构校验：把来源不可信的数据（本地存储、导入文件、Gist）转成工作区。
- * 只检查结构和取值范围，不检查引用是否悬空：标签被删除后残留的 ID 是合法状态。
+ * 工作区的校验：把来源不可信的数据（本地存储、导入文件、Gist）转成工作区。
+ * 先检查结构和取值范围，再检查条目之间的引用。
+ * 标签引用不检查：标签被删除后，工具上残留的 ID 是合法状态。
  * 结果只保留已知属性，多余的属性被丢弃。
  */
 
 /**
  * - `invalidStructure`：不是工作区，或某个属性缺失、类型不对、取值不在范围内；
- * - `newerVersion`：结构版本比当前站点新，需要更新站点后再读取。
+ * - `newerVersion`：结构版本比当前站点新，需要更新站点后再读取；
+ * - `duplicateId`：同一类条目中有重复的内部 ID；
+ * - `duplicateKey`：同一类条目中有重复的标识（内置工具在所属 Agent 内比较），或 Agent 重名；
+ * - `danglingReference`：规则指向的工具不存在。
  */
-export type WorkspaceProblem = 'invalidStructure' | 'newerVersion';
+export type WorkspaceProblem =
+  | 'invalidStructure'
+  | 'newerVersion'
+  | 'duplicateId'
+  | 'duplicateKey'
+  | 'danglingReference';
 
 export type WorkspaceParseResult = { workspace: Workspace } | { problem: WorkspaceProblem };
 
-/** 校验一份已经解析成 JavaScript 值的工作区。不抛异常。 */
-export function parseWorkspace(value: unknown): WorkspaceParseResult {
-  if (isRecord(value) && Number.isInteger(value.schema_version) && Number(value.schema_version) > SCHEMA_VERSION) {
+/**
+ * 校验一份已经解析成 JavaScript 值的工作区。不抛异常。
+ * 旧版本先迁移到当前版本再校验；比站点新的版本直接拒绝。
+ */
+export function parseWorkspace(
+  value: unknown,
+  migrations: readonly WorkspaceMigration[] = WORKSPACE_MIGRATIONS
+): WorkspaceParseResult {
+  if (!isRecord(value) || !Number.isInteger(value.schema_version)) {
+    return { problem: 'invalidStructure' };
+  }
+  const version = Number(value.schema_version);
+  if (version > SCHEMA_VERSION) {
     return { problem: 'newerVersion' };
   }
+  const migrated = migrateWorkspace(value, version, migrations);
+  if (!migrated) {
+    return { problem: 'invalidStructure' };
+  }
+  let decoded: Workspace;
   try {
-    return { workspace: workspace(value) };
+    decoded = workspace(migrated);
   } catch (error) {
     if (error instanceof Invalid) {
       return { problem: 'invalidStructure' };
     }
     throw error;
   }
+  const problem = checkIntegrity(decoded);
+  return problem ? { problem } : { workspace: decoded };
+}
+
+/* 唯一性与引用检查：在结构合法的工作区上进行。 */
+
+function hasDuplicates(values: string[]): boolean {
+  return new Set(values).size !== values.length;
+}
+
+function checkIntegrity(ws: Workspace): WorkspaceProblem | null {
+  const builtInTools = ws.agents.flatMap((agent) => agent.built_in_tools);
+  const ids = [ws.tags, ws.command_tools, ws.mcp_servers, ws.agents, builtInTools, ws.rules];
+  if (ids.some((items) => hasDuplicates(items.map((item) => item.id)))) {
+    return 'duplicateId';
+  }
+  const keys = [ws.tags, ws.command_tools, ws.mcp_servers, ...ws.agents.map((agent) => agent.built_in_tools)];
+  if (
+    keys.some((items) => hasDuplicates(items.map((item) => item.key))) ||
+    hasDuplicates(ws.agents.map((agent) => agent.name))
+  ) {
+    return 'duplicateKey';
+  }
+  const toolIds: Record<ToolType, Set<string>> = {
+    command: new Set(ws.command_tools.map((tool) => tool.id)),
+    mcp: new Set(ws.mcp_servers.map((server) => server.id)),
+    built_in: new Set(builtInTools.map((tool) => tool.id)),
+  };
+  if (ws.rules.some((rule) => !toolIds[rule.tool.type].has(rule.tool.id))) {
+    return 'danglingReference';
+  }
+  return null;
 }
 
 /* 以下解码函数遇到无效结构时抛出 `Invalid`，由 `parseWorkspace` 统一转成原因码。 */
