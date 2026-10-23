@@ -258,7 +258,27 @@
     "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。",
     "mcpTomlCopyHint": "“复制”的内容是若干 TOML 表，可以直接追加到配置文件末尾；文件中已有同名的 Server 表时需要先删除旧表。",
     "tomlFieldSkipped": "TOML 表达不了的字段",
-    "tomlFieldSkippedHint": "这些字段的值（如 null）无法写成 TOML，没有写进输出。"
+    "tomlFieldSkippedHint": "这些字段的值（如 null）无法写成 TOML，没有写进输出。",
+    "placeholderUnexpanded": "占位符未展开",
+    "placeholderUnexpandedHint": "{{rules}} 条规则、{{servers}} 个 MCP Server 中的 {{home}} 或 {{user}} 原样保留在输出中，因为本机设置不完整。",
+    "openDeviceSettings": "填写本机设置"
+  },
+  "deviceSettings": {
+    "title": "本机设置",
+    "hint": "输出时，规则模式和 MCP Server 内容中的 {{home}}、{{user}} 按这里的设置展开。本机设置只保存在当前浏览器，不进入工作区和导出文件，也不同步，因此同一个工作区在不同系统上各自生成正确的路径。",
+    "os": "操作系统",
+    "osNames": {
+      "linux": "Linux",
+      "macos": "macOS",
+      "windows": "Windows"
+    },
+    "userName": "用户名",
+    "userNameHint": "本机登录系统的用户名，即用户主目录的最后一段。",
+    "expandsTo": "{{placeholder}} 展开为",
+    "incomplete": "选择操作系统并填写用户名之后，占位符才会展开；在此之前原样保留在输出中，输出页会给出提示。",
+    "claudePathHint": "Claude Code 的路径规则请写成 ~/ 的形式：它的规则中单个前导 / 表示相对设置文件所在的目录，{{home}} 展开后的绝对路径含义不对。{{home}} 适合用于 Antigravity 的规则和 MCP Server 内容。",
+    "unsaved": "当前的本机设置只保留到关闭或刷新页面为止。",
+    "invalidStructure": "本地保存的本机设置无效，已清空，请重新填写。"
   },
   "workspaceFile": {
     "title": "导入与导出",

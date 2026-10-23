@@ -118,7 +118,8 @@ describe('生成：高危提示', () => {
       agents: [{ ...claude, built_in_tools: [builtIn('Edit', { writes: true })] }],
       rules: patterns.map((pattern) => rule(`edit:${pattern}`, ref.builtIn('Edit'), pattern, 'allow')),
     });
-    expect(noticesOf(ws)).toEqual([
+    // 本机设置完整、{{home}} 已展开时，高危判定仍按未展开的原始模式，也不产生占位符提示。
+    expect(generate(ws, claude.id, { os: 'linux', user_name: 'alice' })?.notices).toEqual([
       { type: 'highRisk', ruleId: 'edit:' },
       { type: 'highRisk', ruleId: 'edit:/' },
       { type: 'highRisk', ruleId: 'edit:{{home}}/' },

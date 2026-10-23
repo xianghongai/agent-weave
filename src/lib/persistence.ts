@@ -1,6 +1,6 @@
 import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
 import { createPresetWorkspace } from '@/lib/presets';
-import type { Workspace } from '@/lib/workspace';
+import { type DeviceSettings, EMPTY_DEVICE_SETTINGS, OPERATING_SYSTEMS, type Workspace } from '@/lib/workspace';
 import { type ImportProblem, importWorkspace } from '@/lib/workspace-file';
 
 /*
@@ -58,6 +58,63 @@ export function loadWorkspace(storage: KeyValueStorage): { workspace: Workspace;
 export function saveWorkspace(storage: KeyValueStorage, workspace: Workspace): SaveProblem | null {
   try {
     storage.setItem(STORAGE_KEYS.workspace, JSON.stringify(workspace));
+    return null;
+  } catch {
+    return 'writeFailed';
+  }
+}
+
+/**
+ * - `readFailed`：同 `LoadProblem`；
+ * - `invalidStructure`：本地保存的本机设置无法解析，或不是有效的本机设置。
+ */
+export type DeviceSettingsLoadProblem = 'readFailed' | 'invalidStructure';
+
+function parseDeviceSettings(text: string): DeviceSettings | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const { os, user_name: userName } = value as Record<string, unknown>;
+  // `undefined` 表示取值无效；`null` 表示未选择操作系统，是合法的。
+  const parsedOs = os === null ? null : OPERATING_SYSTEMS.find((candidate) => candidate === os);
+  if (parsedOs === undefined || typeof userName !== 'string') {
+    return null;
+  }
+  // 只保留已知属性，丢弃未知属性。
+  return { os: parsedOs, user_name: userName };
+}
+
+/**
+ * 读取本机设置，总是返回一份可用的设置。
+ * 没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。
+ */
+export function loadDeviceSettings(storage: KeyValueStorage): {
+  settings: DeviceSettings;
+  problem: DeviceSettingsLoadProblem | null;
+} {
+  let text: string | null;
+  try {
+    text = storage.getItem(STORAGE_KEYS.deviceSettings);
+  } catch {
+    return { settings: EMPTY_DEVICE_SETTINGS, problem: 'readFailed' };
+  }
+  if (text === null) {
+    return { settings: EMPTY_DEVICE_SETTINGS, problem: null };
+  }
+  const settings = parseDeviceSettings(text);
+  return settings ? { settings, problem: null } : { settings: EMPTY_DEVICE_SETTINGS, problem: 'invalidStructure' };
+}
+
+/** 保存本机设置。成功时返回 `null`。 */
+export function saveDeviceSettings(storage: KeyValueStorage, settings: DeviceSettings): SaveProblem | null {
+  try {
+    storage.setItem(STORAGE_KEYS.deviceSettings, JSON.stringify(settings));
     return null;
   } catch {
     return 'writeFailed';

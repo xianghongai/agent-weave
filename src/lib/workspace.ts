@@ -139,7 +139,8 @@ export interface Workspace {
 }
 
 /** 本机设置：只属于当前设备，用于展开路径占位符。不属于工作区，也不同步。 */
-export type OperatingSystem = 'linux' | 'macos' | 'windows';
+export const OPERATING_SYSTEMS = ['linux', 'macos', 'windows'] as const;
+export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
 
 export interface DeviceSettings {
   os: OperatingSystem | null;

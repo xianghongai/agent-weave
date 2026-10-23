@@ -7,6 +7,7 @@ import {
   type BuiltInTool,
   type CommandTool,
   type Decision,
+  type DeviceSettings,
   EMPTY_DEVICE_SETTINGS,
   type McpServer,
   type Rule,
@@ -670,5 +671,151 @@ describe('生成：内置工具', () => {
       'Bash(zip *)',
       'Read',
     ]);
+  });
+});
+
+describe('生成：路径占位符', () => {
+  const linux: DeviceSettings = { os: 'linux', user_name: 'alice' };
+
+  it('Linux 上 {{home}} 展开为 /home/<用户名>，规则模式中的占位符随之展开', () => {
+    const ws = workspace(['ls'], [rule('ls', '{{home}}/projects', 'allow')]);
+    const output = generate(ws, claude.id, linux);
+    expect(output?.permission?.decisions[0]?.entries).toEqual(['Bash(ls /home/alice/projects *)']);
+    expect(output?.notices).toEqual([]);
+  });
+
+  it.each([
+    ['macOS', { os: 'macos', user_name: 'alice' }, 'Bash(ls /Users/alice/projects/alice *)'],
+    ['Windows', { os: 'windows', user_name: 'alice' }, 'Bash(ls C:\\Users\\alice/projects/alice *)'],
+    ['用户名前后的空白不计入', { os: 'linux', user_name: ' alice ' }, 'Bash(ls /home/alice/projects/alice *)'],
+  ] satisfies [string, DeviceSettings, string][])(
+    '%s：{{home}} 按操作系统展开，{{user}} 展开为用户名',
+    (_, device, expected) => {
+      const ws = workspace(['ls'], [rule('ls', '{{home}}/projects/{{user}}', 'allow')]);
+      expect(generate(ws, claude.id, device)?.permission?.decisions[0]?.entries).toEqual([expected]);
+    }
+  );
+
+  it.each([
+    ['没有本机设置', EMPTY_DEVICE_SETTINGS],
+    ['没有选择操作系统', { os: null, user_name: 'alice' }],
+    ['用户名为空白', { os: 'macos', user_name: '  ' }],
+  ] satisfies [string, DeviceSettings][])('%s时占位符原样保留，每条相关规则产生一条提示', (_, device) => {
+    const home = rule('ls', '{{home}}/projects/{{user}}', 'allow');
+    const plain = rule('ls', '/tmp', 'allow');
+    const output = generate(workspace(['ls'], [home, plain]), claude.id, device);
+    expect(output?.permission?.decisions[0]?.entries).toEqual([
+      'Bash(ls /tmp *)',
+      'Bash(ls {{home}}/projects/{{user}} *)',
+    ]);
+    expect(output?.notices).toEqual([{ type: 'placeholderUnexpanded', ruleId: home.id, serverId: null }]);
+  });
+
+  it('跳过的规则不进入输出，也不产生占位符提示', () => {
+    const noAsk: Agent = {
+      ...claude,
+      permission_output: claude.permission_output && {
+        ...claude.permission_output,
+        decision_keys: { allow: 'allow', ask: '', deny: 'deny' },
+      },
+    };
+    const ws = workspace(['ls'], [rule('ls', '{{home}}', 'ask')], noAsk);
+    expect(generate(ws, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([]);
+  });
+
+  it('${VAR} 不是路径占位符，设置完整与否都原样输出且不提示', () => {
+    const ws = workspace(['ls'], [rule('ls', '${HOME}/projects', 'allow')]);
+    for (const device of [linux, EMPTY_DEVICE_SETTINGS]) {
+      const output = generate(ws, claude.id, device);
+      expect(output?.permission?.decisions[0]?.entries).toEqual(['Bash(ls ${HOME}/projects *)']);
+      expect(output?.notices).toEqual([]);
+    }
+  });
+
+  describe('MCP Server 内容', () => {
+    const mcpAgent: Agent = { ...claude, mcp_output: { style: 'json', property_path: 'mcpServers', scopes: [] } };
+    const filesystem = server('filesystem', {
+      command: 'npx',
+      args: ['-y', '@modelcontextprotocol/server-filesystem', '{{home}}/notes'],
+      env: {
+        OWNER: '{{user}}',
+        TOKEN: '${FS_TOKEN}',
+        nested: { roots: [{ path: '{{home}}' }], retries: 3, debug: null },
+      },
+    });
+    const plain = server('plain', { command: 'uvx', args: ['plain'] });
+    const ws = withServers(workspace([], [], mcpAgent), [plain, filesystem]);
+
+    it('展开嵌套在对象和数组中的所有字符串值，数字、null 和 ${VAR} 原样保留', () => {
+      const output = generate(ws, claude.id, { os: 'windows', user_name: 'alice' });
+      expect(output?.mcp?.copyInnerText?.split(',\n"plain"')[0]).toBe(
+        [
+          '"filesystem": {',
+          '  "command": "npx",',
+          '  "args": [',
+          '    "-y",',
+          '    "@modelcontextprotocol/server-filesystem",',
+          '    "C:\\\\Users\\\\alice/notes"',
+          '  ],',
+          '  "env": {',
+          '    "OWNER": "alice",',
+          '    "TOKEN": "${FS_TOKEN}",',
+          '    "nested": {',
+          '      "roots": [',
+          '        {',
+          '          "path": "C:\\\\Users\\\\alice"',
+          '        }',
+          '      ],',
+          '      "retries": 3,',
+          '      "debug": null',
+          '    }',
+          '  }',
+          '}',
+        ].join('\n')
+      );
+      expect(output?.mcp?.preview).toContain('"OWNER": "alice"');
+      expect(output?.notices).toEqual([]);
+    });
+
+    it('本机设置不完整时内容原样输出，含占位符的每个 Server 产生一条提示', () => {
+      const output = generate(ws, claude.id, EMPTY_DEVICE_SETTINGS);
+      expect(output?.mcp?.copyText).toContain('"{{home}}/notes"');
+      expect(output?.mcp?.copyText).toContain('"OWNER": "{{user}}"');
+      expect(output?.notices).toEqual([{ type: 'placeholderUnexpanded', ruleId: null, serverId: filesystem.id }]);
+    });
+
+    it('TOML 风格同样展开；不完整时占位符提示排在 TOML 字段跳过提示之前', () => {
+      const tomlAgent: Agent = { ...claude, mcp_output: { style: 'toml', property_path: 'mcp_servers', scopes: [] } };
+      const toml = { ...ws, agents: [tomlAgent] };
+      const expanded = generate(toml, claude.id, { os: 'macos', user_name: 'alice' });
+      expect(expanded?.mcp?.copyText).toContain('"/Users/alice/notes"');
+      expect(expanded?.mcp?.copyText).toContain('OWNER = "alice"');
+      expect(generate(toml, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([
+        { type: 'placeholderUnexpanded', ruleId: null, serverId: filesystem.id },
+        { type: 'tomlFieldSkipped', serverId: filesystem.id, field: 'env.nested.debug' },
+      ]);
+    });
+
+    it('没有 MCP 输出的 Agent 不提示 Server 内容中的占位符', () => {
+      const noMcp = { ...ws, agents: [claude] };
+      expect(generate(noMcp, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([]);
+    });
+
+    it('规则的提示在前，Server 的提示在后', () => {
+      const home = rule('ls', '{{home}}', 'allow');
+      const both = { ...ws, command_tools: [tool('ls')], rules: [home] };
+      expect(generate(both, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([
+        { type: 'placeholderUnexpanded', ruleId: home.id, serverId: null },
+        { type: 'placeholderUnexpanded', ruleId: null, serverId: filesystem.id },
+      ]);
+    });
+
+    it('预设 filesystem 的根目录在 Linux 上展开为用户主目录', () => {
+      const preset = createPresetWorkspace();
+      const agent = preset.agents.find((candidate) => candidate.name === 'Claude Code');
+      const output = generate(preset, agent?.id ?? '', linux);
+      expect(output?.mcp?.copyText).toContain('"/home/alice"');
+      expect(output?.mcp?.copyText).not.toContain('{{home}}');
+    });
   });
 });

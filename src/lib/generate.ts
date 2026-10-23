@@ -11,6 +11,7 @@ import type {
   TemplatePair,
   Workspace,
 } from '@/lib/workspace';
+import { expandContent, expandText } from '@/lib/placeholders';
 import { ruleNotices } from '@/lib/rule-notices';
 import { tomlTable } from '@/lib/toml';
 import { DECISIONS } from '@/lib/workspace';
@@ -117,8 +118,16 @@ function templatesFor(tool: ResolvedTool, output: PermissionOutput): { pair: Tem
   }
 }
 
-/** 把一条规则写成输出中的字符串；该 Agent 表达不了时返回跳过原因。 */
-function ruleEntry(rule: Rule, tool: ResolvedTool, output: PermissionOutput): { entry: string } | { skip: SkipReason } {
+/**
+ * 把一条规则写成输出中的字符串；该 Agent 表达不了时返回跳过原因。
+ * 模式中的路径占位符先展开再代入模板；`unexpanded` 表示本机设置不完整、占位符原样保留。
+ */
+function ruleEntry(
+  rule: Rule,
+  tool: ResolvedTool,
+  output: PermissionOutput,
+  device: DeviceSettings
+): { entry: string; unexpanded: boolean } | { skip: SkipReason } {
   // 决策键名为空表示该 Agent 不支持这一档，先于模板判定。
   if (output.decision_keys[rule.decision] === '') {
     return { skip: 'decisionKeyMissing' };
@@ -128,17 +137,25 @@ function ruleEntry(rule: Rule, tool: ResolvedTool, output: PermissionOutput): { 
   if (template === '') {
     return { skip: 'templateMissing' };
   }
-  return { entry: fillTemplate(template, { ...values, pattern: rule.pattern }) };
+  const pattern = expandText(rule.pattern, device);
+  return { entry: fillTemplate(template, { ...values, pattern: pattern.value }), unexpanded: pattern.unexpanded };
 }
 
 function permissionSection(
   workspace: Workspace,
   agentId: string,
-  output: PermissionOutput
-): { section: PermissionSection; skippedRules: SkippedRule[]; writtenRules: RuleListItem[] } {
+  output: PermissionOutput,
+  device: DeviceSettings
+): {
+  section: PermissionSection;
+  skippedRules: SkippedRule[];
+  writtenRules: RuleListItem[];
+  placeholderNotices: Notice[];
+} {
   const skippedRules: SkippedRule[] = [];
-  // 实际写进输出的规则，高危与冲突提示只针对它们。
+  // 实际写进输出的规则，高危与冲突提示只针对它们；高危判定用的是未展开的原始模式。
   const writtenRules: RuleListItem[] = [];
+  const placeholderNotices: Notice[] = [];
   // Set 保持插入顺序，因此去重后仍与规则列表的顺序一致。
   const entries = new Map<Decision, Set<string>>(DECISIONS.map((decision) => [decision, new Set()]));
 
@@ -148,12 +165,15 @@ function permissionSection(
     if (tool.type === 'built_in' && tool.agent.id !== agentId) {
       continue;
     }
-    const result = ruleEntry(rule, tool, output);
+    const result = ruleEntry(rule, tool, output, device);
     if ('skip' in result) {
       skippedRules.push({ ruleId: rule.id, reason: result.skip });
-    } else {
-      entries.get(rule.decision)?.add(result.entry);
-      writtenRules.push(item);
+      continue;
+    }
+    entries.get(rule.decision)?.add(result.entry);
+    writtenRules.push(item);
+    if (result.unexpanded) {
+      placeholderNotices.push({ type: 'placeholderUnexpanded', ruleId: rule.id, serverId: null });
     }
   }
 
@@ -174,6 +194,7 @@ function permissionSection(
     section: { ...nestedJson(output.property_path, body), decisions, scopes: output.scopes },
     skippedRules,
     writtenRules,
+    placeholderNotices,
   };
 }
 
@@ -190,10 +211,29 @@ function jsonMcpSection(servers: McpServer[], output: McpOutput): McpSection {
 
 /**
  * MCP 节：包含全部 MCP Server，按标识排序；描述不进入输出，内容中的 `${VAR}` 原样保留。
- * 每种风格一个分支，共用 Server 的选取与排序；格式化中产生的提示随节一起返回。
+ * 每种风格一个分支，共用 Server 的选取、排序和路径占位符的展开；格式化中产生的提示随节一起返回。
+ * 占位符未能展开的 Server 各产生一条提示，排在格式化的提示之前。
  */
-function mcpSection(workspace: Workspace, output: McpOutput): { section: McpSection; notices: Notice[] } {
-  const servers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
+function mcpSection(
+  workspace: Workspace,
+  output: McpOutput,
+  device: DeviceSettings
+): { section: McpSection; notices: Notice[] } {
+  const placeholderNotices: Notice[] = [];
+  const servers = workspace.mcp_servers
+    .toSorted((a, b) => compareText(a.key, b.key))
+    .map((server) => {
+      const content = expandContent(server.content, device);
+      if (content.unexpanded) {
+        placeholderNotices.push({ type: 'placeholderUnexpanded', ruleId: null, serverId: server.id });
+      }
+      return { ...server, content: content.value };
+    });
+  const formatted = formatMcpSection(servers, output);
+  return { section: formatted.section, notices: [...placeholderNotices, ...formatted.notices] };
+}
+
+function formatMcpSection(servers: McpServer[], output: McpOutput): { section: McpSection; notices: Notice[] } {
   switch (output.style) {
     case 'json':
       return { section: jsonMcpSection(servers, output), notices: [] };
@@ -224,18 +264,26 @@ function tomlMcpSection(servers: McpServer[], output: McpOutput): { section: Mcp
 }
 
 /** 找不到该 Agent 时返回 `null`。 */
-export function generate(workspace: Workspace, agentId: string, _device: DeviceSettings): AgentOutput | null {
+export function generate(workspace: Workspace, agentId: string, device: DeviceSettings): AgentOutput | null {
   const agent = workspace.agents.find((candidate) => candidate.id === agentId);
   if (!agent) {
     return null;
   }
   // 没有权限输出的 Agent 不产生跳过的规则，界面只说明“不输出权限”。
-  const permission = agent.permission_output ? permissionSection(workspace, agent.id, agent.permission_output) : null;
-  const mcp = agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null;
+  const permission = agent.permission_output
+    ? permissionSection(workspace, agent.id, agent.permission_output, device)
+    : null;
+  // 没有 MCP 输出的 Agent 不用到 Server 内容，也就不提示其中的占位符。
+  const mcp = agent.mcp_output ? mcpSection(workspace, agent.mcp_output, device) : null;
   return {
     permission: permission?.section ?? null,
     mcp: mcp?.section ?? null,
     skippedRules: permission?.skippedRules ?? [],
-    notices: [...ruleNotices(permission?.writtenRules ?? []), ...(mcp?.notices ?? [])],
+    // 规则的占位符提示排在 MCP 节的提示之前，与输出中权限在前、MCP 在后的顺序一致。
+    notices: [
+      ...ruleNotices(permission?.writtenRules ?? []),
+      ...(permission?.placeholderNotices ?? []),
+      ...(mcp?.notices ?? []),
+    ],
   };
 }
