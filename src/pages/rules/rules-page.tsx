@@ -12,7 +12,7 @@ import { operationProblemMessage } from '@/i18n/problems';
 import type { Decision, Rule, ToolRef } from '@/lib/workspace';
 import { type OperationProblem, addRule, deleteRule, listRules, resolveTool } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
-import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
+import { DecisionToggle, ToolSelect, ToolTypeBadge, patternTexts } from '@/pages/rules/rule-fields';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 export default function RulesPage() {
@@ -45,6 +45,7 @@ export default function RulesPage() {
                 <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
                   <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
                     <code className="font-medium">{tool.tool.key}</code>
+                    <ToolTypeBadge type={tool.type} />
                     {rule.pattern ? (
                       <code className="break-all">{rule.pattern}</code>
                     ) : (
@@ -102,7 +103,8 @@ function AddRuleForm() {
 
   // 所选工具被删除后，表单回到未选状态。
   const selected = tool && resolveTool(workspace, tool) ? tool : null;
-  const hasTools = workspace.command_tools.length > 0;
+  const hasTools = workspace.command_tools.length > 0 || workspace.mcp_servers.length > 0;
+  const patternText = patternTexts(selected?.type);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -153,11 +155,11 @@ function AddRuleForm() {
               value={pattern}
               autoComplete="off"
               spellCheck={false}
-              placeholder={t('rules.patternPlaceholder')}
+              placeholder={t(patternText.placeholder)}
               className="font-mono"
               onChange={(event) => setPattern(event.target.value)}
             />
-            <FieldDescription>{t('rules.patternHint')}</FieldDescription>
+            <FieldDescription>{t(patternText.hint)}</FieldDescription>
           </Field>
           <Field>
             <FieldLabel>{t('rules.decision')}</FieldLabel>

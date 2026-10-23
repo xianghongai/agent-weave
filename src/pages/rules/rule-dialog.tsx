@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Rule } from '@/lib/workspace';
 import { type OperationProblem, updateRule } from '@/lib/workspace-operations';
-import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
+import { DecisionToggle, ToolSelect, patternTexts } from '@/pages/rules/rule-fields';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 interface RuleDialogProps {
@@ -66,7 +66,7 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
             value={pattern}
             autoComplete="off"
             spellCheck={false}
-            placeholder={t('rules.patternPlaceholder')}
+            placeholder={t(patternTexts(tool.type).placeholder)}
             className="font-mono"
             onChange={(event) => setPattern(event.target.value)}
           />

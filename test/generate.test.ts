@@ -336,6 +336,38 @@ describe('生成：没有权限输出的 Agent', () => {
   });
 });
 
+describe('生成：预设的 MCP Server', () => {
+  const preset = createPresetWorkspace();
+  const outputOf = (name: string) => {
+    const agent = preset.agents.find((candidate) => candidate.name === name);
+    return agent ? generate(preset, agent.id, EMPTY_DEVICE_SETTINGS) : null;
+  };
+  const claudeCode = outputOf('Claude Code');
+  const antigravity = outputOf('Antigravity');
+
+  it('每个预设 MCP Server 都有一条允许整个 Server 的共享规则', () => {
+    const allow = (output: typeof claudeCode) => output?.permission?.decisions.find((d) => d.decision === 'allow');
+    expect(allow(claudeCode)?.entries).toEqual(expect.arrayContaining(['mcp__context7', 'mcp__filesystem']));
+    expect(allow(antigravity)?.entries).toEqual(expect.arrayContaining(['mcp(context7/*)', 'mcp(filesystem/*)']));
+  });
+
+  it('Claude Code 与 Antigravity 都输出 JSON 风格的 mcpServers，密钥以 ${VAR} 引用', () => {
+    for (const output of [claudeCode, antigravity]) {
+      expect(output?.mcp?.style).toBe('json');
+      expect(output?.mcp?.copyText.startsWith('"mcpServers": {\n')).toBe(true);
+      expect(output?.mcp?.copyText).toContain('"CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"');
+    }
+  });
+
+  it('MCP 输出带有各自的作用域', () => {
+    expect(claudeCode?.mcp?.scopes.map((scope) => scope.path)).toEqual(['.mcp.json', '~/.claude.json']);
+    expect(antigravity?.mcp?.scopes.map((scope) => scope.path)).toEqual([
+      '~/.gemini/config/mcp_config.json',
+      '.agents/mcp_config.json',
+    ]);
+  });
+});
+
 function server(key: string, content: McpServer['content'] = {}, description = ''): McpServer {
   return { id: `server-${key}`, key, content, description, tag_ids: [], high_risk: false };
 }
@@ -389,5 +421,135 @@ describe('生成：MCP 规则', () => {
     expect(generate(ws, claude.id, EMPTY_DEVICE_SETTINGS)?.skippedRules).toEqual([
       { ruleId: tool.id, reason: 'templateMissing' },
     ]);
+  });
+});
+
+describe('生成：JSON 风格的 MCP 输出', () => {
+  const jsonOutput: Agent = {
+    ...claude,
+    mcp_output: {
+      style: 'json',
+      property_path: 'mcpServers',
+      scopes: [{ name: '项目级', path: '.mcp.json', note: '' }],
+    },
+  };
+  const servers = [
+    server('memory', { command: 'npx', args: ['-y', '@modelcontextprotocol/server-memory'] }, '记忆'),
+    server(
+      'context7',
+      { command: 'npx', args: ['-y', '@upstash/context7-mcp'], env: { CONTEXT7_API_KEY: '${CONTEXT7_API_KEY}' } },
+      '查询最新的库文档'
+    ),
+  ];
+  const mcp = generate(withServers(workspace([], [], jsonOutput), servers), claude.id, EMPTY_DEVICE_SETTINGS)?.mcp;
+
+  it('预览按属性路径完整嵌套，Server 按标识排序，描述不进入输出，${VAR} 原样保留', () => {
+    expect(mcp?.style).toBe('json');
+    expect(mcp?.preview).toBe(
+      [
+        '{',
+        '  "mcpServers": {',
+        '    "context7": {',
+        '      "command": "npx",',
+        '      "args": [',
+        '        "-y",',
+        '        "@upstash/context7-mcp"',
+        '      ],',
+        '      "env": {',
+        '        "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"',
+        '      }',
+        '    },',
+        '    "memory": {',
+        '      "command": "npx",',
+        '      "args": [',
+        '        "-y",',
+        '        "@modelcontextprotocol/server-memory"',
+        '      ]',
+        '    }',
+        '  }',
+        '}',
+      ].join('\n')
+    );
+  });
+
+  it('“复制”是属性路径最末一段的键值对', () => {
+    expect(mcp?.copyText).toBe(
+      [
+        '"mcpServers": {',
+        '  "context7": {',
+        '    "command": "npx",',
+        '    "args": [',
+        '      "-y",',
+        '      "@upstash/context7-mcp"',
+        '    ],',
+        '    "env": {',
+        '      "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"',
+        '    }',
+        '  },',
+        '  "memory": {',
+        '    "command": "npx",',
+        '    "args": [',
+        '      "-y",',
+        '      "@modelcontextprotocol/server-memory"',
+        '    ]',
+        '  }',
+        '}',
+      ].join('\n')
+    );
+  });
+
+  it('“复制内部”是各 Server 的键值对，以逗号分隔', () => {
+    expect(mcp?.copyInnerText).toBe(
+      [
+        '"context7": {',
+        '  "command": "npx",',
+        '  "args": [',
+        '    "-y",',
+        '    "@upstash/context7-mcp"',
+        '  ],',
+        '  "env": {',
+        '    "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}"',
+        '  }',
+        '},',
+        '"memory": {',
+        '  "command": "npx",',
+        '  "args": [',
+        '    "-y",',
+        '    "@modelcontextprotocol/server-memory"',
+        '  ]',
+        '}',
+      ].join('\n')
+    );
+  });
+
+  it('附带 Agent 定义中的作用域', () => {
+    expect(mcp?.scopes).toEqual([{ name: '项目级', path: '.mcp.json', note: '' }]);
+  });
+
+  it('多层属性路径逐层嵌套，“复制”只到最末一段', () => {
+    const nested: Agent = { ...jsonOutput, mcp_output: { style: 'json', property_path: 'a.servers', scopes: [] } };
+    const output = generate(withServers(workspace([], [], nested), [server('x')]), claude.id, EMPTY_DEVICE_SETTINGS);
+    expect(output?.mcp?.preview).toBe('{\n  "a": {\n    "servers": {\n      "x": {}\n    }\n  }\n}');
+    expect(output?.mcp?.copyText).toBe('"servers": {\n  "x": {}\n}');
+  });
+
+  it('没有 MCP Server 时输出空对象，“复制内部”为空', () => {
+    const output = generate(workspace([], [], jsonOutput), claude.id, EMPTY_DEVICE_SETTINGS);
+    expect(output?.mcp?.copyText).toBe('"mcpServers": {}');
+    expect(output?.mcp?.copyInnerText).toBe('');
+  });
+
+  it('内容中自带的 description 字段属于内容，原样输出', () => {
+    const output = generate(
+      withServers(workspace([], [], jsonOutput), [server('x', { description: '内容里的' }, 'Server 描述')]),
+      claude.id,
+      EMPTY_DEVICE_SETTINGS
+    );
+    expect(output?.mcp?.copyInnerText).toBe('"x": {\n  "description": "内容里的"\n}');
+  });
+
+  it('没有 MCP 输出的 Agent 不输出 MCP 节', () => {
+    const output = generate(withServers(workspace([], []), servers), claude.id, EMPTY_DEVICE_SETTINGS);
+    expect(output?.mcp).toBeNull();
   });
 });

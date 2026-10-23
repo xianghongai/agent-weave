@@ -16,6 +16,7 @@ import {
   deleteMcpServer,
   deleteRule,
   listRules,
+  newMcpOutput,
   newPermissionOutput,
   updateAgent,
   updateCommandTool,
@@ -411,8 +412,34 @@ describe('工作区操作：Agent', () => {
         problem: 'propertyPathInvalid',
       });
     }
-    const mcp_output: McpOutput = { style: 'json', property_path: 'mcp..servers', scopes: [] };
-    expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'propertyPathInvalid' });
+  });
+
+  it('MCP 输出的属性路径无效时返回单独的原因码，便于界面定位到对应字段', () => {
+    for (const property_path of ['', 'mcp..servers', 'mcpServers.']) {
+      const mcp_output: McpOutput = { style: 'json', property_path, scopes: [] };
+      expect(addAgent(empty, agentInput({ mcp_output }), context())).toEqual({ problem: 'mcpPropertyPathInvalid' });
+    }
+  });
+
+  it('可以设置 MCP 输出：去掉属性路径与作用域首尾的空白，丢弃全部为空的作用域', () => {
+    const mcp_output: McpOutput = {
+      style: 'toml',
+      property_path: ' mcp_servers ',
+      scopes: [
+        { name: ' 用户级 ', path: ' ~/.codex/config.toml ', note: '' },
+        { name: '', path: ' ', note: '' },
+      ],
+    };
+    const ws = apply(empty, (w) => addAgent(w, agentInput({ permission_output: null, mcp_output }), context()));
+    expect(ws.agents[1]?.mcp_output).toEqual({
+      style: 'toml',
+      property_path: 'mcp_servers',
+      scopes: [{ name: '用户级', path: '~/.codex/config.toml', note: '' }],
+    });
+  });
+
+  it('新开启的 MCP 输出默认为 JSON 风格，属性路径为 mcpServers', () => {
+    expect(newMcpOutput()).toEqual({ style: 'json', property_path: 'mcpServers', scopes: [] });
   });
 
   it('两个决策映射到同一个键名时返回原因码，留空的决策不算重复', () => {

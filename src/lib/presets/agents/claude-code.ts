@@ -17,5 +17,12 @@ export const CLAUDE_CODE: Agent = {
     command_templates: { with_pattern: 'Bash({command} {pattern} *)', without_pattern: 'Bash({command} *)' },
     mcp_templates: { with_pattern: 'mcp__{server}__{pattern}', without_pattern: 'mcp__{server}' },
   },
-  mcp_output: null,
+  mcp_output: {
+    style: 'json',
+    property_path: 'mcpServers',
+    scopes: [
+      { name: '项目级', path: '.mcp.json', note: '提交到仓库，与团队共享。' },
+      { name: '用户级', path: '~/.claude.json', note: '对当前用户的所有项目生效。' },
+    ],
+  },
 };

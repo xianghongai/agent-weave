@@ -2,6 +2,7 @@ import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { DECISIONS, type Decision, type ToolRef, type Workspace } from '@/lib/workspace';
@@ -12,14 +13,25 @@ function encodeToolRef(ref: ToolRef): string {
   return `${ref.type}:${ref.id}`;
 }
 
-/** 规则可以指向的工具，按标识排序。 */
-function toolOptions(workspace: Workspace): { value: string; label: string; ref: ToolRef }[] {
-  return workspace.command_tools
+interface ToolOption {
+  value: string;
+  label: string;
+  ref: ToolRef;
+}
+
+/** 某一类工具的选项，按标识排序。 */
+function optionsOf(type: ToolRef['type'], tools: { id: string; key: string }[]): ToolOption[] {
+  return tools
     .toSorted((a, b) => compareText(a.key, b.key))
     .map((tool) => {
-      const ref: ToolRef = { type: 'command', id: tool.id };
+      const ref: ToolRef = { type, id: tool.id };
       return { value: encodeToolRef(ref), label: tool.key, ref };
     });
+}
+
+/** 规则可以指向的工具：按工具类型分段，与规则列表的排序一致。 */
+function toolOptions(workspace: Workspace): ToolOption[] {
+  return [...optionsOf('command', workspace.command_tools), ...optionsOf('mcp', workspace.mcp_servers)];
 }
 
 interface ToolSelectProps {
@@ -52,11 +64,32 @@ export function ToolSelect({ id, workspace, value, onChange, className }: ToolSe
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value} className="font-mono">
             {option.label}
+            <ToolTypeBadge type={option.ref.type} />
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
   );
+}
+
+/** 区分同名的命令工具与 MCP 工具；命令工具不加标记。 */
+export function ToolTypeBadge({ type }: { type: ToolRef['type'] }) {
+  const { t } = useTranslation();
+  if (type !== 'mcp') {
+    return null;
+  }
+  return (
+    <Badge variant="outline" className="font-sans">
+      {t('rules.mcpBadge')}
+    </Badge>
+  );
+}
+
+/** 模式输入框的占位文字和说明随工具类型变化：命令工具填参数前缀，MCP 工具填工具名。 */
+export function patternTexts(type: ToolRef['type'] | undefined) {
+  return type === 'mcp'
+    ? ({ placeholder: 'rules.mcpPatternPlaceholder', hint: 'rules.mcpPatternHint' } as const)
+    : ({ placeholder: 'rules.patternPlaceholder', hint: 'rules.patternHint' } as const);
 }
 
 interface DecisionToggleProps {

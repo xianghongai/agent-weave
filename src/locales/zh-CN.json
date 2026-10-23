@@ -72,7 +72,9 @@
       "nameEmpty": "名称不能为空。",
       "nameDuplicate": "已有同名的 Agent，名称不能重复。",
       "propertyPathInvalid": "属性路径不能为空，点分的每一段也不能为空。",
-      "decisionKeyDuplicate": "两个决策不能使用同一个键名。"
+      "decisionKeyDuplicate": "两个决策不能使用同一个键名。",
+      "mcpPropertyPathInvalid": "MCP 输出的属性路径不能为空，点分的每一段也不能为空。",
+      "contentInvalid": "内容必须是合法的 JSON 对象。只粘贴 Server 名之后的那个对象，不带外层的键名。"
     },
     "skip": {
       "decisionKeyMissing": "该 Agent 不支持“{{decision}}”这一档：决策键名为空。",
@@ -122,12 +124,36 @@
     "deleteWithRules": "有 {{n}} 条权限规则指向它，这些规则会一并删除。",
     "deleteNoRules": "没有权限规则指向它。"
   },
+  "mcp": {
+    "servers": "MCP Server",
+    "serversHint": "每个 MCP Server 自动成为一个 MCP 工具，可以直接对它编写权限规则。MCP Server 由所有 Agent 共享。",
+    "add": "新增 MCP Server",
+    "addTitle": "新增 MCP Server",
+    "editTitle": "编辑 MCP Server",
+    "empty": "还没有 MCP Server。",
+    "key": "标识",
+    "keyPlaceholder": "如 context7",
+    "keyHint": "即输出中的 Server 名。",
+    "content": "内容",
+    "contentHint": "Claude 风格的 JSON 对象，如 command、args、env。只检查是不是 JSON 对象，字段的对错由你负责。环境变量占位符 ${VAR} 原样输出，密钥请留在本机环境变量里。",
+    "description": "描述",
+    "descriptionHint": "只在本工具中显示，不进入输出。",
+    "ruleCount": "{{n}} 条规则",
+    "editLabel": "编辑 {{key}}",
+    "deleteLabel": "删除 {{key}}",
+    "deleteTitle": "删除 MCP Server {{key}}？",
+    "deleteWithRules": "有 {{n}} 条权限规则指向它，这些规则会一并删除。",
+    "deleteNoRules": "没有权限规则指向它。"
+  },
   "rules": {
     "addTitle": "新增权限规则",
     "addHint": "添加后保留所选工具，可以在同一工具下连续添加多条规则。",
     "tool": "工具",
     "toolPlaceholder": "选择工具",
-    "noTools": "还没有工具，先到“工具”页新增命令工具。",
+    "noTools": "还没有工具，先到“工具”页新增命令工具，或到“MCP Server”页新增 MCP Server。",
+    "mcpBadge": "MCP",
+    "mcpPatternPlaceholder": "如 query-docs，留空表示整个 Server",
+    "mcpPatternHint": "填该 MCP Server 提供的工具名，其中的 * 原样代入。",
     "pattern": "模式",
     "patternPlaceholder": "如 push --force，留空表示整个工具",
     "patternHint": "只填工具标识之后的参数前缀，其中的 * 原样代入。",
@@ -149,7 +175,10 @@
     "copyHint": "“复制”只复制 {{key}} 这一层的键值对，可以在编辑器里折叠原属性后整体替换；“复制内部”只复制该决策数组的元素，可以追加到已有数组后自行去重。",
     "entryCount": "{{n}} 条",
     "skippedRules": "跳过的规则",
-    "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。"
+    "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。",
+    "mcp": "MCP",
+    "noMcp": "该 Agent 不输出 MCP 配置。",
+    "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。"
   },
   "workspaceFile": {
     "title": "导入与导出",
@@ -194,7 +223,18 @@
     "removeScope": "删除作用域",
     "noScopes": "还没有作用域。",
     "advanced": "高级",
-    "advancedHint": "属性路径、决策键名和输出模板。",
+    "advancedHint": "属性路径、决策键名、输出模板和 MCP 风格。",
+    "mcpOutput": "输出 MCP 配置",
+    "mcpOutputHint": "关闭后该 Agent 不输出 MCP 配置。",
+    "noMcpOutput": "不输出 MCP 配置",
+    "mcpScopes": "MCP 配置的作用域",
+    "mcpStyle": "风格",
+    "mcpStyles": {
+      "json": "JSON",
+      "toml": "TOML"
+    },
+    "mcpStyleHint": "JSON 风格把各 Server 写进属性路径下的对象；TOML 风格为每个 Server 生成一个表。",
+    "mcpPropertyPathHint": "点分的多层路径，如 mcpServers、mcp_servers。",
     "propertyPath": "属性路径",
     "propertyPathHint": "点分的多层路径，如 permissions、userSettings.globalPermissionGrants。",
     "decisionKeys": "决策键名",

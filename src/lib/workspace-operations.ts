@@ -37,6 +37,7 @@ export type OperationProblem =
   | 'nameEmpty'
   | 'nameDuplicate'
   | 'propertyPathInvalid'
+  | 'mcpPropertyPathInvalid'
   | 'decisionKeyDuplicate'
   | 'contentInvalid'
   | 'notFound'
@@ -210,7 +211,11 @@ export function updateMcpServer(
 }
 
 /** 删除 MCP Server，同时删除指向它（即同名 MCP 工具）的规则。 */
-export function deleteMcpServer(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
+export function deleteMcpServer(
+  workspace: Workspace,
+  id: string,
+  ctx: OperationContext = systemContext
+): OperationResult {
   if (!workspace.mcp_servers.some((server) => server.id === id)) {
     return { problem: 'notFound' };
   }
@@ -247,6 +252,11 @@ export function newPermissionOutput(): PermissionOutput {
     command_templates: { with_pattern: '', without_pattern: '' },
     mcp_templates: { with_pattern: '', without_pattern: '' },
   };
+}
+
+/** 开启 MCP 输出时的初始值：主流 Agent 采用的 Claude 风格 `mcpServers` JSON。 */
+export function newMcpOutput(): McpOutput {
+  return { style: 'json', property_path: 'mcpServers', scopes: [] };
 }
 
 function trimTemplates(pair: TemplatePair): TemplatePair {
@@ -299,10 +309,12 @@ function checkAgentInput(
 
   const permission_output = input.permission_output && normalizePermissionOutput(input.permission_output);
   const mcp_output = input.mcp_output && normalizeMcpOutput(input.mcp_output);
-  for (const output of [permission_output, mcp_output]) {
-    if (output && !isValidPropertyPath(output.property_path)) {
-      return { problem: 'propertyPathInvalid' };
-    }
+  // 两种输出的属性路径分别给出原因码，界面据此定位到出错的字段。
+  if (permission_output && !isValidPropertyPath(permission_output.property_path)) {
+    return { problem: 'propertyPathInvalid' };
+  }
+  if (mcp_output && !isValidPropertyPath(mcp_output.property_path)) {
+    return { problem: 'mcpPropertyPathInvalid' };
   }
   if (permission_output) {
     // 同一个键名出现两次时，JSON 中后一个决策会覆盖前一个；留空的决策不输出，不算重复。

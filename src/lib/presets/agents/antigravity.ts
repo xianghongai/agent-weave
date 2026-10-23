@@ -23,5 +23,16 @@ export const ANTIGRAVITY: Agent = {
     command_templates: { with_pattern: 'command({command} {pattern})', without_pattern: 'command({command})' },
     mcp_templates: { with_pattern: 'mcp({server}/{pattern})', without_pattern: 'mcp({server}/*)' },
   },
-  mcp_output: null,
+  mcp_output: {
+    style: 'json',
+    property_path: 'mcpServers',
+    scopes: [
+      {
+        name: '用户级',
+        path: '~/.gemini/config/mcp_config.json',
+        note: 'IDE、App、CLI 共用。远程 MCP 在这里使用 serverUrl 而非 url，本工具不转换，粘贴后需要自行修改。',
+      },
+      { name: '工作区级', path: '.agents/mcp_config.json', note: '只对当前工作区生效。' },
+    ],
+  },
 };
