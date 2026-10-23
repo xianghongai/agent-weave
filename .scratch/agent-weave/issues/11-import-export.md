@@ -6,7 +6,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 导出内容就是工作区 JSON，不含 Gist Token、Gist ID 和本机设置
 - [ ] 导入会校验结构：缺少字段、类型错误、引用了不存在的内部 ID 等情况返回原因码，界面翻译为具体提示

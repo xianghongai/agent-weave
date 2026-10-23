@@ -6,7 +6,7 @@
 
 **Blocked by:** 05, 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 标签包括标识（唯一）和名称；可以新增、重命名、删除
 - [ ] 三类工具都可以打多个标签

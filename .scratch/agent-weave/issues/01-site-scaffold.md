@@ -6,7 +6,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 使用 Vite、React、Tailwind CSS v4、shadcn/ui（Base UI），依赖版本由项目清单锁定，Node 和 pnpm 版本由 mise 管理
 - [ ] 格式检查、lint、类型检查、Vitest、构建都可以运行并通过，至少有一个示例测试

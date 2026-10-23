@@ -6,7 +6,7 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 每个 Server 生成一个 `[<属性路径>.<标识>]` 表；嵌套对象（如 `env`）生成子表；字符串、数字、布尔值、数组按 TOML 语法输出，字符串正确转义
 - [ ] 无法表达的值（如 `null`）跳过该字段，并产生提示

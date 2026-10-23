@@ -6,7 +6,7 @@
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 每次修改工作区后写入 localStorage，并更新 `updated_at`
 - [ ] 首次访问时载入预设工作区

@@ -1,6 +1,6 @@
 # Agent Weave：权限与 MCP 配置在线生成
 
-Status: ready-for-agent
+Status: done
 
 ## 问题陈述
 

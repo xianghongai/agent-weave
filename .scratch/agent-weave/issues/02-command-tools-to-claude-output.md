@@ -6,7 +6,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 工作区结构使用 snake_case 属性名，条目之间用内部 ID 引用，内部 ID 不在界面上显示
 - [ ] 可以新增、编辑、删除命令工具（标识、可选描述）；标识重复时提示，不能保存

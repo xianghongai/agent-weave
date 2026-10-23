@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 预设中各类条目的内部 ID 是固定值
 - [ ] 合并预设按内部 ID 判断条目是否已存在，逐类（标签、命令工具、MCP Server、Agent 与其内置工具、规则）只新增不存在的条目，已有条目保持不变
