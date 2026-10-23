@@ -11,8 +11,9 @@ import type {
   TemplatePair,
   Workspace,
 } from '@/lib/workspace';
+import { ruleNotices } from '@/lib/rule-notices';
 import { DECISIONS } from '@/lib/workspace';
-import { type ResolvedTool, compareText, listRules } from '@/lib/workspace-operations';
+import { type ResolvedTool, type RuleListItem, compareText, listRules } from '@/lib/workspace-operations';
 
 /*
  * 生成：输入工作区、Agent 的内部 ID 和本机设置，返回该 Agent 的完整输出结果。
@@ -133,12 +134,15 @@ function permissionSection(
   workspace: Workspace,
   agentId: string,
   output: PermissionOutput
-): { section: PermissionSection; skippedRules: SkippedRule[] } {
+): { section: PermissionSection; skippedRules: SkippedRule[]; writtenRules: RuleListItem[] } {
   const skippedRules: SkippedRule[] = [];
+  // 实际写进输出的规则，高危与冲突提示只针对它们。
+  const writtenRules: RuleListItem[] = [];
   // Set 保持插入顺序，因此去重后仍与规则列表的顺序一致。
   const entries = new Map<Decision, Set<string>>(DECISIONS.map((decision) => [decision, new Set()]));
 
-  for (const { rule, tool } of listRules(workspace)) {
+  for (const item of listRules(workspace)) {
+    const { rule, tool } = item;
     // 指向内置工具的规则只属于该内置工具所在的 Agent，其他 Agent 既不输出也不算跳过。
     if (tool.type === 'built_in' && tool.agent.id !== agentId) {
       continue;
@@ -148,6 +152,7 @@ function permissionSection(
       skippedRules.push({ ruleId: rule.id, reason: result.skip });
     } else {
       entries.get(rule.decision)?.add(result.entry);
+      writtenRules.push(item);
     }
   }
 
@@ -167,6 +172,7 @@ function permissionSection(
   return {
     section: { ...nestedJson(output.property_path, body), decisions, scopes: output.scopes },
     skippedRules,
+    writtenRules,
   };
 }
 
@@ -208,6 +214,6 @@ export function generate(workspace: Workspace, agentId: string, _device: DeviceS
     permission: permission?.section ?? null,
     mcp: agent.mcp_output ? mcpSection(workspace, agent.mcp_output) : null,
     skippedRules: permission?.skippedRules ?? [],
-    notices: [],
+    notices: ruleNotices(permission?.writtenRules ?? []),
   };
 }
