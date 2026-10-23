@@ -64,7 +64,7 @@ export interface SkippedRule {
 export interface AgentOutput {
   /** 为 `null` 时该 Agent 不输出权限。 */
   permission: PermissionSection | null;
-  /** 为 `null` 时该 Agent 不输出 MCP 配置。 */
+  /** 为 `null` 时该 Agent 没有 MCP 输出。 */
   mcp: McpSection | null;
   skippedRules: SkippedRule[];
   notices: Notice[];

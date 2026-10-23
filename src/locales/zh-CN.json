@@ -34,7 +34,7 @@
     },
     "output": {
       "title": "输出",
-      "description": "按 Agent 预览并复制生成的权限配置和 MCP 配置。"
+      "description": "按 Agent 预览并复制生成的权限输出和 MCP 输出。"
     },
     "sync": {
       "title": "同步",
@@ -188,7 +188,7 @@
     "empty": "还没有命令工具。",
     "key": "标识",
     "keyPlaceholder": "如 git、./gradlew",
-    "keyHint": "即命令本身。权限规则的模式只填它之后的参数。",
+    "keyHint": "即命令本身。权限规则的模式只填它之后的命令前缀。",
     "description": "描述",
     "ruleCount": "{{n}} 条规则",
     "editLabel": "编辑 {{key}}",
@@ -229,7 +229,7 @@
     "mcpPatternHint": "填该 MCP Server 提供的工具名，其中的 * 原样代入。",
     "pattern": "模式",
     "patternPlaceholder": "如 push --force，留空表示整个工具",
-    "patternHint": "只填工具标识之后的参数前缀，其中的 * 原样代入。",
+    "patternHint": "只填工具标识之后的命令前缀，其中的 * 原样代入。",
     "builtInPatternPlaceholder": "如 ./src/，留空表示整个工具",
     "builtInPatternHint": "路径填以 / 结尾的目录前缀，glob 由该工具的模板补全，其中的 * 原样代入。该规则只属于 {{agent}}。",
     "decision": "决策",
@@ -256,7 +256,7 @@
     "skippedRules": "跳过的规则",
     "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。",
     "mcp": "MCP",
-    "noMcp": "该 Agent 不输出 MCP 配置。",
+    "noMcp": "该 Agent 不输出 MCP。",
     "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。",
     "mcpTomlCopyHint": "“复制”的内容是若干 TOML 表，可以直接追加到配置文件末尾；文件中已有同名的 Server 表时需要先删除旧表。",
     "tomlFieldSkipped": "TOML 表达不了的字段",
@@ -326,10 +326,10 @@
     "noScopes": "还没有作用域。",
     "advanced": "高级",
     "advancedHint": "属性路径、决策键名、输出模板和 MCP 风格。",
-    "mcpOutput": "输出 MCP 配置",
-    "mcpOutputHint": "关闭后该 Agent 不输出 MCP 配置。",
-    "noMcpOutput": "不输出 MCP 配置",
-    "mcpScopes": "MCP 配置的作用域",
+    "mcpOutput": "输出 MCP",
+    "mcpOutputHint": "关闭后该 Agent 不输出 MCP。",
+    "noMcpOutput": "不输出 MCP",
+    "mcpScopes": "MCP 的作用域",
     "mcpStyle": "风格",
     "mcpStyles": {
       "json": "JSON",

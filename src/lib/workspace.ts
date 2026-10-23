@@ -105,12 +105,12 @@ export interface Agent {
   built_in_tools: BuiltInTool[];
   /** 为 `null` 时该 Agent 不输出权限。 */
   permission_output: PermissionOutput | null;
-  /** 为 `null` 时该 Agent 不输出 MCP 配置。 */
+  /** 为 `null` 时该 Agent 没有 MCP 输出。 */
   mcp_output: McpOutput | null;
 }
 
 /**
- * 工具引用。命令工具和 MCP 工具（即 MCP Server）的 ID 在工作区内查找；
+ * 工具引用。命令工具的 ID 在工作区内查找；MCP 工具以所对应 MCP Server 的 ID 引用；
  * 内置工具的 ID 在全部 Agent 的内置工具中查找，规则通过它隐含归属该 Agent。
  */
 export interface ToolRef {

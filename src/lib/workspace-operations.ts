@@ -696,7 +696,7 @@ export function deleteRule(workspace: Workspace, id: string, ctx: OperationConte
 /* 查询 */
 
 /**
- * 规则指向的工具。工具已被删除时解析不到。MCP 工具即 MCP Server 本身。
+ * 规则指向的工具。工具已被删除时解析不到。MCP 工具解析为它所对应的 MCP Server。
  * 内置工具同时带上所属的 Agent：指向它的规则只属于这个 Agent。
  */
 export type ResolvedTool =
