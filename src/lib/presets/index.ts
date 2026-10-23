@@ -1,5 +1,5 @@
-import { ANTIGRAVITY } from '@/lib/presets/agents/antigravity';
-import { CLAUDE_CODE } from '@/lib/presets/agents/claude-code';
+import { ANTIGRAVITY, ANTIGRAVITY_RULES } from '@/lib/presets/agents/antigravity';
+import { CLAUDE_CODE, CLAUDE_CODE_RULES } from '@/lib/presets/agents/claude-code';
 import { CODEX_CLI } from '@/lib/presets/agents/codex-cli';
 import { PRESET_COMMAND_TOOLS } from '@/lib/presets/command-tools';
 import { PRESET_MCP_SERVERS } from '@/lib/presets/mcp-servers';
@@ -9,7 +9,7 @@ import { SCHEMA_VERSION, type Workspace } from '@/lib/workspace';
 
 /*
  * 预设：随站点发布的初始工作区内容。
- * 源码按实体拆分，每个 Agent 定义一个文件，在模块加载时合成一份默认工作区。
+ * 源码按实体拆分，每个 Agent 定义一个文件（含其内置工具的规则），在模块加载时合成一份默认工作区。
  */
 
 /** 预设的修改时间固定不变，任何一次编辑都会比它新。 */
@@ -22,7 +22,7 @@ const PRESET_WORKSPACE: Workspace = {
   command_tools: PRESET_COMMAND_TOOLS,
   mcp_servers: PRESET_MCP_SERVERS,
   agents: [CLAUDE_CODE, ANTIGRAVITY, CODEX_CLI],
-  rules: PRESET_RULES,
+  rules: [...PRESET_RULES, ...CLAUDE_CODE_RULES, ...ANTIGRAVITY_RULES],
 };
 
 /** 返回预设工作区的独立副本，调用方可以放心持有。 */

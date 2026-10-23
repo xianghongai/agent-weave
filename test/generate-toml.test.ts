@@ -187,7 +187,8 @@ describe('生成：预设 Codex CLI', () => {
 
   it('MCP 输出为 TOML 风格的 mcp_servers 表，作用域为用户级与项目级的 config.toml', () => {
     expect(output?.mcp?.style).toBe('toml');
-    expect(output?.mcp?.copyText.startsWith('[mcp_servers.context7]\n')).toBe(true);
+    expect(output?.mcp?.copyText.startsWith('[mcp_servers.chrome-devtools]\n')).toBe(true);
+    expect(output?.mcp?.copyText).toContain('\n\n[mcp_servers.context7]\n');
     expect(output?.mcp?.copyText).toContain('\n\n[mcp_servers.filesystem]\n');
     expect(output?.mcp?.copyText).toContain('\n\n[mcp_servers.sequential-thinking]\n');
     expect(output?.mcp?.copyInnerText).toBeNull();

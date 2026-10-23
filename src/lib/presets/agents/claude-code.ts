@@ -1,8 +1,12 @@
-import type { Agent, BuiltInTool } from '@/lib/workspace';
+import type { Agent, BuiltInTool, Rule } from '@/lib/workspace';
+
+function builtInId(key: string): string {
+  return `preset-built-in-claude-code-${key.toLowerCase()}`;
+}
 
 function builtIn(key: string, description: string, writes: boolean, with_pattern: string): BuiltInTool {
   return {
-    id: `preset-built-in-claude-code-${key.toLowerCase()}`,
+    id: builtInId(key),
     key,
     description,
     tag_ids: [],
@@ -51,3 +55,20 @@ export const CLAUDE_CODE: Agent = {
     ],
   },
 };
+
+/** 整体允许某个内置工具。 */
+function allowWhole(key: string): Rule {
+  return {
+    id: `preset-rule-claude-code-${key.toLowerCase()}-allow`,
+    tool: { type: 'built_in', id: builtInId(key) },
+    pattern: '',
+    decision: 'allow',
+    high_risk: false,
+  };
+}
+
+/**
+ * Claude Code 内置工具的预设规则，来自实际配置：网页抓取与搜索整体允许。
+ * 路径规则要写成 `~/` 形式：单个前导 `/` 在 Claude Code 中表示相对设置文件所在目录，不能用 `{{home}}`。
+ */
+export const CLAUDE_CODE_RULES: Rule[] = [allowWhole('WebFetch'), allowWhole('WebSearch')];

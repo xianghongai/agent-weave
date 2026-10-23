@@ -1,8 +1,12 @@
-import type { Agent, BuiltInTool } from '@/lib/workspace';
+import type { Agent, BuiltInTool, Rule } from '@/lib/workspace';
+
+function builtInId(key: string): string {
+  return `preset-built-in-antigravity-${key.replaceAll('_', '-')}`;
+}
 
 function builtIn(key: string, description: string, writes: boolean): BuiltInTool {
   return {
-    id: `preset-built-in-antigravity-${key.replaceAll('_', '-')}`,
+    id: builtInId(key),
     key,
     description,
     tag_ids: [],
@@ -59,3 +63,39 @@ export const ANTIGRAVITY: Agent = {
     ],
   },
 };
+
+function allow(id: string, key: string, pattern: string): Rule {
+  return {
+    id: `preset-rule-antigravity-${id}-allow`,
+    tool: { type: 'built_in', id: builtInId(key) },
+    pattern,
+    decision: 'allow',
+    high_risk: false,
+  };
+}
+
+/** 允许写入的目录。主目录下的写成 `{{home}}/`，由本机设置展开；最后一项是相对工作区的路径。 */
+const WRITABLE_DIRECTORIES: [id: string, pattern: string][] = [
+  ['downloads', '{{home}}/Downloads/'],
+  ['documents', '{{home}}/Documents/'],
+  ['features', '{{home}}/Features/'],
+  ['workspaces', '{{home}}/Workspaces/'],
+  ['vendors', '{{home}}/Vendors/'],
+  ['dot-agents', '{{home}}/.agents/'],
+  ['dot-claude', '{{home}}/.claude/'],
+  ['dot-codex', '{{home}}/.codex/'],
+  ['dot-copilot', '{{home}}/.copilot/'],
+  ['dot-gemini', '{{home}}/.gemini/'],
+  ['src', 'src/'],
+];
+
+/**
+ * Antigravity 内置工具的预设规则，来自实际配置：读文件、读网页、在网页上执行操作整体允许，写文件只允许列出的目录。
+ * 原配置中 Linux 与 macOS 两套主目录写法合并为同一条 `{{home}}/` 规则。
+ */
+export const ANTIGRAVITY_RULES: Rule[] = [
+  allow('read-file', 'read_file', ''),
+  allow('read-url', 'read_url', ''),
+  allow('execute-url', 'execute_url', ''),
+  ...WRITABLE_DIRECTORIES.map(([id, pattern]) => allow(`write-file-${id}`, 'write_file', pattern)),
+];
