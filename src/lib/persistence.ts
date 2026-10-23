@@ -1,0 +1,80 @@
+import { createPresetWorkspace } from '@/lib/presets';
+import type { Workspace } from '@/lib/workspace';
+import { type WorkspaceProblem, parseWorkspace } from '@/lib/workspace-validation';
+
+/*
+ * 持久化：在浏览器本地存储中读写工作区、本机设置和 Gist 设置，三者分键存储。
+ * 读、写、解析失败都返回原因码，不抛异常，由界面层翻译成提示。
+ * 存储通过参数注入，测试时使用内存中的替身。
+ */
+
+/** `localStorage` 中本模块用到的部分。 */
+export interface KeyValueStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+
+/** 三类数据各用独立的键。本机设置和 Gist 设置只存在本机，不进入工作区。 */
+export const STORAGE_KEYS = {
+  workspace: 'agent-weave:workspace',
+  deviceSettings: 'agent-weave:device-settings',
+  gistSettings: 'agent-weave:gist-settings',
+} as const;
+
+/**
+ * - `readFailed`：存储不可用或读取时出错，如浏览器禁用了站点数据；
+ * - `parseFailed`：保存的内容不是合法的 JSON，如被截断；
+ * - 其余见 `WorkspaceProblem`。
+ */
+export type LoadProblem = 'readFailed' | 'parseFailed' | WorkspaceProblem;
+
+/** `writeFailed`：存储不可用或写入时出错，如隐私模式、配额已满。 */
+export type SaveProblem = 'writeFailed';
+
+export type PersistenceProblem = LoadProblem | SaveProblem;
+
+/**
+ * 读取本地保存的工作区，总是返回一份可用的工作区。
+ * 没有本地数据（首次访问）时返回预设；本地数据无法读取或无效时也返回预设，同时给出原因码供界面提示。
+ */
+export function loadWorkspace(storage: KeyValueStorage): { workspace: Workspace; problem: LoadProblem | null } {
+  let text: string | null;
+  try {
+    text = storage.getItem(STORAGE_KEYS.workspace);
+  } catch {
+    return { workspace: createPresetWorkspace(), problem: 'readFailed' };
+  }
+  if (text === null) {
+    return { workspace: createPresetWorkspace(), problem: null };
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { workspace: createPresetWorkspace(), problem: 'parseFailed' };
+  }
+  const parsed = parseWorkspace(value);
+  if ('problem' in parsed) {
+    return { workspace: createPresetWorkspace(), problem: parsed.problem };
+  }
+  return { workspace: parsed.workspace, problem: null };
+}
+
+/** 保存工作区。成功时返回 `null`。 */
+export function saveWorkspace(storage: KeyValueStorage, workspace: Workspace): SaveProblem | null {
+  try {
+    storage.setItem(STORAGE_KEYS.workspace, JSON.stringify(workspace));
+    return null;
+  } catch {
+    return 'writeFailed';
+  }
+}
+
+/**
+ * 浏览器的 `localStorage`。每次调用时才访问它：
+ * 有的浏览器在禁用站点数据时，连读取 `localStorage` 属性都会抛异常，这样异常也会落在上面的 `try` 里。
+ */
+export const browserStorage: KeyValueStorage = {
+  getItem: (key) => globalThis.localStorage.getItem(key),
+  setItem: (key, value) => globalThis.localStorage.setItem(key, value),
+};

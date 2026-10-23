@@ -69,7 +69,21 @@
       "keyDuplicate": "已有相同标识的条目，标识不能重复。",
       "notFound": "该条目已不存在，可能已被删除。",
       "toolMissing": "所选工具已不存在，请重新选择。"
+    },
+    "persistence": {
+      "readFailed": "浏览器不允许本站访问本地存储，可能禁用了站点数据。",
+      "writeFailed": "浏览器拒绝写入本地存储，可能处于隐私模式，或存储空间已满。",
+      "parseFailed": "本地保存的工作区已损坏，无法解析。",
+      "invalidStructure": "本地保存的工作区结构无效。",
+      "newerVersion": "本地保存的工作区来自更新版本的站点，刷新页面可以更新到新版本后再读取。"
     }
+  },
+  "storage": {
+    "unsavedTitle": "修改不会被保存",
+    "unsavedHint": "当前的修改只保留到关闭或刷新页面为止。",
+    "fallbackTitle": "已载入预设",
+    "fallbackHint": "本地保存的数据还在，但下一次修改会覆盖它。",
+    "dismiss": "知道了"
   },
   "tools": {
     "commandTools": "命令工具",
