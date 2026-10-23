@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { importProblemMessage } from '@/i18n/problems';
 import { downloadText } from '@/lib/download';
+import { formatTime } from '@/lib/format-time';
 import type { Workspace } from '@/lib/workspace';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 import { getWorkspace, runOperation } from '@/state/workspace-store';
@@ -134,10 +135,4 @@ export function WorkspaceFileSection() {
       </AlertDialog>
     </section>
   );
-}
-
-/** 把 ISO 8601 时间显示为本地时间；无法识别时原样显示。 */
-function formatTime(iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString('zh-CN');
 }

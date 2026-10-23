@@ -12,6 +12,7 @@ import type {
   Workspace,
 } from '@/lib/workspace';
 import { expandContent, expandText } from '@/lib/placeholders';
+import { tomlTable } from '@/lib/toml';
 import { DECISIONS } from '@/lib/workspace';
 import { type ResolvedTool, compareText, listRules } from '@/lib/workspace-operations';
 
@@ -199,38 +200,56 @@ function jsonMcpSection(servers: McpServer[], output: McpOutput): McpSection {
 
 /**
  * MCP 节：包含全部 MCP Server，按标识排序；描述不进入输出，内容中的 `${VAR}` 原样保留。
- * 每种风格一个分支，共用 Server 的选取与排序。
+ * 每种风格一个分支，共用 Server 的选取、排序和路径占位符的展开；格式化中产生的提示随节一起返回。
+ * 占位符未能展开的 Server 各产生一条提示，排在格式化的提示之前。
  */
-function mcpSection(workspace: Workspace, output: McpOutput): McpSection | null {
-  const servers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
+function mcpSection(
+  workspace: Workspace,
+  output: McpOutput,
+  device: DeviceSettings
+): { section: McpSection; notices: Notice[] } {
+  const placeholderNotices: Notice[] = [];
+  const servers = workspace.mcp_servers
+    .toSorted((a, b) => compareText(a.key, b.key))
+    .map((server) => {
+      const content = expandContent(server.content, device);
+      if (content.unexpanded) {
+        placeholderNotices.push({ type: 'placeholderUnexpanded', ruleId: null, serverId: server.id });
+      }
+      return { ...server, content: content.value };
+    });
+  const formatted = formatMcpSection(servers, output);
+  return { section: formatted.section, notices: [...placeholderNotices, ...formatted.notices] };
+}
+
+function formatMcpSection(servers: McpServer[], output: McpOutput): { section: McpSection; notices: Notice[] } {
   switch (output.style) {
     case 'json':
-      return jsonMcpSection(servers, output);
+      return { section: jsonMcpSection(servers, output), notices: [] };
     case 'toml':
-      // TOML 风格由 JSON 内容转换而来，随 Codex CLI 一起实现，在此之前不输出。
-      return null;
+      return tomlMcpSection(servers, output);
   }
 }
 
 /**
- * MCP 输出：先展开各 Server 内容中的路径占位符，再按风格格式化。
- * 未能展开的 Server 各产生一条提示，按标识排序，与输出顺序一致。
+ * TOML 风格：每个 Server 一个 `[<属性路径>.<标识>]` 表，可以直接追加到配置文件，因此没有“复制内部”。
+ * TOML 表达不了的字段（如 `null`）被跳过，每个字段产生一条提示。
  */
-function mcpOutput(
-  workspace: Workspace,
-  output: McpOutput,
-  device: DeviceSettings
-): { section: McpSection | null; notices: Notice[] } {
-  const expanded = workspace.mcp_servers.map((server) => {
-    const content = expandContent(server.content, device);
-    return { server: { ...server, content: content.value }, unexpanded: content.unexpanded };
+function tomlMcpSection(servers: McpServer[], output: McpOutput): { section: McpSection; notices: Notice[] } {
+  const path = output.property_path.split('.');
+  const notices: Notice[] = [];
+  const tables = servers.map((server) => {
+    const table = tomlTable([...path, server.key], server.content);
+    for (const field of table.skippedFields) {
+      notices.push({ type: 'tomlFieldSkipped', serverId: server.id, field });
+    }
+    return table.text;
   });
-  const notices = expanded
-    .filter(({ unexpanded }) => unexpanded)
-    .toSorted((a, b) => compareText(a.server.key, b.server.key))
-    .map(({ server }): Notice => ({ type: 'placeholderUnexpanded', ruleId: null, serverId: server.id }));
-  const section = mcpSection({ ...workspace, mcp_servers: expanded.map(({ server }) => server) }, output);
-  return { section, notices };
+  const text = tables.join('\n\n');
+  return {
+    section: { style: 'toml', preview: text, copyText: text, copyInnerText: null, scopes: output.scopes },
+    notices,
+  };
 }
 
 /** 找不到该 Agent 时返回 `null`。 */
@@ -244,7 +263,7 @@ export function generate(workspace: Workspace, agentId: string, device: DeviceSe
     ? permissionSection(workspace, agent.id, agent.permission_output, device)
     : null;
   // 没有 MCP 输出的 Agent 不用到 Server 内容，也就不提示其中的占位符。
-  const mcp = agent.mcp_output ? mcpOutput(workspace, agent.mcp_output, device) : null;
+  const mcp = agent.mcp_output ? mcpSection(workspace, agent.mcp_output, device) : null;
   return {
     permission: permission?.section ?? null,
     mcp: mcp?.section ?? null,

@@ -784,6 +784,18 @@ describe('生成：路径占位符', () => {
       expect(output?.notices).toEqual([{ type: 'placeholderUnexpanded', ruleId: null, serverId: filesystem.id }]);
     });
 
+    it('TOML 风格同样展开；不完整时占位符提示排在 TOML 字段跳过提示之前', () => {
+      const tomlAgent: Agent = { ...claude, mcp_output: { style: 'toml', property_path: 'mcp_servers', scopes: [] } };
+      const toml = { ...ws, agents: [tomlAgent] };
+      const expanded = generate(toml, claude.id, { os: 'macos', user_name: 'alice' });
+      expect(expanded?.mcp?.copyText).toContain('"/Users/alice/notes"');
+      expect(expanded?.mcp?.copyText).toContain('OWNER = "alice"');
+      expect(generate(toml, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([
+        { type: 'placeholderUnexpanded', ruleId: null, serverId: filesystem.id },
+        { type: 'tomlFieldSkipped', serverId: filesystem.id, field: 'env.nested.debug' },
+      ]);
+    });
+
     it('没有 MCP 输出的 Agent 不提示 Server 内容中的占位符', () => {
       const noMcp = { ...ws, agents: [claude] };
       expect(generate(noMcp, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([]);
