@@ -370,5 +370,19 @@
     "writesBadge": "写入类",
     "templatesHint": "使用 {pattern}，如 Read({pattern}**) 与 Read、read_file({pattern}) 与 read_file(*)。路径模式是以 / 结尾的目录前缀，由模板补全 glob。",
     "deleteTitle": "删除 {{agent}} 的内置工具 {{key}}？"
+  },
+  "notices": {
+    "highRiskFlag": "高危",
+    "toolHighRiskHint": "允许指向它的规则时产生高危提示。",
+    "ruleHighRiskHint": "决策为“允许”时产生高危提示，即使所指工具不是高危工具。",
+    "highRiskRule": "高危：允许了高危操作",
+    "conflictRule": "冲突：同一工具、同一模式还有其他决策",
+    "title": "提示",
+    "hint": "只提醒，不影响输出。可以直接编辑相关的规则。",
+    "highRisk": "允许了高危操作",
+    "highRiskDetail": "所指工具或规则本身被标记为高危，或允许写入类内置工具写入任意位置、根目录或主目录。",
+    "conflict": "决策冲突",
+    "conflictDetail": "同一工具、同一模式出现了不同的决策。各决策照常输出，实际生效哪一个取决于 Agent 自身的优先级。",
+    "editRule": "编辑这条规则"
   }
 }

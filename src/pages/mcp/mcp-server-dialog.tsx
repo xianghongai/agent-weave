@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -43,10 +44,11 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
   const [key, setKey] = useState(server?.key ?? '');
   const [content, setContent] = useState(server ? JSON.stringify(server.content, null, 2) : '');
   const [description, setDescription] = useState(server?.description ?? '');
+  const [highRisk, setHighRisk] = useState(server?.high_risk ?? false);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { key, content, description };
+    const input = { key, content, description, high_risk: highRisk };
     return server ? updateMcpServer(current, server.id, input) : addMcpServer(current, input);
   };
   // 操作是纯函数，可以边输入边试算，立即提示重复标识和无效内容。空标识、空内容只禁用保存，不提示。
@@ -125,6 +127,12 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
           />
           <FieldDescription>{t('mcp.descriptionHint')}</FieldDescription>
         </Field>
+        <HighRiskSwitch
+          id="mcp-server-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
       </FieldGroup>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

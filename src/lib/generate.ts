@@ -12,9 +12,10 @@ import type {
   Workspace,
 } from '@/lib/workspace';
 import { expandContent, expandText } from '@/lib/placeholders';
+import { ruleNotices } from '@/lib/rule-notices';
 import { tomlTable } from '@/lib/toml';
 import { DECISIONS } from '@/lib/workspace';
-import { type ResolvedTool, compareText, listRules } from '@/lib/workspace-operations';
+import { type ResolvedTool, type RuleListItem, compareText, listRules } from '@/lib/workspace-operations';
 
 /*
  * 生成：输入工作区、Agent 的内部 ID 和本机设置，返回该 Agent 的完整输出结果。
@@ -145,13 +146,21 @@ function permissionSection(
   agentId: string,
   output: PermissionOutput,
   device: DeviceSettings
-): { section: PermissionSection; skippedRules: SkippedRule[]; notices: Notice[] } {
+): {
+  section: PermissionSection;
+  skippedRules: SkippedRule[];
+  writtenRules: RuleListItem[];
+  placeholderNotices: Notice[];
+} {
   const skippedRules: SkippedRule[] = [];
-  const notices: Notice[] = [];
+  // 实际写进输出的规则，高危与冲突提示只针对它们；高危判定用的是未展开的原始模式。
+  const writtenRules: RuleListItem[] = [];
+  const placeholderNotices: Notice[] = [];
   // Set 保持插入顺序，因此去重后仍与规则列表的顺序一致。
   const entries = new Map<Decision, Set<string>>(DECISIONS.map((decision) => [decision, new Set()]));
 
-  for (const { rule, tool } of listRules(workspace)) {
+  for (const item of listRules(workspace)) {
+    const { rule, tool } = item;
     // 指向内置工具的规则只属于该内置工具所在的 Agent，其他 Agent 既不输出也不算跳过。
     if (tool.type === 'built_in' && tool.agent.id !== agentId) {
       continue;
@@ -162,8 +171,9 @@ function permissionSection(
       continue;
     }
     entries.get(rule.decision)?.add(result.entry);
+    writtenRules.push(item);
     if (result.unexpanded) {
-      notices.push({ type: 'placeholderUnexpanded', ruleId: rule.id, serverId: null });
+      placeholderNotices.push({ type: 'placeholderUnexpanded', ruleId: rule.id, serverId: null });
     }
   }
 
@@ -183,7 +193,8 @@ function permissionSection(
   return {
     section: { ...nestedJson(output.property_path, body), decisions, scopes: output.scopes },
     skippedRules,
-    notices,
+    writtenRules,
+    placeholderNotices,
   };
 }
 
@@ -268,6 +279,11 @@ export function generate(workspace: Workspace, agentId: string, device: DeviceSe
     permission: permission?.section ?? null,
     mcp: mcp?.section ?? null,
     skippedRules: permission?.skippedRules ?? [],
-    notices: [...(permission?.notices ?? []), ...(mcp?.notices ?? [])],
+    // 规则的占位符提示排在 MCP 节的提示之前，与输出中权限在前、MCP 在后的顺序一致。
+    notices: [
+      ...ruleNotices(permission?.writtenRules ?? []),
+      ...(permission?.placeholderNotices ?? []),
+      ...(mcp?.notices ?? []),
+    ],
   };
 }

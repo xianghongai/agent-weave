@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -39,10 +40,11 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
   const workspace = useWorkspace();
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
+  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { key, description };
+    const input = { key, description, high_risk: highRisk };
     return tool ? updateCommandTool(current, tool.id, input) : addCommandTool(current, input);
   };
   // 操作是纯函数，可以边输入边试算，标识重复时立即提示。空标识只禁用保存，不提示。
@@ -95,6 +97,12 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
             onChange={(event) => setDescription(event.target.value)}
           />
         </Field>
+        <HighRiskSwitch
+          id="command-tool-high-risk"
+          checked={highRisk}
+          onCheckedChange={setHighRisk}
+          hint={t('notices.toolHighRiskHint')}
+        />
       </FieldGroup>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>

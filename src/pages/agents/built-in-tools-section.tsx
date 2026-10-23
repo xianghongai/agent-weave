@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { HighRiskBadge } from '@/components/high-risk';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Agent, BuiltInTool } from '@/lib/workspace';
@@ -69,6 +70,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
                   )}
                 </div>
                 {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
+                {tool.high_risk && <HighRiskBadge />}
                 {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
                 <Button
                   variant="ghost"

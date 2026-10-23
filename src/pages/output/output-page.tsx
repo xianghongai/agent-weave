@@ -13,6 +13,7 @@ import { type McpSection, type Notice, type PermissionSection, type SkippedRule,
 import type { Scope, Workspace } from '@/lib/workspace';
 import { resolveTool } from '@/lib/workspace-operations';
 import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
+import { RuleNoticeList } from '@/pages/output/rule-notice-list';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { useDeviceSettings } from '@/state/device-settings-store';
 import { useWorkspace } from '@/state/workspace-store';
@@ -43,6 +44,8 @@ export default function OutputPage() {
             </TabsList>
           </Tabs>
 
+          {/* 复制前最后检查一遍：高危与冲突提示放在输出之前。 */}
+          <RuleNoticeList workspace={workspace} notices={output.notices} />
           <PlaceholderNotice notices={output.notices} />
 
           <section className="grid gap-3">
