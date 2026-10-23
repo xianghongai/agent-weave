@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Note, Page } from '@/components/page';
+import { TagBadges } from '@/components/tag-badges';
+import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,14 +18,23 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { CommandTool } from '@/lib/workspace';
-import { compareText, countRulesForTool, deleteCommandTool } from '@/lib/workspace-operations';
+import {
+  NO_TOOL_FILTER,
+  type ToolFilter,
+  compareText,
+  countRulesForTool,
+  deleteCommandTool,
+  matchesToolFilter,
+} from '@/lib/workspace-operations';
 import { CommandToolDialog } from '@/pages/tools/command-tool-dialog';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 export default function ToolsPage() {
   const { t } = useTranslation();
   const workspace = useWorkspace();
-  const tools = workspace.command_tools.toSorted((a, b) => compareText(a.key, b.key));
+  const [filter, setFilter] = useState<ToolFilter>(NO_TOOL_FILTER);
+  const allTools = workspace.command_tools.toSorted((a, b) => compareText(a.key, b.key));
+  const tools = allTools.filter((tool) => matchesToolFilter(tool, filter));
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
   const [editOpen, setEditOpen] = useState(false);
@@ -56,16 +67,21 @@ export default function ToolsPage() {
       }
     >
       <section className="grid gap-3">
-        <div className="grid gap-1">
-          <h2 className="flex items-center gap-2 font-medium">
-            <TerminalIcon className="size-4 text-brand" />
-            {t('tools.commandTools')}
-          </h2>
-          <p className="text-sm text-muted-foreground">{t('tools.commandToolsHint')}</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="grid gap-1">
+            <h2 className="flex items-center gap-2 font-medium">
+              <TerminalIcon className="size-4 text-brand" />
+              {t('tools.commandTools')}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t('tools.commandToolsHint')}</p>
+          </div>
+          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
         </div>
 
-        {tools.length === 0 ? (
+        {allTools.length === 0 ? (
           <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
+        ) : tools.length === 0 ? (
+          <Note icon={TerminalIcon}>{t('filters.noMatch')}</Note>
         ) : (
           <ul className="divide-y rounded-xl border">
             {tools.map((tool) => {
@@ -77,6 +93,7 @@ export default function ToolsPage() {
                     {tool.description && (
                       <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
                     )}
+                    <TagBadges tagIds={tool.tag_ids} />
                   </div>
                   {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
                   <Button

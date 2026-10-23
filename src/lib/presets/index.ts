@@ -3,6 +3,7 @@ import { CLAUDE_CODE } from '@/lib/presets/agents/claude-code';
 import { PRESET_COMMAND_TOOLS } from '@/lib/presets/command-tools';
 import { PRESET_MCP_SERVERS } from '@/lib/presets/mcp-servers';
 import { PRESET_RULES } from '@/lib/presets/rules';
+import { PRESET_TAGS } from '@/lib/presets/tags';
 import { SCHEMA_VERSION, type Workspace } from '@/lib/workspace';
 
 /*
@@ -16,7 +17,7 @@ const PRESET_UPDATED_AT = '2026-10-23T00:00:00.000Z';
 const PRESET_WORKSPACE: Workspace = {
   schema_version: SCHEMA_VERSION,
   updated_at: PRESET_UPDATED_AT,
-  tags: [],
+  tags: PRESET_TAGS,
   command_tools: PRESET_COMMAND_TOOLS,
   mcp_servers: PRESET_MCP_SERVERS,
   agents: [CLAUDE_CODE, ANTIGRAVITY],

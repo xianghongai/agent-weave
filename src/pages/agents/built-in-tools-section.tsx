@@ -3,6 +3,7 @@ import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { TagBadges } from '@/components/tag-badges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +68,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
                   {tool.description && (
                     <span className="truncate text-xs text-muted-foreground">{tool.description}</span>
                   )}
+                  <TagBadges tagIds={tool.tag_ids} />
                 </div>
                 {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
                 {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}

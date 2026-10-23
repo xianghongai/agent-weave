@@ -99,7 +99,11 @@ export function updateTag(
   if ('problem' in checked) {
     return checked;
   }
-  return commit(workspace, { tags: workspace.tags.map((tag) => (tag.id === id ? { id, ...checked.fields } : tag)) }, ctx);
+  return commit(
+    workspace,
+    { tags: workspace.tags.map((tag) => (tag.id === id ? { id, ...checked.fields } : tag)) },
+    ctx
+  );
 }
 
 /** 删除标签。引用它的工具保持不变，残留的标签 ID 由界面显示为悬空引用。 */
@@ -758,9 +762,7 @@ export function matchesToolFilter(
     return false;
   }
   const keyword = filter.name.trim().toLowerCase();
-  return (
-    keyword === '' || tool.key.toLowerCase().includes(keyword) || tool.description.toLowerCase().includes(keyword)
-  );
+  return keyword === '' || tool.key.toLowerCase().includes(keyword) || tool.description.toLowerCase().includes(keyword);
 }
 
 /** 规则列表的筛选条件，取值 `null` 表示不限。归属筛选由界面另行组合。 */

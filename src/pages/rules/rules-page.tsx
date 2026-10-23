@@ -10,9 +10,19 @@ import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Decision, Rule, ToolRef } from '@/lib/workspace';
-import { type OperationProblem, addRule, deleteRule, listRules, resolveTool } from '@/lib/workspace-operations';
+import {
+  NO_RULE_FILTER,
+  type OperationProblem,
+  type RuleFilter,
+  addRule,
+  deleteRule,
+  listRules,
+  matchesRuleFilter,
+  resolveTool,
+} from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { DecisionToggle, ToolSelect, ToolTypeBadge } from '@/pages/rules/rule-fields';
+import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
 import {
   type OwnerFilter,
   OwnerBadge,
@@ -26,8 +36,9 @@ export default function RulesPage() {
   const { t } = useTranslation();
   const workspace = useWorkspace();
   const [owner, setOwner] = useState<OwnerFilter>('all');
+  const [filter, setFilter] = useState<RuleFilter>(NO_RULE_FILTER);
   const allRules = listRules(workspace);
-  const rules = allRules.filter(({ tool }) => matchesOwner(tool, owner));
+  const rules = allRules.filter((item) => matchesOwner(item.tool, owner) && matchesRuleFilter(item, filter));
 
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Rule | null>(null);
@@ -46,7 +57,10 @@ export default function RulesPage() {
               </h2>
               <p className="text-sm text-muted-foreground">{t('rules.listHint')}</p>
             </div>
-            <OwnerFilterSelect workspace={workspace} value={owner} onChange={setOwner} />
+            <div className="flex flex-wrap items-center gap-2">
+              <RuleFilterBar workspace={workspace} value={filter} onChange={setFilter} />
+              <OwnerFilterSelect workspace={workspace} value={owner} onChange={setOwner} />
+            </div>
           </div>
 
           {allRules.length === 0 ? (

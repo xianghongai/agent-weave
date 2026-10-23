@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Note, Page } from '@/components/page';
+import { TagBadges } from '@/components/tag-badges';
+import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +18,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { McpServer } from '@/lib/workspace';
-import { compareText, countRulesForTool, deleteMcpServer } from '@/lib/workspace-operations';
+import {
+  NO_TOOL_FILTER,
+  type ToolFilter,
+  compareText,
+  countRulesForTool,
+  deleteMcpServer,
+  matchesToolFilter,
+} from '@/lib/workspace-operations';
 import { McpServerDialog } from '@/pages/mcp/mcp-server-dialog';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
@@ -24,7 +33,9 @@ export default function McpPage() {
   const { t } = useTranslation();
   const workspace = useWorkspace();
   // 与输出中的顺序一致，按标识排序。
-  const servers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
+  const [filter, setFilter] = useState<ToolFilter>(NO_TOOL_FILTER);
+  const allServers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
+  const servers = allServers.filter((server) => matchesToolFilter(server, filter));
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
   const [editOpen, setEditOpen] = useState(false);
@@ -57,10 +68,15 @@ export default function McpPage() {
       }
     >
       <section className="grid gap-3">
-        <p className="text-sm text-muted-foreground">{t('mcp.serversHint')}</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <p className="max-w-prose text-sm text-muted-foreground">{t('mcp.serversHint')}</p>
+          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
+        </div>
 
-        {servers.length === 0 ? (
+        {allServers.length === 0 ? (
           <Note icon={PlugIcon}>{t('mcp.empty')}</Note>
+        ) : servers.length === 0 ? (
+          <Note icon={PlugIcon}>{t('filters.noMatch')}</Note>
         ) : (
           <ul className="divide-y rounded-xl border">
             {servers.map((server) => {
@@ -75,6 +91,7 @@ export default function McpPage() {
                     <code className="truncate font-mono text-xs text-muted-foreground">
                       {JSON.stringify(server.content)}
                     </code>
+                    <TagBadges tagIds={server.tag_ids} />
                   </div>
                   {ruleCount > 0 && <Badge variant="secondary">{t('mcp.ruleCount', { n: ruleCount })}</Badge>}
                   <Button

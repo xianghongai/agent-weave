@@ -301,5 +301,46 @@
     "writesBadge": "写入类",
     "templatesHint": "使用 {pattern}，如 Read({pattern}**) 与 Read、read_file({pattern}) 与 read_file(*)。路径模式是以 / 结尾的目录前缀，由模板补全 glob。",
     "deleteTitle": "删除 {{agent}} 的内置工具 {{key}}？"
+  },
+  "tags": {
+    "add": "新增标签",
+    "addTitle": "新增标签",
+    "editTitle": "编辑标签",
+    "listHint": "按标识排序。删除标签不会修改打了它的工具：这些工具保留原来的引用，显示为带警告符号的悬空标签。",
+    "empty": "还没有标签。",
+    "key": "标识",
+    "keyPlaceholder": "如 vcs",
+    "keyHint": "在全部标签中唯一。工具按内部 ID 引用标签，修改标识或名称不影响已打的标签。",
+    "name": "名称",
+    "namePlaceholder": "如 版本控制",
+    "nameHint": "在工具列表和筛选中显示。",
+    "toolCount": "{{n}} 个工具",
+    "editLabel": "编辑标签 {{key}}",
+    "deleteLabel": "删除标签 {{key}}",
+    "deleteTitle": "删除标签 {{key}}？",
+    "deleteWithTools": "有 {{n}} 个工具打了这个标签。删除后这些工具保留原来的引用，显示为带警告符号的悬空标签，编辑工具时可以移除。",
+    "deleteNoTools": "没有工具打这个标签。",
+    "field": "标签",
+    "fieldHint": "可以选择多个。标签只用于分组和筛选，不影响输出。",
+    "fieldDanglingHint": "带警告符号的是已删除的标签，取消选中即可移除。",
+    "fieldEmpty": "还没有标签，可以到“标签”页新增。",
+    "dangling": "该标签已被删除，这里显示的是残留的引用。",
+    "danglingLabel": "已删除的标签 {{id}}"
+  },
+  "filters": {
+    "name": "按名称筛选",
+    "namePlaceholder": "按名称筛选",
+    "tag": "按标签筛选",
+    "tagAll": "全部标签",
+    "decision": "按决策筛选",
+    "decisionAll": "全部决策",
+    "toolType": "按工具类型筛选",
+    "toolTypeAll": "全部类型",
+    "toolTypes": {
+      "command": "命令工具",
+      "mcp": "MCP 工具",
+      "built_in": "内置工具"
+    },
+    "noMatch": "没有符合筛选条件的工具。"
   }
 }

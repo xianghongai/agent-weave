@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -8,7 +9,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { McpServer, Workspace } from '@/lib/workspace';
-import { type OperationProblem, addMcpServer, updateMcpServer } from '@/lib/workspace-operations';
+import {
+  type OperationProblem,
+  addMcpServer,
+  setToolTags,
+  systemContext,
+  updateMcpServer,
+} from '@/lib/workspace-operations';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 interface McpServerDialogProps {
@@ -43,11 +50,19 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
   const [key, setKey] = useState(server?.key ?? '');
   const [content, setContent] = useState(server ? JSON.stringify(server.content, null, 2) : '');
   const [description, setDescription] = useState(server?.description ?? '');
+  const [tagIds, setTagIds] = useState<string[]>(server?.tag_ids ?? []);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
+  // 新增时预先取定内部 ID，以便在同一次操作中接着设置标签。
+  const [newId] = useState(() => systemContext.newId());
 
   const operation = (current: Workspace) => {
     const input = { key, content, description };
-    return server ? updateMcpServer(current, server.id, input) : addMcpServer(current, input);
+    const result = server
+      ? updateMcpServer(current, server.id, input)
+      : addMcpServer(current, input, { ...systemContext, newId: () => newId });
+    return 'problem' in result
+      ? result
+      : setToolTags(result.workspace, { type: 'mcp', id: server?.id ?? newId }, tagIds);
   };
   // 操作是纯函数，可以边输入边试算，立即提示重复标识和无效内容。空标识、空内容只禁用保存，不提示。
   const trial = operation(workspace);
@@ -125,6 +140,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
           />
           <FieldDescription>{t('mcp.descriptionHint')}</FieldDescription>
         </Field>
+        <TagPicker value={tagIds} onChange={setTagIds} />
       </FieldGroup>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>
