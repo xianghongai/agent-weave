@@ -77,7 +77,21 @@
     "skip": {
       "decisionKeyMissing": "该 Agent 不支持“{{decision}}”这一档：决策键名为空。",
       "templateMissing": "该 Agent 的{{templates}}中，{{template}}为空。"
+    },
+    "persistence": {
+      "readFailed": "浏览器不允许本站访问本地存储，可能禁用了站点数据。",
+      "writeFailed": "浏览器拒绝写入本地存储，可能处于隐私模式，或存储空间已满。",
+      "parseFailed": "本地保存的工作区已损坏，无法解析。",
+      "invalidStructure": "本地保存的工作区结构无效。",
+      "newerVersion": "本地保存的工作区来自更新版本的站点，刷新页面可以更新到新版本后再读取。"
     }
+  },
+  "storage": {
+    "unsavedTitle": "修改不会被保存",
+    "unsavedHint": "当前的修改只保留到关闭或刷新页面为止。",
+    "fallbackTitle": "已载入预设",
+    "fallbackHint": "本地保存的数据还在，但下一次修改会覆盖它。",
+    "dismiss": "知道了"
   },
   "tools": {
     "commandTools": "命令工具",

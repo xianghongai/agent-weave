@@ -6,6 +6,7 @@ import { useHashLocation } from 'wouter/use-hash-location';
 import { PwaPrompt } from '@/components/pwa-prompt';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { StorageBanner } from '@/components/storage-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { PAGES } from '@/pages/registry';
@@ -50,6 +51,7 @@ export function App() {
           <div className="flex min-h-dvh flex-col">
             <SiteHeader />
             <main className="page-width flex-1">
+              <StorageBanner />
               <Routes />
             </main>
             <SiteFooter />
