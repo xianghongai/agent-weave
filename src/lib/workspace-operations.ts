@@ -9,8 +9,10 @@ import type {
   PermissionOutput,
   Rule,
   Scope,
+  Tag,
   TemplatePair,
   ToolRef,
+  ToolType,
   Workspace,
 } from '@/lib/workspace';
 import { TOOL_TYPES } from '@/lib/workspace';
@@ -48,6 +50,125 @@ export type OperationResult = { workspace: Workspace } | { problem: OperationPro
 
 function commit(workspace: Workspace, changes: Partial<Workspace>, ctx: OperationContext): OperationResult {
   return { workspace: { ...workspace, ...changes, updated_at: ctx.now() } };
+}
+
+/* 标签 */
+
+export interface TagInput {
+  key: string;
+  name: string;
+}
+
+/** 整理并检查标签表单的内容。标识在全部标签中唯一，名称不能为空。 */
+function checkTagInput(
+  workspace: Workspace,
+  input: TagInput,
+  selfId: string | null
+): { problem: OperationProblem } | { fields: Omit<Tag, 'id'> } {
+  const key = input.key.trim();
+  const problem = checkKey(workspace.tags, key, selfId);
+  if (problem) {
+    return { problem };
+  }
+  const name = input.name.trim();
+  if (name === '') {
+    return { problem: 'nameEmpty' };
+  }
+  return { fields: { key, name } };
+}
+
+export function addTag(workspace: Workspace, input: TagInput, ctx: OperationContext = systemContext): OperationResult {
+  const checked = checkTagInput(workspace, input, null);
+  if ('problem' in checked) {
+    return checked;
+  }
+  return commit(workspace, { tags: [...workspace.tags, { id: ctx.newId(), ...checked.fields }] }, ctx);
+}
+
+/** 重命名标签：标识和名称都可以修改。工具按内部 ID 引用标签，不需要改动。 */
+export function updateTag(
+  workspace: Workspace,
+  id: string,
+  input: TagInput,
+  ctx: OperationContext = systemContext
+): OperationResult {
+  if (!workspace.tags.some((tag) => tag.id === id)) {
+    return { problem: 'notFound' };
+  }
+  const checked = checkTagInput(workspace, input, id);
+  if ('problem' in checked) {
+    return checked;
+  }
+  return commit(workspace, { tags: workspace.tags.map((tag) => (tag.id === id ? { id, ...checked.fields } : tag)) }, ctx);
+}
+
+/** 删除标签。引用它的工具保持不变，残留的标签 ID 由界面显示为悬空引用。 */
+export function deleteTag(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
+  if (!workspace.tags.some((tag) => tag.id === id)) {
+    return { problem: 'notFound' };
+  }
+  return commit(workspace, { tags: workspace.tags.filter((tag) => tag.id !== id) }, ctx);
+}
+
+/**
+ * 设置一个工具（命令工具、MCP Server 或内置工具）的标签，整体替换原有的标签列表。
+ * 不检查标签是否存在：编辑时保留的悬空引用照常写回。重复的 ID 只保留第一次出现。
+ */
+export function setToolTags(
+  workspace: Workspace,
+  ref: ToolRef,
+  tagIds: readonly string[],
+  ctx: OperationContext = systemContext
+): OperationResult {
+  const tag_ids = [...new Set(tagIds)];
+  const withTags = <T extends { id: string }>(tool: T): T => (tool.id === ref.id ? { ...tool, tag_ids } : tool);
+
+  if (ref.type === 'command') {
+    if (!workspace.command_tools.some((tool) => tool.id === ref.id)) {
+      return { problem: 'notFound' };
+    }
+    return commit(workspace, { command_tools: workspace.command_tools.map(withTags) }, ctx);
+  }
+  if (ref.type === 'mcp') {
+    if (!workspace.mcp_servers.some((server) => server.id === ref.id)) {
+      return { problem: 'notFound' };
+    }
+    return commit(workspace, { mcp_servers: workspace.mcp_servers.map(withTags) }, ctx);
+  }
+  const found = findBuiltInTool(workspace, ref.id);
+  if (!found) {
+    return { problem: 'notFound' };
+  }
+  return commit(
+    workspace,
+    { agents: withBuiltInTools(workspace, found.agent.id, found.agent.built_in_tools.map(withTags)) },
+    ctx
+  );
+}
+
+/** 全部工具（命令工具、MCP Server、各 Agent 的内置工具），用于按标签统计。 */
+function allTools(workspace: Workspace): { tag_ids: string[] }[] {
+  return [
+    ...workspace.command_tools,
+    ...workspace.mcp_servers,
+    ...workspace.agents.flatMap((agent) => agent.built_in_tools),
+  ];
+}
+
+/** 引用某个标签的工具数量。删除标签前，界面用它在确认框中提示。 */
+export function countToolsForTag(workspace: Workspace, tagId: string): number {
+  return allTools(workspace).filter((tool) => tool.tag_ids.includes(tagId)).length;
+}
+
+/** 工具上的一个标签引用。标签已被删除时 `tag` 为 `null`，界面只能显示残留的 ID。 */
+export interface TagRef {
+  id: string;
+  tag: Tag | null;
+}
+
+/** 按工具上的顺序解析标签引用。 */
+export function resolveTags(workspace: Workspace, tagIds: readonly string[]): TagRef[] {
+  return tagIds.map((id) => ({ id, tag: workspace.tags.find((tag) => tag.id === id) ?? null }));
 }
 
 /* 命令工具 */
@@ -615,5 +736,48 @@ export function listRules(workspace: Workspace): RuleListItem[] {
       TOOL_TYPES.indexOf(a.tool.type) - TOOL_TYPES.indexOf(b.tool.type) ||
       compareText(a.tool.tool.key, b.tool.tool.key) ||
       compareText(a.rule.pattern, b.rule.pattern)
+  );
+}
+
+/* 筛选 */
+
+/** 工具列表的筛选条件：名称关键字为空、标签为 `null` 表示不限。 */
+export interface ToolFilter {
+  name: string;
+  tagId: string | null;
+}
+
+export const NO_TOOL_FILTER: ToolFilter = { name: '', tagId: null };
+
+/** 名称关键字去掉首尾空白后不区分大小写地匹配标识或描述；标签条件与它同时生效。 */
+export function matchesToolFilter(
+  tool: { key: string; description: string; tag_ids: string[] },
+  filter: ToolFilter
+): boolean {
+  if (filter.tagId !== null && !tool.tag_ids.includes(filter.tagId)) {
+    return false;
+  }
+  const keyword = filter.name.trim().toLowerCase();
+  return (
+    keyword === '' || tool.key.toLowerCase().includes(keyword) || tool.description.toLowerCase().includes(keyword)
+  );
+}
+
+/** 规则列表的筛选条件，取值 `null` 表示不限。归属筛选由界面另行组合。 */
+export interface RuleFilter {
+  /** 规则所指工具带有这个标签。 */
+  tagId: string | null;
+  decision: Decision | null;
+  toolType: ToolType | null;
+}
+
+export const NO_RULE_FILTER: RuleFilter = { tagId: null, decision: null, toolType: null };
+
+/** 规则是否同时满足全部筛选条件。 */
+export function matchesRuleFilter({ rule, tool }: RuleListItem, filter: RuleFilter): boolean {
+  return (
+    (filter.tagId === null || tool.tool.tag_ids.includes(filter.tagId)) &&
+    (filter.decision === null || rule.decision === filter.decision) &&
+    (filter.toolType === null || tool.type === filter.toolType)
   );
 }

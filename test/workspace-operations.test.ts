@@ -1,32 +1,45 @@
 import { describe, expect, it } from 'vitest';
 
 import { generate } from '@/lib/generate';
+import { createPresetWorkspace } from '@/lib/presets';
 import { EMPTY_DEVICE_SETTINGS, type McpOutput, type PermissionOutput, type Workspace } from '@/lib/workspace';
 import {
   type AgentInput,
   type BuiltInToolInput,
+  NO_RULE_FILTER,
   type OperationContext,
+  type RuleFilter,
+  type ToolFilter,
   addAgent,
   addBuiltInTool,
   addCommandTool,
   addMcpServer,
   addRule,
+  addTag,
   countRulesForAgent,
   countRulesForTool,
+  countToolsForTag,
   deleteAgent,
   deleteBuiltInTool,
   deleteCommandTool,
   deleteMcpServer,
   deleteRule,
+  deleteTag,
   listRules,
+  matchesRuleFilter,
+  matchesToolFilter,
   newMcpOutput,
   newPermissionOutput,
+  resolveTags,
+  setToolTags,
   updateAgent,
   updateBuiltInTool,
   updateCommandTool,
   updateMcpServer,
   updateRule,
+  updateTag,
 } from '@/lib/workspace-operations';
+import { parseWorkspace } from '@/lib/workspace-validation';
 
 const BEFORE = '2026-01-01T00:00:00.000Z';
 const NOW = '2026-10-23T12:00:00.000Z';
@@ -591,5 +604,180 @@ describe('工作区操作：内置工具', () => {
     expect(allowEntries(deleted)).toEqual(['Bash(git *)']);
     expect(deleted.updated_at).toBe(NOW);
     expect(deleteBuiltInTool(deleted, 'read', ctx)).toEqual({ problem: 'notFound' });
+  });
+});
+
+describe('工作区操作：标签', () => {
+  it('新增标签时去掉首尾空白，并更新修改时间', () => {
+    const ws = apply(empty, (w) => addTag(w, { key: ' vcs ', name: ' 版本控制 ' }, context()));
+    expect(ws.tags).toEqual([{ id: 'new-1', key: 'vcs', name: '版本控制' }]);
+    expect(ws.updated_at).toBe(NOW);
+  });
+
+  it('标识为空、标识重复或名称为空时返回原因码', () => {
+    const ctx = context();
+    const ws = apply(empty, (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx));
+    expect(addTag(ws, { key: ' ', name: '名称' }, ctx)).toEqual({ problem: 'keyEmpty' });
+    expect(addTag(ws, { key: 'vcs', name: '另一个' }, ctx)).toEqual({ problem: 'keyDuplicate' });
+    expect(addTag(ws, { key: 'net', name: ' ' }, ctx)).toEqual({ problem: 'nameEmpty' });
+  });
+
+  it('重命名标签时可以修改标识和名称，但不能改成别的标签的标识', () => {
+    const ctx = context();
+    const ws = apply(
+      empty,
+      (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
+      (w) => addTag(w, { key: 'net', name: '网络' }, ctx)
+    );
+    const renamed = apply(ws, (w) => updateTag(w, 'new-1', { key: 'scm', name: '源码管理' }, ctx));
+    expect(renamed.tags[0]).toEqual({ id: 'new-1', key: 'scm', name: '源码管理' });
+    expect(updateTag(ws, 'new-1', { key: 'net', name: '网络' }, ctx)).toEqual({ problem: 'keyDuplicate' });
+    expect(updateTag(ws, 'missing', { key: 'x', name: 'x' }, ctx)).toEqual({ problem: 'notFound' });
+  });
+
+  it('删除标签', () => {
+    const ctx = context();
+    const ws = apply(
+      empty,
+      (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
+      (w) => addTag(w, { key: 'net', name: '网络' }, ctx)
+    );
+    const deleted = apply(ws, (w) => deleteTag(w, 'new-1', ctx));
+    expect(deleted.tags.map((tag) => tag.key)).toEqual(['net']);
+    expect(deleted.updated_at).toBe(NOW);
+    expect(deleteTag(deleted, 'new-1', ctx)).toEqual({ problem: 'notFound' });
+  });
+
+  it('三类工具都可以打多个标签，重复的标签只保留一次', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
+      (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
+      (w) => setToolTags(w, { type: 'command', id: 'new-1' }, ['vcs', 'net', 'vcs'], ctx),
+      (w) => setToolTags(w, { type: 'mcp', id: 'new-2' }, ['search'], ctx),
+      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['fs', 'search'], ctx)
+    );
+    expect(ws.command_tools[0]?.tag_ids).toEqual(['vcs', 'net']);
+    expect(ws.mcp_servers[0]?.tag_ids).toEqual(['search']);
+    expect(ws.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs', 'search']);
+    expect(ws.updated_at).toBe(NOW);
+    expect(setToolTags(ws, { type: 'built_in', id: 'missing' }, [], ctx)).toEqual({ problem: 'notFound' });
+  });
+
+  it('编辑工具时保留它的标签', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
+      (w) => setToolTags(w, { type: 'command', id: 'new-1' }, ['vcs'], ctx),
+      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['fs'], ctx),
+      (w) => updateCommandTool(w, 'new-1', { key: 'git', description: '版本控制' }, ctx),
+      (w) => updateBuiltInTool(w, 'read', builtInInput(), ctx)
+    );
+    expect(ws.command_tools[0]?.tag_ids).toEqual(['vcs']);
+    expect(ws.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs']);
+  });
+
+  it('删除标签时不修改引用它的工具，残留的标签 ID 成为悬空引用', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
+      (w) => addTag(w, { key: 'fs', name: '文件系统' }, ctx),
+      (w) => addCommandTool(w, { key: 'git', description: '' }, ctx),
+      (w) => setToolTags(w, { type: 'command', id: 'new-3' }, ['new-1', 'new-2'], ctx),
+      (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['new-2'], ctx)
+    );
+    expect(countToolsForTag(ws, 'new-2')).toBe(2);
+
+    const deleted = apply(ws, (w) => deleteTag(w, 'new-2', ctx));
+    expect(deleted.command_tools[0]?.tag_ids).toEqual(['new-1', 'new-2']);
+    expect(deleted.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['new-2']);
+    expect(resolveTags(deleted, ['new-1', 'new-2'])).toEqual([
+      { id: 'new-1', tag: { id: 'new-1', key: 'vcs', name: '版本控制' } },
+      { id: 'new-2', tag: null },
+    ]);
+    // 悬空引用不影响校验，可以照常保存和导入。
+    expect(parseWorkspace(deleted)).toEqual({ workspace: deleted });
+  });
+
+  it('增删标签、给工具打标签都不改变任何 Agent 的生成结果', () => {
+    const ctx = context();
+    const preset = createPresetWorkspace();
+    const outputs = (ws: Workspace) => ws.agents.map((agent) => generate(ws, agent.id, EMPTY_DEVICE_SETTINGS));
+
+    const tagged = apply(
+      preset,
+      (w) => addTag(w, { key: 'mine', name: '我的' }, ctx),
+      ...preset.command_tools.map(
+        (tool) => (w: Workspace) => setToolTags(w, { type: 'command', id: tool.id }, ['new-1'], ctx)
+      ),
+      ...preset.mcp_servers.map(
+        (server) => (w: Workspace) => setToolTags(w, { type: 'mcp', id: server.id }, ['new-1'], ctx)
+      ),
+      ...preset.agents.flatMap((agent) =>
+        agent.built_in_tools.map(
+          (tool) => (w: Workspace) => setToolTags(w, { type: 'built_in', id: tool.id }, ['new-1'], ctx)
+        )
+      ),
+      (w) => updateTag(w, 'new-1', { key: 'renamed', name: '改名' }, ctx),
+      ...preset.tags.map((tag) => (w: Workspace) => deleteTag(w, tag.id, ctx))
+    );
+    expect(outputs(tagged)).toEqual(outputs(preset));
+    expect(outputs(apply(tagged, (w) => deleteTag(w, 'new-1', ctx)))).toEqual(outputs(preset));
+  });
+});
+
+describe('查询：筛选', () => {
+  const ctx = context();
+  /* new-1 vcs、new-2 net；git(new-3) 打 vcs，curl(new-4) 打 net，context7(new-5) 打 net，Read 打 vcs。 */
+  const ws = apply(
+    withRead,
+    (w) => addTag(w, { key: 'vcs', name: '版本控制' }, ctx),
+    (w) => addTag(w, { key: 'net', name: '网络' }, ctx),
+    (w) => addCommandTool(w, { key: 'git', description: '分布式版本控制' }, ctx),
+    (w) => addCommandTool(w, { key: 'curl', description: '传输数据' }, ctx),
+    (w) => addMcpServer(w, { key: 'context7', content: '{}', description: '' }, ctx),
+    (w) => setToolTags(w, { type: 'command', id: 'new-3' }, ['new-1'], ctx),
+    (w) => setToolTags(w, { type: 'command', id: 'new-4' }, ['new-2'], ctx),
+    (w) => setToolTags(w, { type: 'mcp', id: 'new-5' }, ['new-2'], ctx),
+    (w) => setToolTags(w, { type: 'built_in', id: 'read' }, ['new-1'], ctx),
+    (w) => addRule(w, { tool: { type: 'command', id: 'new-3' }, pattern: 'status', decision: 'allow' }, ctx),
+    (w) => addRule(w, { tool: { type: 'command', id: 'new-3' }, pattern: 'push', decision: 'ask' }, ctx),
+    (w) => addRule(w, { tool: { type: 'command', id: 'new-4' }, pattern: '', decision: 'deny' }, ctx),
+    (w) => addRule(w, { tool: { type: 'mcp', id: 'new-5' }, pattern: '', decision: 'allow' }, ctx),
+    (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: './', decision: 'allow' }, ctx)
+  );
+
+  function tools(filter: ToolFilter): string[] {
+    return ws.command_tools.filter((tool) => matchesToolFilter(tool, filter)).map((tool) => tool.key);
+  }
+
+  function rules(filter: Partial<RuleFilter>): string[] {
+    return listRules(ws)
+      .filter((item) => matchesRuleFilter(item, { ...NO_RULE_FILTER, ...filter }))
+      .map(({ rule, tool }) => `${tool.tool.key} ${rule.pattern}`.trim());
+  }
+
+  it('工具按名称筛选时不区分大小写，标识或描述包含关键字即符合', () => {
+    expect(tools({ name: '', tagId: null })).toEqual(['git', 'curl']);
+    expect(tools({ name: ' GI ', tagId: null })).toEqual(['git']);
+    expect(tools({ name: '传输', tagId: null })).toEqual(['curl']);
+  });
+
+  it('工具按标签筛选，与名称同时生效', () => {
+    expect(tools({ name: '', tagId: 'new-2' })).toEqual(['curl']);
+    expect(tools({ name: 'git', tagId: 'new-2' })).toEqual([]);
+    expect(tools({ name: 'git', tagId: 'new-1' })).toEqual(['git']);
+  });
+
+  it('规则按工具的标签、决策、工具类型筛选，多个条件同时生效', () => {
+    expect(rules({})).toEqual(['curl', 'git push', 'git status', 'context7', 'Read ./']);
+    expect(rules({ tagId: 'new-1' })).toEqual(['git push', 'git status', 'Read ./']);
+    expect(rules({ decision: 'allow' })).toEqual(['git status', 'context7', 'Read ./']);
+    expect(rules({ toolType: 'mcp' })).toEqual(['context7']);
+    expect(rules({ tagId: 'new-2', decision: 'allow' })).toEqual(['context7']);
+    expect(rules({ tagId: 'new-1', decision: 'allow', toolType: 'command' })).toEqual(['git status']);
   });
 });
