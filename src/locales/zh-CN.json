@@ -83,7 +83,18 @@
       "writeFailed": "浏览器拒绝写入本地存储，可能处于隐私模式，或存储空间已满。",
       "parseFailed": "本地保存的工作区已损坏，无法解析。",
       "invalidStructure": "本地保存的工作区结构无效。",
-      "newerVersion": "本地保存的工作区来自更新版本的站点，刷新页面可以更新到新版本后再读取。"
+      "newerVersion": "本地保存的工作区来自更新版本的站点，刷新页面可以更新到新版本后再读取。",
+      "duplicateId": "本地保存的工作区中，同一类条目有重复的内部 ID。",
+      "duplicateKey": "本地保存的工作区中，同一类条目有重复的标识，或有重名的 Agent。",
+      "danglingReference": "本地保存的工作区中，有权限规则指向不存在的工具。"
+    },
+    "import": {
+      "parseFailed": "内容不是合法的 JSON，可能不完整或已被截断。",
+      "invalidStructure": "内容不是有效的工作区：缺少必要的属性，或某个属性的类型、取值不对。",
+      "newerVersion": "内容来自更新版本的站点。刷新页面更新到新版本后再试。",
+      "duplicateId": "同一类条目中有重复的内部 ID。",
+      "duplicateKey": "同一类条目中有重复的标识，或有重名的 Agent。",
+      "danglingReference": "有权限规则指向不存在的工具。"
     }
   },
   "storage": {
@@ -139,6 +150,20 @@
     "entryCount": "{{n}} 条",
     "skippedRules": "跳过的规则",
     "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。"
+  },
+  "workspaceFile": {
+    "title": "导入与导出",
+    "hint": "把整个工作区保存为 JSON 文件，用于备份或分享给同事；也可以用这样的文件替换当前工作区。",
+    "export": "导出",
+    "exportHint": "导出文件不含 Gist Token、Gist ID 和本机设置，可以放心分享。",
+    "import": "导入",
+    "importFailed": "无法导入 {{file}}",
+    "readFailed": "无法读取所选文件。",
+    "confirmTitle": "用 {{file}} 替换当前工作区？",
+    "confirmDescription": "当前工作区的全部内容会被替换，无法撤销。需要保留时，先导出备份。",
+    "summary": "文件中有 {{commands}} 个命令工具、{{servers}} 个 MCP Server、{{agents}} 个 Agent、{{rules}} 条权限规则，最后修改于 {{updatedAt}}。",
+    "confirm": "替换",
+    "imported": "已导入工作区"
   },
   "pwa": {
     "offlineReady": "已可离线使用",
