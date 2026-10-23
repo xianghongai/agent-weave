@@ -30,6 +30,11 @@ describe('构建产物的 CSP', () => {
     expect(policy.get('font-src')).toEqual(["'self'"]);
   });
 
+  it('Service Worker 和 manifest 只从本站加载，安装与离线不需要放宽 connect-src', () => {
+    expect(policy.get('worker-src')).toEqual(["'self'"]);
+    expect(policy.get('manifest-src')).toEqual(["'self'"]);
+  });
+
   it('除 connect-src 外，没有任何指令放行外部域名', () => {
     for (const [name, sources] of policy) {
       const external = name === 'connect-src' ? [] : sources.filter((source) => /^(https?:|\*|\/\/)/.test(source));
