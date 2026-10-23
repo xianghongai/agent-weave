@@ -18,7 +18,7 @@
     },
     "tools": {
       "title": "工具",
-      "description": "维护常用的命令工具，以及各 Agent 的内置工具。"
+      "description": "维护所有 Agent 共享的命令工具。各 Agent 的内置工具在“Agent”页维护。"
     },
     "mcp": {
       "title": "MCP Server",
@@ -152,14 +152,20 @@
     "addHint": "添加后保留所选工具，可以在同一工具下连续添加多条规则。",
     "tool": "工具",
     "toolPlaceholder": "选择工具",
-    "noTools": "还没有工具，先到“工具”页新增命令工具。",
+    "noTools": "还没有工具，先到“工具”页新增命令工具，或在“Agent”页新增内置工具。",
     "pattern": "模式",
     "patternPlaceholder": "如 push --force，留空表示整个工具",
     "patternHint": "只填工具标识之后的参数前缀，其中的 * 原样代入。",
+    "builtInPatternPlaceholder": "如 ./src/，留空表示整个工具",
+    "builtInPatternHint": "路径填以 / 结尾的目录前缀，glob 由该工具的模板补全，其中的 * 原样代入。该规则只属于 {{agent}}。",
     "decision": "决策",
     "listTitle": "规则列表",
-    "listHint": "按工具标识、模式自动排序，输出顺序与它一致。",
+    "listHint": "按工具类型（命令工具、MCP 工具、内置工具）、工具标识、模式自动排序，输出顺序与它一致。",
+    "owner": "归属",
+    "ownerAll": "全部归属",
+    "ownerShared": "共享",
     "empty": "还没有权限规则。",
+    "noMatch": "没有符合筛选条件的规则。",
     "wholeTool": "整个工具",
     "editTitle": "编辑权限规则",
     "editLabel": "编辑规则",
@@ -237,5 +243,23 @@
     "deleteTitle": "删除 Agent {{name}}？",
     "deleteDescription": "它的 {{tools}} 个内置工具，以及指向这些内置工具的 {{rules}} 条权限规则会一并删除。共享的规则不受影响。",
     "builtInTemplates": "内置工具模板"
+  },
+  "builtInTools": {
+    "title": "内置工具",
+    "sectionLabel": "{{agent}} 的内置工具",
+    "add": "新增内置工具",
+    "addLabel": "为 {{agent}} 新增内置工具",
+    "addTitle": "为 {{agent}} 新增内置工具",
+    "editTitle": "编辑 {{agent}} 的内置工具",
+    "empty": "还没有内置工具。",
+    "key": "标识",
+    "keyPlaceholder": "如 Read、read_file",
+    "keyHint": "在 {{agent}} 的内置工具中唯一。指向它的权限规则只属于 {{agent}}。",
+    "description": "描述",
+    "writes": "写入类",
+    "writesHint": "会写入文件的工具。允许它写入任意位置、根目录或主目录时产生高危提示。",
+    "writesBadge": "写入类",
+    "templatesHint": "使用 {pattern}，如 Read({pattern}**) 与 Read、read_file({pattern}) 与 read_file(*)。路径模式是以 / 结尾的目录前缀，由模板补全 glob。",
+    "deleteTitle": "删除 {{agent}} 的内置工具 {{key}}？"
   }
 }

@@ -12,14 +12,29 @@ function encodeToolRef(ref: ToolRef): string {
   return `${ref.type}:${ref.id}`;
 }
 
-/** 规则可以指向的工具，按标识排序。 */
-function toolOptions(workspace: Workspace): { value: string; label: string; ref: ToolRef }[] {
-  return workspace.command_tools
+type ToolOption = { value: string; label: string; ref: ToolRef };
+
+/** 规则可以指向的工具：先按工具类型，同类内按标识排序。 */
+function toolOptions(workspace: Workspace): ToolOption[] {
+  const commands = workspace.command_tools
     .toSorted((a, b) => compareText(a.key, b.key))
     .map((tool) => {
       const ref: ToolRef = { type: 'command', id: tool.id };
       return { value: encodeToolRef(ref), label: tool.key, ref };
     });
+  return [...commands, ...builtInToolOptions(workspace)];
+}
+
+/** 内置工具按 Agent 的顺序排列，标签带上所属 Agent 的名称，以便区分同名工具并标明规则归属。 */
+function builtInToolOptions(workspace: Workspace): ToolOption[] {
+  return workspace.agents.flatMap((agent) =>
+    agent.built_in_tools
+      .toSorted((a, b) => compareText(a.key, b.key))
+      .map((tool) => {
+        const ref: ToolRef = { type: 'built_in', id: tool.id };
+        return { value: encodeToolRef(ref), label: `${tool.key} · ${agent.name}`, ref };
+      })
+  );
 }
 
 interface ToolSelectProps {

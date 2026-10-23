@@ -3,12 +3,13 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Rule } from '@/lib/workspace';
-import { type OperationProblem, updateRule } from '@/lib/workspace-operations';
+import { type OperationProblem, resolveTool, updateRule } from '@/lib/workspace-operations';
 import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
+import { usePatternTexts } from '@/pages/rules/rule-owner';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 interface RuleDialogProps {
@@ -40,6 +41,7 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
   const [pattern, setPattern] = useState(rule.pattern);
   const [decision, setDecision] = useState(rule.decision);
   const [problem, setProblem] = useState<OperationProblem | null>(null);
+  const patternTexts = usePatternTexts(resolveTool(workspace, tool));
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -66,10 +68,11 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
             value={pattern}
             autoComplete="off"
             spellCheck={false}
-            placeholder={t('rules.patternPlaceholder')}
+            placeholder={patternTexts.placeholder}
             className="font-mono"
             onChange={(event) => setPattern(event.target.value)}
           />
+          <FieldDescription>{patternTexts.hint}</FieldDescription>
         </Field>
         <Field>
           <FieldLabel>{t('rules.decision')}</FieldLabel>

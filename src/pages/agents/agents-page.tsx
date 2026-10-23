@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import type { Agent } from '@/lib/workspace';
 import { countRulesForAgent, deleteAgent } from '@/lib/workspace-operations';
 import { AgentDialog } from '@/pages/agents/agent-dialog';
+import { BuiltInToolsSection } from '@/pages/agents/built-in-tools-section';
 import { runOperation, useWorkspace } from '@/state/workspace-store';
 
 export default function AgentsPage() {
@@ -58,7 +59,7 @@ export default function AgentsPage() {
       ) : (
         <ul className="divide-y rounded-xl border">
           {workspace.agents.map((agent) => (
-            <li key={agent.id} className="flex items-center gap-3 px-3 py-2.5">
+            <li key={agent.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
               <div className="grid min-w-0 flex-1 gap-0.5">
                 <span className="truncate text-sm font-medium">{agent.name}</span>
                 {agent.description && (
@@ -90,6 +91,8 @@ export default function AgentsPage() {
               >
                 <Trash2Icon />
               </Button>
+              {/* 换行到下一行，占满整行。 */}
+              <BuiltInToolsSection agent={agent} className="basis-full" />
             </li>
           ))}
         </ul>
