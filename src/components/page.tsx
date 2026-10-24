@@ -38,13 +38,19 @@ export function Page({ icon: Icon, title, description, help, actions, scroll = '
           <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
           {help && <HelpPopover label={help.label} content={help.content} />}
         </div>
-        <p
-          title={description}
-          className="order-last basis-full text-sm text-pretty text-muted-foreground md:order-none md:min-w-0 md:flex-1 md:basis-0 md:truncate"
-        >
-          {description}
-        </p>
-        {/* 操作区放不下时换行：窄屏下排在说明之后独占一行，宽屏下先挤掉说明的宽度再换行。 */}
+        {/*
+          宽屏下说明只占剩余宽度，连一小段截断的文字都放不下时整段隐藏：
+          外层是一行高的换行容器，零宽的伪元素占住第一行，说明窄于最小宽度时折到第二行而被裁掉。
+        */}
+        <div className="order-last basis-full md:order-none md:flex md:h-5 md:min-w-0 md:flex-1 md:basis-0 md:flex-wrap md:overflow-hidden md:before:h-5 md:before:w-0 md:before:content-['']">
+          <p
+            title={description}
+            className="text-sm text-pretty text-muted-foreground md:min-w-24 md:flex-1 md:basis-0 md:truncate"
+          >
+            {description}
+          </p>
+        </div>
+        {/* 操作区放不下时换行：窄屏下排在说明之后独占一行，宽屏下先压缩说明再换行。 */}
         {actions && (
           <div className="order-last flex basis-full flex-wrap items-center gap-2 md:order-none md:ml-auto md:basis-auto">
             {actions}
