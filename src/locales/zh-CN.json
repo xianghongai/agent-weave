@@ -281,7 +281,7 @@
     "builtInPatternHint": "- 路径填以 `/` 结尾的目录，如 `./src/`，模板会补上 glob。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。\n- 该规则只属于 {{agent}}。",
     "decision": "决策",
     "listHelp": "规则列表说明",
-    "listHint": "- 按工具类型（命令工具、MCP 工具、内置工具）、工具标识、模式自动排序。\n- 输出顺序与列表顺序一致。",
+    "listHint": "- 按工具类型（命令工具、MCP 工具、内置工具）、工具标识、模式自动排序。\n- 同一工具的规则归在一组，组头显示工具的描述和标签。\n- 输出顺序与列表顺序一致。",
     "owner": "归属",
     "ownerAll": "全部归属",
     "ownerShared": "共享",
@@ -291,8 +291,8 @@
     "count": "{{n}} 条权限规则",
     "showForTool": "查看指向该工具的权限规则",
     "editTitle": "编辑权限规则",
-    "editLabel": "编辑规则",
-    "deleteLabel": "删除规则"
+    "editLabel": "编辑规则 {{rule}}",
+    "deleteLabel": "删除规则 {{rule}}"
   },
   "output": {
     "noAgents": "还没有 Agent。",

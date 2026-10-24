@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { RuleCountBadge } from '@/components/rule-count-badge';
-import { KeyWithTags } from '@/components/tag-badges';
+import { ToolSummary } from '@/components/tag-badges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,9 +64,8 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
         <ul className="divide-y rounded-lg border">
           {tools.map((tool) => (
             <li key={tool.id} className="flex items-center gap-3 px-3 py-1.5">
-              <div className="grid min-w-0 flex-1 gap-0.5">
-                <KeyWithTags toolKey={tool.key} tagIds={tool.tag_ids} />
-                {tool.description && <span className="truncate text-xs text-muted-foreground">{tool.description}</span>}
+              <div className="min-w-0 flex-1">
+                <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
               </div>
               {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
               {tool.high_risk && <HighRiskBadge />}

@@ -26,6 +26,7 @@ import {
   deleteRule,
   deleteTag,
   findSelectedAgent,
+  groupRulesByTool,
   listRules,
   matchesRuleFilter,
   matchesToolFilter,
@@ -872,6 +873,59 @@ describe('查询：筛选', () => {
     expect(tools({ name: '', tagId: 'new-2' })).toEqual(['curl']);
     expect(tools({ name: 'git', tagId: 'new-2' })).toEqual([]);
     expect(tools({ name: 'git', tagId: 'new-1' })).toEqual(['git']);
+  });
+
+  it('规则按所指工具分组，组的顺序与组内规则的顺序沿用列表', () => {
+    const groups = groupRulesByTool(listRules(ws)).map(({ tool, rules: items }) => [
+      tool.tool.key,
+      items.map((rule) => rule.pattern),
+    ]);
+    expect(groups).toEqual([
+      ['curl', ['']],
+      ['git', ['push', 'status']],
+      ['context7', ['']],
+      ['Read', ['./']],
+    ]);
+  });
+
+  it('同名的命令工具与 MCP 工具分在不同的组', () => {
+    const local = context();
+    const same = apply(
+      empty,
+      (w) => addCommandTool(w, { key: 'github', description: '' }, local),
+      (w) => addMcpServer(w, { key: 'github', content: '{}', description: '' }, local),
+      (w) => addRule(w, { tool: { type: 'command', id: 'new-1' }, pattern: 'pr', decision: 'allow' }, local),
+      (w) => addRule(w, { tool: { type: 'mcp', id: 'new-2' }, pattern: '', decision: 'ask' }, local)
+    );
+    expect(groupRulesByTool(listRules(same)).map(({ tool, rules: items }) => [tool.type, items.length])).toEqual([
+      ['command', 1],
+      ['mcp', 1],
+    ]);
+  });
+
+  it('不同 Agent 的同名内置工具按 Agent 的顺序各成一组，组内规则不交错', () => {
+    // 在 Claude Code 之后加一个 Agent，带同名的 Read。
+    const agents = withRead.agents.flatMap((agent) => [
+      agent,
+      {
+        ...agent,
+        id: 'agent-other',
+        name: 'Other',
+        built_in_tools: agent.built_in_tools.map((tool) => ({ ...tool, id: 'read-other' })),
+      },
+    ]);
+    const local = context();
+    const two = apply(
+      { ...withRead, agents },
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read-other' }, pattern: 'a/', decision: 'allow' }, local),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: 'b/', decision: 'allow' }, local),
+      (w) => addRule(w, { tool: { type: 'built_in', id: 'read-other' }, pattern: 'c/', decision: 'allow' }, local)
+    );
+    expect(listRules(two).map(({ rule }) => rule.pattern)).toEqual(['b/', 'a/', 'c/']);
+    expect(groupRulesByTool(listRules(two)).map(({ tool, rules: items }) => [tool.tool.id, items.length])).toEqual([
+      ['read', 1],
+      ['read-other', 2],
+    ]);
   });
 
   it('规则按工具的标签、决策、工具类型筛选，多个条件同时生效', () => {

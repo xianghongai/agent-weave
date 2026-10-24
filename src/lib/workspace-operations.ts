@@ -797,7 +797,7 @@ export function compareText(a: string, b: string): number {
 }
 
 /**
- * 规则列表：按工具类型、工具标识、模式自动排序，输出顺序与它一致。
+ * 规则列表：按工具类型、工具标识、模式自动排序，同名的内置工具按 Agent 的顺序，输出顺序与它一致。
  * 指向不存在工具的规则不出现在列表中。
  */
 export function listRules(workspace: Workspace): RuleListItem[] {
@@ -808,12 +808,39 @@ export function listRules(workspace: Workspace): RuleListItem[] {
       items.push({ rule, tool });
     }
   }
+  // 内置工具的标识只在所属 Agent 内唯一，同名时按 Agent 的顺序排，同一工具的规则才不会交错。
+  const agentOrder = (tool: ResolvedTool) => (tool.type === 'built_in' ? workspace.agents.indexOf(tool.agent) : 0);
   return items.sort(
     (a, b) =>
       TOOL_TYPES.indexOf(a.tool.type) - TOOL_TYPES.indexOf(b.tool.type) ||
       compareText(a.tool.tool.key, b.tool.tool.key) ||
+      agentOrder(a.tool) - agentOrder(b.tool) ||
       compareText(a.rule.pattern, b.rule.pattern)
   );
+}
+
+/** 规则列表中同一个工具的规则。 */
+export interface RuleGroup {
+  tool: ResolvedTool;
+  rules: Rule[];
+}
+
+/**
+ * 把规则列表按所指工具分组，组按工具首次出现的顺序排列，组内规则保持列表中的顺序。
+ * 工具按类型和内部 ID 区分，同名的命令工具与 MCP 工具不会合并。
+ */
+export function groupRulesByTool(items: readonly RuleListItem[]): RuleGroup[] {
+  const groups = new Map<string, RuleGroup>();
+  for (const { rule, tool } of items) {
+    const key = `${tool.type}:${tool.tool.id}`;
+    const group = groups.get(key);
+    if (group) {
+      group.rules.push(rule);
+    } else {
+      groups.set(key, { tool, rules: [rule] });
+    }
+  }
+  return [...groups.values()];
 }
 
 /* 筛选 */

@@ -5,17 +5,18 @@ import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
+import { ToolSummary } from '@/components/tag-badges';
 import { Button } from '@/components/ui/button';
 import { useFilterQuery } from '@/hooks/use-filter-query';
 import { ruleFilterFromQuery, ruleFilterToQuery } from '@/lib/filter-query';
 import { toolOptions } from '@/lib/tool-options';
 import type { Rule } from '@/lib/workspace';
-import { deleteRule, listRules, matchesRuleFilter } from '@/lib/workspace-operations';
+import { deleteRule, groupRulesByTool, listRules, matchesRuleFilter } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
 import { OwnerBadge } from '@/pages/rules/rule-owner';
-import { RuleWarningIcons, ruleWarnings } from '@/pages/rules/rule-warnings';
+import { type RuleWarning, RuleWarningIcons, ruleWarnings } from '@/pages/rules/rule-warnings';
 import { useAppStore } from '@/state/app-store';
 
 export default function RulesPage() {
@@ -24,7 +25,7 @@ export default function RulesPage() {
   const applyOperation = useAppStore((state) => state.applyOperation);
   const [filter, setFilter] = useFilterQuery(ruleFilterFromQuery, ruleFilterToQuery);
   const allRules = listRules(workspace);
-  const rules = allRules.filter((item) => matchesRuleFilter(item, filter));
+  const groups = groupRulesByTool(allRules.filter((item) => matchesRuleFilter(item, filter)));
   const warnings = ruleWarnings(allRules);
 
   const hasTools = toolOptions(workspace).length > 0;
@@ -63,44 +64,54 @@ export default function RulesPage() {
           <Note icon={ShieldCheckIcon}>{t('rules.noTools')}</Note>
         ) : allRules.length === 0 ? (
           <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
-        ) : rules.length === 0 ? (
+        ) : groups.length === 0 ? (
           <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
         ) : (
           <PageScroll framed>
             <ul className="divide-y">
-              {rules.map(({ rule, tool }) => (
-                <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
-                    <code className="font-medium">{tool.tool.key}</code>
-                    <ToolTypeBadge type={tool.type} />
-                    {/* 模式为空表示整个工具，不另外标注。 */}
-                    {rule.pattern && <code className="break-all">{rule.pattern}</code>}
-                    <OwnerBadge tool={tool} />
-                  </div>
-                  <RuleWarningIcons warning={warnings.get(rule.id)} />
-                  <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
-                    {t(`decisions.${rule.decision}`)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('rules.editLabel')}
-                    title={t('common.edit')}
-                    onClick={() => openEditor(rule)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('rules.deleteLabel')}
-                    title={t('common.delete')}
-                    onClick={() => applyOperation((current) => deleteRule(current, rule.id))}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </li>
-              ))}
+              {groups.map(({ tool, rules: toolRules }) => {
+                // 模式为空表示整个工具，是默认情况：这条规则的决策和操作放在组头，与工具标识同一行。
+                // 列表按模式排序，模式为空的规则排在组内最前面。
+                const [whole, patterned] =
+                  toolRules[0]?.pattern === '' ? [toolRules[0], toolRules.slice(1)] : [null, toolRules];
+                const actions = (rule: Rule) => (
+                  <RuleActions
+                    rule={rule}
+                    label={`${tool.tool.key} ${rule.pattern}`.trim()}
+                    warning={warnings.get(rule.id)}
+                    onEdit={() => openEditor(rule)}
+                    onDelete={() => applyOperation((current) => deleteRule(current, rule.id))}
+                  />
+                );
+                return (
+                  <li key={`${tool.type}:${tool.tool.id}`} className="py-1.5">
+                    {/* 组头：工具的标识、类型、归属、描述和标签排成一行，同一工具的规则共用。 */}
+                    <div className="flex min-h-8 items-center gap-3 px-3">
+                      <div className="min-w-0 flex-1">
+                        <ToolSummary
+                          toolKey={tool.tool.key}
+                          description={tool.tool.description}
+                          tagIds={tool.tool.tag_ids}
+                        >
+                          <ToolTypeBadge type={tool.type} />
+                          <OwnerBadge tool={tool} />
+                        </ToolSummary>
+                      </div>
+                      {whole && actions(whole)}
+                    </div>
+                    {patterned.length > 0 && (
+                      <ul>
+                        {patterned.map((rule) => (
+                          <li key={rule.id} className="flex items-center gap-3 pr-3 pl-6">
+                            <code className="min-w-0 flex-1 font-mono text-sm break-all">{rule.pattern}</code>
+                            {actions(rule)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </PageScroll>
         )}
@@ -108,5 +119,46 @@ export default function RulesPage() {
 
       <RuleDialog open={editOpen} onOpenChange={setEditOpen} rule={editTarget} />
     </Page>
+  );
+}
+
+interface RuleActionsProps {
+  rule: Rule;
+  /** 屏幕阅读器用来区分各行按钮的规则文字：工具标识加模式。 */
+  label: string;
+  warning: RuleWarning | undefined;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+/** 一条规则右侧的警告、决策和编辑、删除按钮。 */
+function RuleActions({ rule, label, warning, onEdit, onDelete }: RuleActionsProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex shrink-0 items-center gap-3">
+      <RuleWarningIcons warning={warning} />
+      <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
+        {t(`decisions.${rule.decision}`)}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t('rules.editLabel', { rule: label })}
+        title={t('common.edit')}
+        onClick={onEdit}
+      >
+        <PencilIcon />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={t('rules.deleteLabel', { rule: label })}
+        title={t('common.delete')}
+        onClick={onDelete}
+      >
+        <Trash2Icon />
+      </Button>
+    </div>
   );
 }

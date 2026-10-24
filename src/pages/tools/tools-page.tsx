@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Note, Page, PageScroll } from '@/components/page';
 import { RuleCountBadge } from '@/components/rule-count-badge';
-import { KeyWithTags } from '@/components/tag-badges';
+import { ToolSummary } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
@@ -79,11 +79,8 @@ export default function ToolsPage() {
             <ul className="divide-y">
               {tools.map((tool) => (
                 <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="grid min-w-0 flex-1 gap-0.5">
-                    <KeyWithTags toolKey={tool.key} tagIds={tool.tag_ids} />
-                    {tool.description && (
-                      <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
                   </div>
                   {tool.high_risk && <HighRiskBadge />}
                   <RuleCountBadge tool={{ type: 'command', id: tool.id }} />

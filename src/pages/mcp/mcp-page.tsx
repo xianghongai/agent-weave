@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Note, Page, PageScroll } from '@/components/page';
 import { RuleCountBadge } from '@/components/rule-count-badge';
-import { KeyWithTags } from '@/components/tag-badges';
+import { ToolSummary } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
@@ -80,10 +80,7 @@ export default function McpPage() {
               {servers.map((server) => (
                 <li key={server.id} className="flex items-center gap-3 px-3 py-2.5">
                   <div className="grid min-w-0 flex-1 gap-0.5">
-                    <KeyWithTags toolKey={server.key} tagIds={server.tag_ids} />
-                    {server.description && (
-                      <span className="truncate text-sm text-muted-foreground">{server.description}</span>
-                    )}
+                    <ToolSummary toolKey={server.key} description={server.description} tagIds={server.tag_ids} />
                     <code className="truncate font-mono text-xs text-muted-foreground">
                       {JSON.stringify(server.content)}
                     </code>

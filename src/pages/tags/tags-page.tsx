@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Note, Page, PageScroll } from '@/components/page';
+import { tagTone } from '@/components/tag-badges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Tag } from '@/lib/workspace';
 import { compareText, countToolsForTag, deleteTag, totalToolCount } from '@/lib/workspace-operations';
@@ -63,8 +65,10 @@ export default function TagsPage() {
                 const toolCounts = countToolsForTag(workspace, tag.id);
                 return (
                   <li key={tag.id} className="flex items-center gap-3 px-3 py-2.5">
-                    <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                      <span className="font-medium">{tag.name}</span>
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
+                      <Badge variant="outline" className={tagTone(tag.id)}>
+                        {tag.name}
+                      </Badge>
                       <code className="truncate font-mono text-sm text-muted-foreground">{tag.key}</code>
                     </div>
                     <ToolCountBadges tagId={tag.id} counts={toolCounts} />
