@@ -4,22 +4,20 @@ import { ruleFilterFromQuery, ruleFilterToQuery, toolFilterFromQuery, toolFilter
 import type { Workspace } from '@/lib/workspace';
 import { NO_RULE_FILTER, NO_TOOL_FILTER } from '@/lib/workspace-operations';
 
-const tool = { description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
+import { builtInTool, commandTool, mcpServer } from './fixtures/entities';
 
 const ws: Workspace = {
   schema_version: 1,
   updated_at: '2026-01-01T00:00:00.000Z',
   tags: [{ id: 'vcs', key: 'vcs', name: '版本控制' }],
-  command_tools: [{ ...tool, id: 'git', key: 'git' }],
-  mcp_servers: [{ ...tool, id: 'git', key: 'git', content: {} }],
+  command_tools: [commandTool({ id: 'git', key: 'git' })],
+  mcp_servers: [mcpServer({ id: 'git', key: 'git' })],
   agents: [
     {
       id: 'claude',
       name: 'Claude Code',
       description: '',
-      built_in_tools: [
-        { ...tool, id: 'read', key: 'Read', writes: false, templates: { with_pattern: '', without_pattern: '' } },
-      ],
+      built_in_tools: [builtInTool({ id: 'read', key: 'Read', templates: { with_pattern: '', without_pattern: '' } })],
       permission_output: null,
       mcp_output: null,
     },

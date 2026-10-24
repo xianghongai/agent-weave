@@ -4,6 +4,7 @@ import { mergePresets, resetToPresets } from '@/lib/preset-operations';
 import { createPresetWorkspace } from '@/lib/presets';
 import type { Agent, BuiltInTool, Decision, Rule, ToolType, Workspace } from '@/lib/workspace';
 import type { OperationContext } from '@/lib/workspace-operations';
+import * as entities from './fixtures/entities';
 
 const BEFORE = '2026-01-01T00:00:00.000Z';
 const NOW = '2026-10-23T12:00:00.000Z';
@@ -100,42 +101,11 @@ describe('合并预设', () => {
         { id: 'preset-tag-net', key: 'net', name: '网络' },
       ],
       command_tools: [
-        {
-          id: 'preset-command-git',
-          key: 'git',
-          description: '',
-          tag_ids: ['preset-tag-vcs', 'preset-tag-net'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'preset-command-hg',
-          key: 'hg',
-          description: '',
-          tag_ids: ['my-vcs', 'preset-tag-vcs'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'preset-command-ls',
-          key: 'ls',
-          description: '',
-          tag_ids: ['preset-tag-vcs'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
+        entities.commandTool({ id: 'preset-command-git', key: 'git', tag_ids: ['preset-tag-vcs', 'preset-tag-net'] }),
+        entities.commandTool({ id: 'preset-command-hg', key: 'hg', tag_ids: ['my-vcs', 'preset-tag-vcs'] }),
+        entities.commandTool({ id: 'preset-command-ls', key: 'ls', tag_ids: ['preset-tag-vcs'] }),
       ],
-      mcp_servers: [
-        {
-          id: 'preset-mcp-github',
-          key: 'github',
-          content: {},
-          description: '',
-          tag_ids: ['preset-tag-vcs'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-      ],
+      mcp_servers: [entities.mcpServer({ id: 'preset-mcp-github', key: 'github', tag_ids: ['preset-tag-vcs'] })],
       agents: [
         agent('preset-agent-claude-code', 'Claude Code', [
           { ...builtIn('preset-builtin-read', 'Read'), tag_ids: ['preset-tag-vcs'] },
@@ -148,16 +118,7 @@ describe('合并预设', () => {
     const mine = workspace({
       tags: [{ id: 'my-vcs', key: 'vcs', name: '我的版本控制' }],
       // 已有的工具保持不变，即使它还引用着预设标签的 ID。
-      command_tools: [
-        {
-          id: 'preset-command-ls',
-          key: 'ls',
-          description: '',
-          tag_ids: ['preset-tag-vcs'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-      ],
+      command_tools: [entities.commandTool({ id: 'preset-command-ls', key: 'ls', tag_ids: ['preset-tag-vcs'] })],
       agents: [agent('preset-agent-claude-code', 'Claude Code', [])],
     });
 
@@ -184,97 +145,38 @@ describe('合并预设', () => {
   it('命令工具与 MCP Server 同样只新增缺少的，已修改的保持不变，标识冲突时跳过', () => {
     const preset = workspace({
       command_tools: [
-        {
-          id: 'preset-command-git',
-          key: 'git',
-          description: '版本控制',
-          tag_ids: [],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'preset-command-rm',
-          key: 'rm',
-          description: '删除文件',
-          tag_ids: [],
-          high_risk: true,
-          high_risk_reason: '',
-        },
-        {
+        entities.commandTool({ id: 'preset-command-git', key: 'git', description: '版本控制' }),
+        entities.commandTool({ id: 'preset-command-rm', key: 'rm', description: '删除文件', high_risk: true }),
+        entities.commandTool({
           id: 'preset-command-ls',
           key: 'ls',
           description: '列出目录',
           tag_ids: ['preset-tag-fs'],
-          high_risk: false,
-          high_risk_reason: '',
-        },
+        }),
       ],
       mcp_servers: [
-        {
+        entities.mcpServer({
           id: 'preset-mcp-fetch',
           key: 'fetch',
           content: { command: 'uvx', args: ['mcp-server-fetch'] },
-          description: '',
-          tag_ids: [],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'preset-mcp-github',
-          key: 'github',
-          content: { url: 'https://example.com/mcp/' },
-          description: '',
-          tag_ids: [],
-          high_risk: false,
-          high_risk_reason: '',
-        },
+        }),
+        entities.mcpServer({ id: 'preset-mcp-github', key: 'github', content: { url: 'https://example.com/mcp/' } }),
       ],
     });
     const mine = workspace({
       command_tools: [
-        {
-          id: 'preset-command-git',
-          key: 'git',
-          description: '我的描述',
-          tag_ids: [],
-          high_risk: true,
-          high_risk_reason: '',
-        },
-        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+        entities.commandTool({ id: 'preset-command-git', key: 'git', description: '我的描述', high_risk: true }),
+        entities.commandTool({ id: 'my-rm', key: 'rm' }),
       ],
-      mcp_servers: [
-        {
-          id: 'my-fetch',
-          key: 'fetch',
-          content: { command: 'npx' },
-          description: '',
-          tag_ids: [],
-          high_risk: false,
-          high_risk_reason: '',
-        },
-      ],
+      mcp_servers: [entities.mcpServer({ id: 'my-fetch', key: 'fetch', content: { command: 'npx' } })],
     });
 
     const { workspace: merged, report } = mergePresets(mine, preset, ctx);
 
     expect(merged.command_tools).toEqual([
-      {
-        id: 'preset-command-git',
-        key: 'git',
-        description: '我的描述',
-        tag_ids: [],
-        high_risk: true,
-        high_risk_reason: '',
-      },
-      { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-      {
-        id: 'preset-command-ls',
-        key: 'ls',
-        description: '列出目录',
-        tag_ids: ['preset-tag-fs'],
-        high_risk: false,
-        high_risk_reason: '',
-      },
+      entities.commandTool({ id: 'preset-command-git', key: 'git', description: '我的描述', high_risk: true }),
+      entities.commandTool({ id: 'my-rm', key: 'rm' }),
+      entities.commandTool({ id: 'preset-command-ls', key: 'ls', description: '列出目录', tag_ids: ['preset-tag-fs'] }),
     ]);
     expect(merged.mcp_servers.map((server) => server.id)).toEqual(['my-fetch', 'preset-mcp-github']);
     expect(report.skipped).toEqual([
@@ -301,7 +203,6 @@ describe('合并预设', () => {
           ...builtIn('preset-builtin-read', 'Read'),
           description: '我改过的描述',
           high_risk: true,
-          high_risk_reason: '',
         },
         builtIn('my-write', 'Write'),
       ]),
@@ -336,8 +237,8 @@ describe('合并预设', () => {
   it('规则只新增缺少的；所指工具因冲突被跳过时，规则也跳过并列出', () => {
     const preset = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-        { id: 'preset-command-rm', key: 'rm', description: '', tag_ids: [], high_risk: true, high_risk_reason: '' },
+        entities.commandTool({ id: 'preset-command-git', key: 'git' }),
+        entities.commandTool({ id: 'preset-command-rm', key: 'rm', high_risk: true }),
       ],
       agents: [
         agent('preset-agent-claude-code', 'Claude Code', [
@@ -355,8 +256,8 @@ describe('合并预设', () => {
     });
     const mine = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+        entities.commandTool({ id: 'preset-command-git', key: 'git' }),
+        entities.commandTool({ id: 'my-rm', key: 'rm' }),
       ],
       agents: [agent('preset-agent-claude-code', 'Claude Code', [builtIn('my-write', 'Write')])],
       rules: [rule('preset-rule-git-allow', 'command', 'preset-command-git', '', 'deny')],
@@ -397,7 +298,7 @@ describe('重置为预设', () => {
 });
 
 function rule(id: string, type: ToolType, toolId: string, pattern: string, decision: Decision): Rule {
-  return { id, tool: { type, id: toolId }, pattern, decision, high_risk: false, high_risk_reason: '' };
+  return entities.rule({ id, tool: { type, id: toolId }, pattern, decision });
 }
 
 function agent(id: string, name: string, built_in_tools: BuiltInTool[]): Agent {
@@ -418,14 +319,5 @@ function agent(id: string, name: string, built_in_tools: BuiltInTool[]): Agent {
 }
 
 function builtIn(id: string, key: string): BuiltInTool {
-  return {
-    id,
-    key,
-    description: '',
-    tag_ids: [],
-    high_risk: false,
-    high_risk_reason: '',
-    writes: false,
-    templates: { with_pattern: `${key}({pattern})`, without_pattern: key },
-  };
+  return entities.builtInTool({ id, key, templates: { with_pattern: `${key}({pattern})`, without_pattern: key } });
 }

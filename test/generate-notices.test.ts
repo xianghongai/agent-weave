@@ -12,6 +12,7 @@ import {
   type ToolRef,
   type Workspace,
 } from '@/lib/workspace';
+import * as entities from './fixtures/entities';
 
 /* 生成结果中的高危提示与冲突提示。 */
 
@@ -31,28 +32,25 @@ const claude: Agent = {
 };
 
 function command(key: string, high_risk = false): CommandTool {
-  return { id: `command-${key}`, key, description: '', tag_ids: [], high_risk, high_risk_reason: '' };
+  return entities.commandTool({ id: `command-${key}`, key, high_risk });
 }
 
 function server(key: string, high_risk = false): McpServer {
-  return { id: `server-${key}`, key, content: {}, description: '', tag_ids: [], high_risk, high_risk_reason: '' };
+  return entities.mcpServer({ id: `server-${key}`, key, high_risk });
 }
 
 function builtIn(key: string, flags: { writes?: boolean; high_risk?: boolean } = {}): BuiltInTool {
-  return {
+  return entities.builtInTool({
     id: `built-in-${key}`,
     key,
-    description: '',
-    tag_ids: [],
     high_risk: flags.high_risk ?? false,
-    high_risk_reason: '',
     writes: flags.writes ?? false,
     templates: { with_pattern: `${key}({pattern}**)`, without_pattern: key },
-  };
+  });
 }
 
 function rule(id: string, tool: ToolRef, pattern: string, decision: Decision, high_risk = false): Rule {
-  return { id, tool, pattern, decision, high_risk, high_risk_reason: '' };
+  return entities.rule({ id, tool, pattern, decision, high_risk });
 }
 
 const ref = {

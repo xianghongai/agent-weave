@@ -43,6 +43,7 @@ import {
   updateTag,
 } from '@/lib/workspace-operations';
 import { parseWorkspace } from '@/lib/workspace-validation';
+import { builtInTool, commandTool, mcpServer, rule } from './fixtures/entities';
 
 const BEFORE = '2026-01-01T00:00:00.000Z';
 const NOW = '2026-10-23T12:00:00.000Z';
@@ -115,9 +116,7 @@ describe('工作区操作：命令工具', () => {
   it('新增命令工具时去掉首尾空白，并更新修改时间', () => {
     const ctx = context();
     const ws = apply(empty, (w) => addCommandTool(w, { key: ' git ', description: ' 版本控制 ' }, ctx));
-    expect(ws.command_tools).toEqual([
-      { id: 'new-1', key: 'git', description: '版本控制', tag_ids: [], high_risk: false, high_risk_reason: '' },
-    ]);
+    expect(ws.command_tools).toEqual([commandTool({ id: 'new-1', key: 'git', description: '版本控制' })]);
     expect(ws.updated_at).toBe(NOW);
   });
 
@@ -190,15 +189,12 @@ describe('工作区操作：MCP Server', () => {
       addMcpServer(w, { key: ' context7 ', content: context7, description: ' 查询文档 ' }, context())
     );
     expect(ws.mcp_servers).toEqual([
-      {
+      mcpServer({
         id: 'new-1',
         key: 'context7',
         content: { command: 'npx', args: ['-y', '@upstash/context7-mcp'] },
         description: '查询文档',
-        tag_ids: [],
-        high_risk: false,
-        high_risk_reason: '',
-      },
+      }),
     ]);
     expect(ws.updated_at).toBe(NOW);
   });
@@ -383,16 +379,7 @@ const withRead: Workspace = {
   agents: empty.agents.map((agent) => ({
     ...agent,
     built_in_tools: [
-      {
-        id: 'read',
-        key: 'Read',
-        description: '',
-        tag_ids: [],
-        high_risk: false,
-        high_risk_reason: '',
-        writes: false,
-        templates: { with_pattern: 'Read({pattern})', without_pattern: 'Read' },
-      },
+      builtInTool({ id: 'read', key: 'Read', templates: { with_pattern: 'Read({pattern})', without_pattern: 'Read' } }),
     ],
   })),
 };
@@ -543,32 +530,11 @@ describe('工作区操作：Agent', () => {
   it('删除 Agent 时连同它的内置工具和指向这些内置工具的规则一起删除，共享规则保留', () => {
     const ws: Workspace = {
       ...withRead,
-      command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' }],
+      command_tools: [commandTool({ id: 'git', key: 'git' })],
       rules: [
-        {
-          id: 'r1',
-          tool: { type: 'command', id: 'git' },
-          pattern: '',
-          decision: 'allow',
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'r2',
-          tool: { type: 'built_in', id: 'read' },
-          pattern: './src/',
-          decision: 'allow',
-          high_risk: false,
-          high_risk_reason: '',
-        },
-        {
-          id: 'r3',
-          tool: { type: 'built_in', id: 'read' },
-          pattern: '',
-          decision: 'ask',
-          high_risk: false,
-          high_risk_reason: '',
-        },
+        rule({ id: 'r1', tool: { type: 'command', id: 'git' }, decision: 'allow' }),
+        rule({ id: 'r2', tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'allow' }),
+        rule({ id: 'r3', tool: { type: 'built_in', id: 'read' }, decision: 'ask' }),
       ],
     };
     expect(countRulesForAgent(ws, 'agent-claude')).toBe(2);
@@ -614,16 +580,15 @@ describe('工作区操作：内置工具', () => {
       templates: { with_pattern: ' Edit({pattern}**) ', without_pattern: ' Edit ' },
     });
     const ws = apply(withRead, (w) => addBuiltInTool(w, 'agent-claude', input, context()));
-    expect(ws.agents[0]?.built_in_tools[1]).toEqual({
-      id: 'new-1',
-      key: 'Edit',
-      description: '修改文件',
-      tag_ids: [],
-      high_risk: false,
-      high_risk_reason: '',
-      writes: true,
-      templates: { with_pattern: 'Edit({pattern}**)', without_pattern: 'Edit' },
-    });
+    expect(ws.agents[0]?.built_in_tools[1]).toEqual(
+      builtInTool({
+        id: 'new-1',
+        key: 'Edit',
+        description: '修改文件',
+        writes: true,
+        templates: { with_pattern: 'Edit({pattern}**)', without_pattern: 'Edit' },
+      })
+    );
     expect(ws.updated_at).toBe(NOW);
   });
 
@@ -675,9 +640,7 @@ describe('工作区操作：内置工具', () => {
     const ws = apply(
       {
         ...withRead,
-        command_tools: [
-          { id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-        ],
+        command_tools: [commandTool({ id: 'git', key: 'git' })],
       },
       (w) => addBuiltInTool(w, 'agent-claude', builtInInput(), ctx),
       (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: '', decision: 'allow' }, ctx),

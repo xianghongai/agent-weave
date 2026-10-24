@@ -20,6 +20,8 @@ lsof -ti tcp:5191 | xargs -r kill
 
 用 `chrome-devtools-isolated` MCP（无头、临时配置）。多个子代理同时自查时会共用一个浏览器：只操作自己打开的页面，结束时关掉。
 
+MCP 调用没有返回（被转到后台、迟迟没有结果）时，最多再试一次；仍然没有结果就停止自查，在回复中说明浏览器自查受阻，并附上 `ps -eo pid,etime,args | rg chrome-devtools-mcp` 的结果，交给用户排查。
+
 ## 读取页面
 
 - 需要整页结构，或要拿 uid 做交互时，用 `take_snapshot`。

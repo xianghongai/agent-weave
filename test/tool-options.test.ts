@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { filterToolOptions, toolOptions } from '@/lib/tool-options';
 import { SCHEMA_VERSION, type Agent, type Workspace } from '@/lib/workspace';
+import * as entities from './fixtures/entities';
 
 function commandTool(id: string, key: string) {
-  return { id, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
+  return entities.commandTool({ id, key });
 }
 
 function mcpServer(id: string, key: string) {
-  return { id, key, content: {}, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
+  return entities.mcpServer({ id, key });
 }
 
 function agent(id: string, name: string, builtInKeys: string[]): Agent {
@@ -16,16 +17,9 @@ function agent(id: string, name: string, builtInKeys: string[]): Agent {
     id,
     name,
     description: '',
-    built_in_tools: builtInKeys.map((key) => ({
-      id: `${id}-${key}`,
-      key,
-      description: '',
-      tag_ids: [],
-      high_risk: false,
-      high_risk_reason: '',
-      writes: false,
-      templates: { with_pattern: '', without_pattern: '' },
-    })),
+    built_in_tools: builtInKeys.map((key) =>
+      entities.builtInTool({ id: `${id}-${key}`, key, templates: { with_pattern: '', without_pattern: '' } })
+    ),
     permission_output: null,
     mcp_output: null,
   };

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { generate } from '@/lib/generate';
 import { createPresetWorkspace } from '@/lib/presets';
 import { type Agent, EMPTY_DEVICE_SETTINGS, type JsonObject, type Workspace } from '@/lib/workspace';
+import { mcpServer } from './fixtures/entities';
 
 /** 只有 TOML 风格 MCP 输出的 Agent，形同 Codex CLI。 */
 const codex: Agent = {
@@ -24,15 +25,7 @@ function workspace(servers: Record<string, JsonObject>, agent: Agent = codex): W
     updated_at: '2026-10-23T00:00:00.000Z',
     tags: [],
     command_tools: [],
-    mcp_servers: Object.entries(servers).map(([key, content]) => ({
-      id: `server-${key}`,
-      key,
-      content,
-      description: '',
-      tag_ids: [],
-      high_risk: false,
-      high_risk_reason: '',
-    })),
+    mcp_servers: Object.entries(servers).map(([key, content]) => mcpServer({ id: `server-${key}`, key, content })),
     agents: [agent],
     rules: [],
   };

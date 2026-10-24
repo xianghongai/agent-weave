@@ -15,6 +15,7 @@ import {
   type TemplatePair,
   type Workspace,
 } from '@/lib/workspace';
+import * as entities from './fixtures/entities';
 
 /** 与 Claude Code 预设相同的权限输出，作为大多数用例的 Agent。 */
 const claude: Agent = {
@@ -33,20 +34,13 @@ const claude: Agent = {
 };
 
 function tool(key: string): CommandTool {
-  return { id: `tool-${key}`, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
+  return entities.commandTool({ id: `tool-${key}`, key });
 }
 
 let ruleSeq = 0;
 function rule(toolKey: string, pattern: string, decision: Decision): Rule {
   ruleSeq += 1;
-  return {
-    id: `rule-${ruleSeq}`,
-    tool: { type: 'command', id: `tool-${toolKey}` },
-    pattern,
-    decision,
-    high_risk: false,
-    high_risk_reason: '',
-  };
+  return entities.rule({ id: `rule-${ruleSeq}`, tool: { type: 'command', id: `tool-${toolKey}` }, pattern, decision });
 }
 
 function workspace(tools: string[], rules: Rule[], agent: Agent = claude): Workspace {
@@ -399,19 +393,12 @@ describe('生成：预设的 MCP Server', () => {
 });
 
 function server(key: string, content: McpServer['content'] = {}, description = ''): McpServer {
-  return { id: `server-${key}`, key, content, description, tag_ids: [], high_risk: false, high_risk_reason: '' };
+  return entities.mcpServer({ id: `server-${key}`, key, content, description });
 }
 
 function mcpRule(serverKey: string, pattern: string, decision: Decision): Rule {
   ruleSeq += 1;
-  return {
-    id: `rule-${ruleSeq}`,
-    tool: { type: 'mcp', id: `server-${serverKey}` },
-    pattern,
-    decision,
-    high_risk: false,
-    high_risk_reason: '',
-  };
+  return entities.rule({ id: `rule-${ruleSeq}`, tool: { type: 'mcp', id: `server-${serverKey}` }, pattern, decision });
 }
 
 /** 在命令工具之外再放入若干 MCP Server。 */
@@ -586,11 +573,11 @@ describe('生成：JSON 风格的 MCP 输出', () => {
 });
 
 function builtIn(id: string, key: string, templates: TemplatePair): BuiltInTool {
-  return { id, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '', writes: false, templates };
+  return entities.builtInTool({ id, key, templates });
 }
 
 function builtInRule(id: string, toolId: string, pattern: string, decision: Decision): Rule {
-  return { id, tool: { type: 'built_in', id: toolId }, pattern, decision, high_risk: false, high_risk_reason: '' };
+  return entities.rule({ id, tool: { type: 'built_in', id: toolId }, pattern, decision });
 }
 
 describe('生成：内置工具', () => {

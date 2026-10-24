@@ -4,6 +4,7 @@ import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 import type { WorkspaceMigration } from '@/lib/workspace-migrations';
 
 import { corrupt, edited, getIn } from './fixtures/workspace';
+import { commandTool, rule } from './fixtures/entities';
 
 describe('导入工作区', () => {
   it('合法的工作区文件原样导入，保留文件中的修改时间', () => {
@@ -90,23 +91,8 @@ describe('导入工作区', () => {
 
   it.each([
     ['标签', ['tags'], { id: 'tag-1', key: 'other', name: '其他' }],
-    [
-      '命令工具',
-      ['command_tools'],
-      { id: 'tool-1', key: 'cmake', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-    ],
-    [
-      '规则',
-      ['rules'],
-      {
-        id: 'rule-1',
-        tool: { type: 'command', id: 'tool-1' },
-        pattern: 'x',
-        decision: 'ask',
-        high_risk: false,
-        high_risk_reason: '',
-      },
-    ],
+    ['命令工具', ['command_tools'], commandTool({ id: 'tool-1', key: 'cmake' })],
+    ['规则', ['rules'], rule({ id: 'rule-1', tool: { type: 'command', id: 'tool-1' }, pattern: 'x', decision: 'ask' })],
     [
       '不同 Agent 的内置工具',
       ['agents'],
@@ -126,11 +112,7 @@ describe('导入工作区', () => {
 
   it.each([
     ['标签', ['tags'], { id: 'tag-2', key: 'vcs', name: '重复' }],
-    [
-      '命令工具',
-      ['command_tools'],
-      { id: 'tool-2', key: 'make', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
-    ],
+    ['命令工具', ['command_tools'], commandTool({ id: 'tool-2', key: 'make' })],
     ['MCP Server', ['mcp_servers'], { ...edited().mcp_servers[0]!, id: 'mcp-2' }],
     ['Agent 名称', ['agents'], { ...edited().agents[0]!, id: 'agent-2', built_in_tools: [] }],
     [
