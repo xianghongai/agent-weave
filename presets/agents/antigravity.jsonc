@@ -1,13 +1,19 @@
 {
   "priority": 50,
   "agents": [
-    // Antigravity：权限写在共享配置的 userSettings.globalPermissionGrants 下，IDE、App、CLI 共用。
-    // 命令工具写成 command(git push)，MCP 工具写成 mcp(server/tool)。
+    // Antigravity：权限按动作而不是工具名建模，命令工具写成 command(git push)，MCP 工具写成 mcp(server/tool)。
+    // 官方公开的只有 CLI 设置文件 ~/.gemini/antigravity-cli/settings.json 的 permissions，因此以它为属性路径；
+    // IDE 侧的 userSettings.globalPermissionGrants 是本机观察到的结构，列为第二个作用域，提示粘贴位置。
+    // CLI 的 /permissions 还有 Shared、Project 两个作用域，官方没有公布存储路径，不列出。
+    // 调研依据：2026-10-24 的官方权限文档、CLI 文档与 SDK 工具参考，见 docs/agent-formats.md。
     {
       "id": "preset-agent-antigravity",
       "name": "Antigravity",
       "description": "preset-agent-antigravity.description",
       "built_in_tools": [
+        // 内置工具即权限动作，收录 read_file、write_file、read_url、execute_url；command 与 mcp 由模板表达。
+        // 不收录 unsandboxed：只对商业或企业账号生效，其他账号会忽略并警告。
+        // SDK 的 view_file、create_file、run_command 等是构建 Agent 用的工具名，不是权限动作，写进规则不会生效。
         // 文件路径按目录递归匹配，模式直接填以 / 结尾的目录前缀，如 write_file(src/)，模板不再补 glob。
         {
           "id": "preset-built-in-antigravity-read-file",
@@ -63,17 +69,17 @@
         },
       ],
       "permission_output": {
-        "property_path": "userSettings.globalPermissionGrants",
+        "property_path": "permissions",
         "scopes": [
-          {
-            "name": "preset-agent-antigravity.permission-scope-shared.name",
-            "path": "~/.gemini/config/config.json",
-            "note": "preset-agent-antigravity.permission-scope-shared.note",
-          },
           {
             "name": "preset-agent-antigravity.permission-scope-cli.name",
             "path": "~/.gemini/antigravity-cli/settings.json",
             "note": "preset-agent-antigravity.permission-scope-cli.note",
+          },
+          {
+            "name": "preset-agent-antigravity.permission-scope-shared.name",
+            "path": "~/.gemini/config/config.json",
+            "note": "preset-agent-antigravity.permission-scope-shared.note",
           },
         ],
         "decision_keys": {
