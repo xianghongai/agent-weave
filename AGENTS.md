@@ -28,6 +28,7 @@
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。
 - `build/`：只在构建时使用的 Vite 插件和配置，不打包进站点。
 - `test/`：Vitest 单元测试，以 `*.test.ts` 命名，只测纯函数。
+- `presets/`：预设的 JSONC 数据文件，每个文件是一份部分工作区，每个 Agent 一个文件，中文在 `presets/locales/`。构建时由 `build/presets.ts` 调用 `src/lib/preset-composition.ts` 合成，以虚拟模块 `virtual:preset-workspace` 提供；写法见 `presets/README.md`，理由见 `docs/adr/0004-presets-as-jsonc-data.md`。
 - `public/`：原样发布的静态文件，如站点图标。
 - `.scratch/`：本地 Issue 与规格，见下文“Agent skills”。
 

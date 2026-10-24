@@ -1,0 +1,15 @@
+{
+  "tags": [
+    { "id": "preset-tag-vcs", "key": "vcs", "name": "preset-tag-vcs.name" },
+    { "id": "preset-tag-package-manager", "key": "package-manager", "name": "preset-tag-package-manager.name" },
+    { "id": "preset-tag-search", "key": "search", "name": "preset-tag-search.name" },
+    { "id": "preset-tag-filesystem", "key": "filesystem", "name": "preset-tag-filesystem.name" },
+    { "id": "preset-tag-text", "key": "text", "name": "preset-tag-text.name" },
+    { "id": "preset-tag-network", "key": "network", "name": "preset-tag-network.name" },
+    { "id": "preset-tag-container", "key": "container", "name": "preset-tag-container.name" },
+    { "id": "preset-tag-system", "key": "system", "name": "preset-tag-system.name" },
+    { "id": "preset-tag-browser", "key": "browser", "name": "preset-tag-browser.name" },
+    { "id": "preset-tag-build", "key": "build", "name": "preset-tag-build.name" },
+    { "id": "preset-tag-hardware", "key": "hardware", "name": "preset-tag-hardware.name" },
+  ],
+}

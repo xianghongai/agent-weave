@@ -5,14 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 const LIB_DIR = join(import.meta.dirname, '../src/lib');
 
-/** 预设是随站点发布的数据，名称、描述和作用域说明本来就是中文，不算界面文案。 */
-const DATA_DIRS = ['presets'];
-
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      return DATA_DIRS.includes(relative(LIB_DIR, path)) ? [] : sourceFiles(path);
+      return sourceFiles(path);
     }
     return entry.name.endsWith('.ts') ? [path] : [];
   });

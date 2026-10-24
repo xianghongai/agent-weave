@@ -7,6 +7,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 import { contentSecurityPolicy } from './build/content-security-policy';
+import { presets } from './build/presets';
 import { PWA_OPTIONS } from './build/pwa';
 
 export default defineConfig({
@@ -21,6 +22,7 @@ export default defineConfig({
     codeInspectorPlugin({ bundler: 'vite', hotKeys: ['ctrlKey', 'shiftKey'] }),
     react(),
     tailwindcss(),
+    presets(),
     contentSecurityPolicy(),
     VitePWA(PWA_OPTIONS),
   ],
