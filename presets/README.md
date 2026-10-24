@@ -6,7 +6,7 @@
 
 - 每个 `.jsonc` 文件都是一份部分工作区：顶层键取导出文件中的 `tags`、`command_tools`、`mcp_servers`、`agents`、`rules` 中的若干个，条目结构与导出文件完全相同。允许注释和尾随逗号。
 - 根目录下按实体拆分：`tags.jsonc`、`command-tools.jsonc`、`mcp-servers.jsonc`、`rules.jsonc`（所有 Agent 共用的规则）。
-- `agents/` 下每个 Agent 一个文件，包含该 Agent 的定义和它的内置工具的规则。下线或改名一个 Agent 只动一个文件。
+- `agents/` 下每个 Agent 一个文件，包含该 Agent 的定义和它的内置工具的规则。下线或改名一个 Agent 只动一个文件。没有收录的产品及卡在哪里，写在 `agents/not-included.jsonc` 的注释中，这个文件不含条目。
 - `locales/zh-CN.json` 是预设的语言文件，与界面的语言文件 `src/locales/` 分开：前者是数据，后者是界面。
 - 合成时把各文件中的同名数组依次拼接：先是根目录下的文件，按标签、命令工具、MCP Server、共享规则的顺序；然后是排好序的 Agent 文件。
 - 结构版本和修改时间由合成代码补上，不写在文件中。

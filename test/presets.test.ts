@@ -32,11 +32,13 @@ describe('预设：合成与导入校验', () => {
     expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
   });
 
-  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Qwen Code 居中', () => {
+  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Cursor CLI、Gemini CLI、Qwen Code 居中，CodeBuddy Code、Devin CLI 在后', () => {
     expect(preset.agents.map((agent) => agent.name)).toEqual([
       'Claude Code',
       'Codex CLI',
       'Antigravity',
+      'Cursor CLI',
+      'Gemini CLI',
       'Qwen Code',
       'CodeBuddy Code',
       'Devin CLI',
@@ -113,6 +115,54 @@ describe('预设：内容整理', () => {
     expect(permission?.copyText).not.toContain('{{home}}');
     expect(permission?.copyText).not.toContain('/home/alice');
   });
+
+  it('Cursor CLI 没有询问这一档：询问规则和带子命令的命令规则都列为跳过的规则', () => {
+    const output = generate(preset, agentId('Cursor CLI'), DEVICE);
+    expect(output?.permission?.decisions.map((decision) => decision.key)).toEqual(['allow', 'deny']);
+    const skipped = new Map(output?.skippedRules.map((skip) => [skip.ruleId, skip.reason]));
+    expect(skipped.get('preset-rule-rm-ask')).toBe('decisionKeyMissing');
+    expect(skipped.get('preset-rule-git-push-force-deny')).toBe('templateMissing');
+    expect(output?.permission?.copyText).toContain('"Shell(git)"');
+    expect(output?.permission?.copyText).toContain('"Mcp(github:*)"');
+  });
+
+  it('Gemini CLI 不输出权限，MCP 写到设置文件的 mcpServers', () => {
+    const output = generate(preset, agentId('Gemini CLI'), DEVICE);
+    expect(output?.permission).toBeNull();
+    expect(output?.skippedRules).toEqual([]);
+    expect(output?.mcp?.scopes.map((scope) => scope.path)).toEqual([
+      '~/.gemini/settings.json',
+      '.gemini/settings.json',
+    ]);
+    expect(output?.mcp?.copyText.startsWith('"mcpServers": {')).toBe(true);
+  });
+});
+
+describe('预设：内置工具与作用域按调研确定', () => {
+  function builtInKeys(name: string): string[] {
+    return preset.agents.find((agent) => agent.name === name)?.built_in_tools.map((tool) => tool.key) ?? [];
+  }
+
+  it('Claude Code 不收录规则不会命中的 Write、NotebookEdit、Glob，也不收录无需审批的工具', () => {
+    const keys = builtInKeys('Claude Code');
+    for (const key of ['Write', 'NotebookEdit', 'Glob', 'Grep', 'LSP', 'Agent', 'TodoWrite', 'AskUserQuestion']) {
+      expect(keys).not.toContain(key);
+    }
+    expect(keys).toEqual(expect.arrayContaining(['Read', 'Edit', 'WebFetch', 'WebSearch', 'Skill']));
+  });
+
+  it('Claude Code 的 Skill 规则按技能名匹配', () => {
+    const skill = preset.agents
+      .find((agent) => agent.name === 'Claude Code')
+      ?.built_in_tools.find((tool) => tool.key === 'Skill');
+    expect(skill?.templates).toEqual({ with_pattern: 'Skill({pattern})', without_pattern: 'Skill' });
+  });
+
+  it('Codex CLI 只输出 MCP，没有内置工具', () => {
+    const output = generate(preset, agentId('Codex CLI'), DEVICE);
+    expect(output?.permission).toBeNull();
+    expect(builtInKeys('Codex CLI')).toEqual([]);
+  });
 });
 
 describe('预设：与 Claude Code 写法相近的 Agent', () => {
@@ -130,13 +180,27 @@ describe('预设：与 Claude Code 写法相近的 Agent', () => {
     expect(allowOf('CodeBuddy Code')).toEqual(expect.arrayContaining(['Bash(git:*)', 'mcp__memory']));
   });
 
+  it('CodeBuddy Code 收录需要审批的内置工具，不收录 Edit 已覆盖的写入类工具和无需审批的工具', () => {
+    const keys = preset.agents.find((agent) => agent.name === 'CodeBuddy Code')?.built_in_tools.map((tool) => tool.key);
+    expect(keys).toEqual(['Read', 'Edit', 'WebFetch', 'WebSearch', 'Workflow', 'Artifact', 'ImageGen', 'VideoGen']);
+  });
+
   it('Devin CLI 的命令规则写作 Exec(prefix)，整个 MCP Server 写作 mcp__server__*', () => {
     expect(allowOf('Devin CLI')).toEqual(expect.arrayContaining(['Exec(git)', 'mcp__memory__*']));
   });
 });
 
 describe('预设：各 Agent 的生成快照', () => {
-  it.each(['Claude Code', 'Antigravity', 'Codex CLI', 'Qwen Code', 'CodeBuddy Code', 'Devin CLI'])('%s', (name) => {
+  it.each([
+    'Claude Code',
+    'Antigravity',
+    'Codex CLI',
+    'Cursor CLI',
+    'Gemini CLI',
+    'Qwen Code',
+    'CodeBuddy Code',
+    'Devin CLI',
+  ])('%s', (name) => {
     const output = generate(preset, agentId(name), DEVICE);
     expect(output).not.toBeNull();
     expect(output).toMatchSnapshot();

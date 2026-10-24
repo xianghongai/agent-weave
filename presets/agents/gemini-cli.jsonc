@@ -1,0 +1,35 @@
+{
+  "priority": 50,
+  "agents": [
+    // Gemini CLI：只有 MCP 输出，不输出权限（ADR 0001）。
+    // 设置文件的 tools.allowed 等列表表达不了中立模型：tools.exclude 已弃用；
+    // toolName(args) 的括号参数只对 run_shell_command 有效，其他工具会被当成整体放行；
+    // MCP 的放行在另一个路径（mcp.allowed、mcpServers.<name>.trust），不在同一组决策列表里。
+    // 官方主推的策略引擎是 TOML 的 [[rule]] 数组，每条规则要写 toolName、decision、priority 等多个字段，模板表达不了。
+    // 因此不收录内置工具。
+    {
+      "id": "preset-agent-gemini-cli",
+      "name": "Gemini CLI",
+      "description": "preset-agent-gemini-cli.description",
+      "built_in_tools": [],
+      "permission_output": null,
+      // MCP 写在设置文件的 mcpServers 下，与其他设置同在一个文件；传输方式由 command、url（SSE）、httpUrl（Streamable HTTP）决定。
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-gemini-cli.mcp-scope-user.name",
+            "path": "~/.gemini/settings.json",
+            "note": "preset-agent-gemini-cli.mcp-scope-user.note",
+          },
+          {
+            "name": "preset-agent-gemini-cli.mcp-scope-project.name",
+            "path": ".gemini/settings.json",
+            "note": "preset-agent-gemini-cli.mcp-scope-project.note",
+          },
+        ],
+      },
+    },
+  ],
+}
