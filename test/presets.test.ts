@@ -136,6 +136,17 @@ describe('预设：内容整理', () => {
     ]);
     expect(output?.mcp?.copyText.startsWith('"mcpServers": {')).toBe(true);
   });
+
+  it('规则的描述只给人看，不出现在任何 Agent 的生成结果中', () => {
+    const described = preset.rules.filter((rule) => rule.description !== '');
+    expect(described.map((rule) => rule.id)).toContain('preset-rule-rm-ask');
+    for (const agent of preset.agents) {
+      const text = JSON.stringify(generate(preset, agent.id, DEVICE));
+      for (const rule of described) {
+        expect(text, `${agent.name} → ${rule.id}`).not.toContain(rule.description);
+      }
+    }
+  });
 });
 
 describe('预设：内置工具与作用域按调研确定', () => {
