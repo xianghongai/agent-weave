@@ -22,8 +22,8 @@
           { "name": "window", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
           { "name": "document", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
           { "name": "navigator", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
-          { "name": "localStorage", "message": "src/lib/ 只放纯函数，本地存储通过注入的 KeyValueStorage 访问。" },
-          { "name": "sessionStorage", "message": "src/lib/ 只放纯函数，本地存储通过注入的 KeyValueStorage 访问。" }
+          { "name": "localStorage", "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。" },
+          { "name": "sessionStorage", "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。" }
         ],
         "no-restricted-imports": [
           "error",

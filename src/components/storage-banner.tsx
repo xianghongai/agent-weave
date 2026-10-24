@@ -1,10 +1,11 @@
 import { HardDriveIcon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 
 import { Note } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { persistenceProblemMessage } from '@/i18n/problems';
-import { dismissStorageFallback, useStorageStatus } from '@/state/workspace-store';
+import { useUiStore } from '@/state/ui-store';
 
 /**
  * 本地存储的提示，显示在所有页面顶部。
@@ -12,7 +13,14 @@ import { dismissStorageFallback, useStorageStatus } from '@/state/workspace-stor
  */
 export function StorageBanner() {
   const { t } = useTranslation();
-  const { fallback, unsaved } = useStorageStatus();
+  // 本机设置和 Gist 设置的回退提示显示在同步页各自的一节中，这里只提示工作区。
+  const { fallback, unsaved, dismissFallback } = useUiStore(
+    useShallow((state) => ({
+      fallback: state.fallback?.workspace ?? null,
+      unsaved: state.unsaved,
+      dismissFallback: state.dismissFallback,
+    }))
+  );
 
   if (!fallback && !unsaved) {
     return null;
@@ -37,7 +45,7 @@ export function StorageBanner() {
             {t('storage.fallbackHint')}
           </p>
           <div>
-            <Button variant="outline" size="sm" onClick={dismissStorageFallback}>
+            <Button variant="outline" size="sm" onClick={() => dismissFallback('workspace')}>
               {t('storage.dismiss')}
             </Button>
           </div>

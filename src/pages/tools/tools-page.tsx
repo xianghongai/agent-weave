@@ -28,11 +28,12 @@ import {
   matchesToolFilter,
 } from '@/lib/workspace-operations';
 import { CommandToolDialog } from '@/pages/tools/command-tool-dialog';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 export default function ToolsPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const [filter, setFilter] = useState<ToolFilter>(NO_TOOL_FILTER);
   const allTools = workspace.command_tools.toSorted((a, b) => compareText(a.key, b.key));
   const tools = allTools.filter((tool) => matchesToolFilter(tool, filter));
@@ -139,7 +140,7 @@ export default function ToolsPage() {
               variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
-                  runOperation((current) => deleteCommandTool(current, deleteTarget.id));
+                  applyOperation((current) => deleteCommandTool(current, deleteTarget.id));
                 }
                 setDeleteOpen(false);
               }}

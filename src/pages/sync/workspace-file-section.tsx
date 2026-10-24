@@ -20,7 +20,7 @@ import { downloadText } from '@/browser/download';
 import { formatTime } from '@/i18n/format-time';
 import type { Workspace } from '@/lib/workspace';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
-import { getWorkspace, runOperation } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 /** 待确认的导入：文件已通过校验，等待用户确认替换。 */
 interface PendingImport {
@@ -32,12 +32,13 @@ interface PendingImport {
 export function WorkspaceFileSection() {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
+  const replaceWorkspace = useAppStore((state) => state.replaceWorkspace);
   // 对话框关闭时保留待导入的内容，避免退场动画期间内容跳变。
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, setPending] = useState<PendingImport | null>(null);
 
   function handleExport() {
-    const file = exportWorkspace(getWorkspace());
+    const file = exportWorkspace(useAppStore.getState().workspace);
     downloadText(file.fileName, file.text);
   }
 
@@ -65,8 +66,7 @@ export function WorkspaceFileSection() {
 
   function confirmImport() {
     if (pending) {
-      const { workspace } = pending;
-      runOperation(() => ({ workspace }));
+      replaceWorkspace(pending.workspace);
       toast.success(t('workspaceFile.imported'));
     }
     setConfirmOpen(false);

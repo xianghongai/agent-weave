@@ -12,5 +12,5 @@
 ## 界面
 
 - **实体对话框**用 `src/hooks/use-operation-form.ts` 的 `useOperationForm()`：实时校验和提交都试运行 `src/lib/workspace-operations.ts` 中的同一个操作，校验规则只在操作里写一遍。
-- **只存在本机的状态**用 `src/state/create-store.ts` 的 `createStore()`，读写放在 `src/lib/persistence.ts`，沿用其中返回原因码的写法；组件通过 store 读写，不直接访问本地存储。
+- **需要持久化的状态**放进 `src/state/app-store.ts` 的一个 slice，并在 `src/lib/persistence.ts` 的 `PersistedState` 与 `restorePersistedState` 中补上校验和回退；组件通过 store 读写，不直接访问本地存储。导出文件和 Gist 推送只序列化工作区，新增的本机状态不能进入其中。
 - **命名与文案**使用 `GLOSSARY.md` 的术语，避开各条目 _Avoid_ 列出的词。同一个概念在代码、文案和文档中用同一个词。

@@ -31,11 +31,12 @@ import {
   usePatternTexts,
 } from '@/pages/rules/rule-owner';
 import { RuleWarningIcons, ruleWarnings } from '@/pages/rules/rule-warnings';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 export default function RulesPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const [owner, setOwner] = useState<OwnerFilter>('all');
   const [filter, setFilter] = useState<RuleFilter>(NO_RULE_FILTER);
   const allRules = listRules(workspace);
@@ -104,7 +105,7 @@ export default function RulesPage() {
                     size="icon"
                     aria-label={t('rules.deleteLabel')}
                     title={t('common.delete')}
-                    onClick={() => runOperation((current) => deleteRule(current, rule.id))}
+                    onClick={() => applyOperation((current) => deleteRule(current, rule.id))}
                   >
                     <Trash2Icon />
                   </Button>
@@ -126,7 +127,8 @@ export default function RulesPage() {
  */
 function AddRuleForm() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const patternRef = useRef<HTMLInputElement>(null);
   const [tool, setTool] = useState<ToolRef | null>(null);
   const [pattern, setPattern] = useState('');
@@ -147,7 +149,7 @@ function AddRuleForm() {
     if (!selected) {
       return;
     }
-    const result = runOperation((current) => addRule(current, { tool: selected, pattern, decision }));
+    const result = applyOperation((current) => addRule(current, { tool: selected, pattern, decision }));
     if (result) {
       setProblem(result);
       return;

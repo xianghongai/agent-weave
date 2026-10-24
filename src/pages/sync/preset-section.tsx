@@ -16,26 +16,27 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { type MergeSkip, mergePresets, resetToPresets } from '@/lib/preset-operations';
-import { getWorkspace, runOperation } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 /** 同步页中的“预设”一节：合并预设与重置为预设。 */
 export function PresetSection() {
   const { t } = useTranslation();
+  const replaceWorkspace = useAppStore((state) => state.replaceWorkspace);
   const [skipped, setSkipped] = useState<MergeSkip[]>([]);
   const [resetOpen, setResetOpen] = useState(false);
 
   function merge() {
     // 合并是同步执行的，先算出结果再交给 store，才能拿到报告。
-    const { workspace, report } = mergePresets(getWorkspace());
+    const { workspace, report } = mergePresets(useAppStore.getState().workspace);
     if (report.added > 0) {
-      runOperation(() => ({ workspace }));
+      replaceWorkspace(workspace);
     }
     toast.success(report.added > 0 ? t('presets.mergedSome', { n: report.added }) : t('presets.mergedNone'));
     setSkipped(report.skipped);
   }
 
   function reset() {
-    runOperation(() => resetToPresets());
+    replaceWorkspace(resetToPresets().workspace);
     setSkipped([]);
     setResetOpen(false);
     toast.success(t('presets.resetDone'));

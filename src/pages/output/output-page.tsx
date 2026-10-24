@@ -1,6 +1,5 @@
 import { cn } from 'cn';
 import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CopyButton } from '@/components/copy-button';
@@ -16,14 +15,15 @@ import { resolveTool } from '@/lib/workspace-operations';
 import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
 import { RuleNoticeList } from '@/pages/output/rule-notice-list';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
-import { useDeviceSettings } from '@/state/device-settings-store';
-import { useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
+import { useUiStore } from '@/state/ui-store';
 
 export default function OutputPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
-  const device = useDeviceSettings();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const workspace = useAppStore((state) => state.workspace);
+  const device = useAppStore((state) => state.deviceSettings);
+  const selectedId = useUiStore((state) => state.selectedAgentId);
+  const selectAgent = useUiStore((state) => state.selectAgent);
 
   // 所选 Agent 不存在（首次打开或已被删除）时，回到第一个 Agent。
   const agent = workspace.agents.find((candidate) => candidate.id === selectedId) ?? workspace.agents[0];
@@ -35,7 +35,7 @@ export default function OutputPage() {
         <Note icon={InfoIcon}>{t('output.noAgents')}</Note>
       ) : (
         <div className="grid gap-6">
-          <Tabs value={agent.id} onValueChange={(value: string) => setSelectedId(value)}>
+          <Tabs value={agent.id} onValueChange={(value: string) => selectAgent(value)}>
             <TabsList className="max-w-full overflow-x-auto">
               {workspace.agents.map((candidate) => (
                 <TabsTrigger key={candidate.id} value={candidate.id}>

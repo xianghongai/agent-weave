@@ -28,11 +28,12 @@ import {
   matchesToolFilter,
 } from '@/lib/workspace-operations';
 import { McpServerDialog } from '@/pages/mcp/mcp-server-dialog';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 export default function McpPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   // 与输出中的顺序一致，按标识排序。
   const [filter, setFilter] = useState<ToolFilter>(NO_TOOL_FILTER);
   const allServers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
@@ -137,7 +138,7 @@ export default function McpPage() {
               variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
-                  runOperation((current) => deleteMcpServer(current, deleteTarget.id));
+                  applyOperation((current) => deleteMcpServer(current, deleteTarget.id));
                 }
                 setDeleteOpen(false);
               }}

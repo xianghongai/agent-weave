@@ -19,11 +19,12 @@ import type { Agent } from '@/lib/workspace';
 import { countRulesForAgent, deleteAgent } from '@/lib/workspace-operations';
 import { AgentDialog } from '@/pages/agents/agent-dialog';
 import { BuiltInToolsSection } from '@/pages/agents/built-in-tools-section';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 export default function AgentsPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
   const [editOpen, setEditOpen] = useState(false);
@@ -117,7 +118,7 @@ export default function AgentsPage() {
               variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
-                  runOperation((current) => deleteAgent(current, deleteTarget.id));
+                  applyOperation((current) => deleteAgent(current, deleteTarget.id));
                 }
                 setDeleteOpen(false);
               }}

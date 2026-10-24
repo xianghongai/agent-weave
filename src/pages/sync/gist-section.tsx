@@ -24,7 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { gistProblemMessage, persistenceProblemMessage } from '@/i18n/problems';
+import { gistProblemMessage } from '@/i18n/problems';
 import { formatTime } from '@/i18n/format-time';
 import {
   type GistConnection,
@@ -36,8 +36,8 @@ import {
   pushWorkspace,
 } from '@/lib/gist';
 import type { Workspace } from '@/lib/workspace';
-import { getGistSettings, setGistSettings, useGistSettings, useGistSettingsProblem } from '@/state/gist-settings-store';
-import { getWorkspace, runOperation } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
+import { useUiStore } from '@/state/ui-store';
 
 /** 创建 Token 的页面：经典 Token 预先勾选 `gist`，Fine-grained Token 需要用户自己授予 Gists 读写。 */
 const CLASSIC_TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=agent-weave';
@@ -54,8 +54,11 @@ type Pending =
 /** 同步页的“Gist 同步”一节：Token 指引、本机 Gist 设置，以及手动推送和拉取。 */
 export function GistSection() {
   const { t } = useTranslation();
-  const settings = useGistSettings();
-  const settingsProblem = useGistSettingsProblem();
+  const settings = useAppStore((state) => state.gistSettings);
+  const setGistSettings = useAppStore((state) => state.setGistSettings);
+  const replaceWorkspace = useAppStore((state) => state.replaceWorkspace);
+  const workspace = useAppStore((state) => state.workspace);
+  const settingsInvalid = useUiStore((state) => state.fallback?.gistSettings ?? false);
   const [busy, setBusy] = useState(false);
   // 对话框关闭时保留待确认的内容，避免退场动画期间内容跳变。
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -90,7 +93,7 @@ export function GistSection() {
 
   async function push(id: string | null) {
     setBusy(true);
-    const result = await pushWorkspace(connection(), id, getWorkspace(), t('gist.description'));
+    const result = await pushWorkspace(connection(), id, useAppStore.getState().workspace, t('gist.description'));
     setBusy(false);
     if ('problem' in result) {
       toast.error(t('gist.pushFailed'), { description: gistProblemMessage(t, result) });
@@ -98,7 +101,7 @@ export function GistSection() {
     }
     if (id === null) {
       // 请求期间设置可能被修改，以最新的设置为准。
-      setGistSettings({ ...getGistSettings(), gist_id: result.gistId });
+      setGistSettings({ ...useAppStore.getState().gistSettings, gist_id: result.gistId });
       toast.success(t('gist.created'));
     } else {
       toast.success(t('gist.pushed'));
@@ -129,8 +132,7 @@ export function GistSection() {
     if (pending?.kind === 'push') {
       void push(pending.gistId);
     } else if (pending?.kind === 'pull') {
-      const workspace = pending.remote;
-      runOperation(() => ({ workspace }));
+      replaceWorkspace(pending.remote);
       toast.success(t('gist.pulled'));
     }
   }
@@ -199,16 +201,9 @@ export function GistSection() {
         </Field>
       </FieldGroup>
 
-      {settingsProblem && (
+      {settingsInvalid && (
         <Note tone="warning" icon={TriangleAlertIcon}>
-          {settingsProblem === 'invalidStructure' ? (
-            <p>{t('gist.invalidStructure')}</p>
-          ) : (
-            <>
-              <p>{persistenceProblemMessage(t, settingsProblem)}</p>
-              <p>{t('gist.unsaved')}</p>
-            </>
-          )}
+          {t('gist.invalidStructure')}
         </Note>
       )}
 
@@ -234,7 +229,7 @@ export function GistSection() {
               {t(pending?.kind === 'pull' ? 'gist.confirmPullDescription' : 'gist.confirmPushDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {pending && <Comparison pending={pending} local={getWorkspace()} />}
+          {pending && <Comparison pending={pending} local={workspace} />}
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={confirm}>

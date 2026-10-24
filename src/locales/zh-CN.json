@@ -111,7 +111,6 @@
     "pulled": "已从 Gist 拉取工作区。",
     "pushFailed": "推送失败",
     "pullFailed": "拉取失败",
-    "unsaved": "当前的 Token 和 Gist ID 只保留到关闭或刷新页面为止。",
     "invalidStructure": "本地保存的 Token 和 Gist ID 无效，已清空，请重新填写。",
     "description": "agent-weave 工作区（由 agent-weave 创建，用于在设备之间同步）",
     "confirmPushTitle": "用本地工作区覆盖 Gist？",
@@ -279,7 +278,6 @@
     "expandsTo": "{{placeholder}} 展开为",
     "incomplete": "选择操作系统并填写用户名之后，占位符才会展开；在此之前原样保留在输出中，输出页会给出提示。",
     "claudePathHint": "Claude Code 的路径规则请写成 ~/ 的形式：它的规则中单个前导 / 表示相对设置文件所在的目录，{{home}} 展开后的绝对路径含义不对。{{home}} 适合用于 Antigravity 的规则和 MCP Server 内容。",
-    "unsaved": "当前的本机设置只保留到关闭或刷新页面为止。",
     "invalidStructure": "本地保存的本机设置无效，已清空，请重新填写。"
   },
   "workspaceFile": {

@@ -20,12 +20,13 @@ import { Button } from '@/components/ui/button';
 import type { Agent, BuiltInTool } from '@/lib/workspace';
 import { compareText, countRulesForTool, deleteBuiltInTool } from '@/lib/workspace-operations';
 import { BuiltInToolDialog } from '@/pages/agents/built-in-tool-dialog';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 /** 某个 Agent 的内置工具清单：按标识排序，可以增删改；删除时确认受影响的规则数量。 */
 export function BuiltInToolsSection({ agent, className }: { agent: Agent; className?: string }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const tools = agent.built_in_tools.toSorted((a, b) => compareText(a.key, b.key));
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
@@ -119,7 +120,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
               variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
-                  runOperation((current) => deleteBuiltInTool(current, deleteTarget.id));
+                  applyOperation((current) => deleteBuiltInTool(current, deleteTarget.id));
                 }
                 setDeleteOpen(false);
               }}

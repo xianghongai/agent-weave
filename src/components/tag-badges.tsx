@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { resolveTags } from '@/lib/workspace-operations';
-import { useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 /** 已删除标签的配色：与“询问”决策同为琥珀色，提示需要清理。 */
 export const DANGLING_TAG_TONE = 'border-amber-600/40 text-amber-700 dark:border-amber-400/40 dark:text-amber-400';
@@ -14,7 +14,7 @@ export const DANGLING_TAG_TONE = 'border-amber-600/40 text-amber-700 dark:border
  */
 export function TagBadges({ tagIds }: { tagIds: readonly string[] }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
   if (tagIds.length === 0) {
     return null;
   }

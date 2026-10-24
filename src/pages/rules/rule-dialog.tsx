@@ -11,7 +11,7 @@ import type { Rule } from '@/lib/workspace';
 import { type OperationProblem, resolveTool, updateRule } from '@/lib/workspace-operations';
 import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
 import { usePatternTexts } from '@/pages/rules/rule-owner';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 interface RuleDialogProps {
   open: boolean;
@@ -37,7 +37,8 @@ export function RuleDialog({ open, onOpenChange, rule }: RuleDialogProps) {
 
 function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const [tool, setTool] = useState(rule.tool);
   const [pattern, setPattern] = useState(rule.pattern);
   const [decision, setDecision] = useState(rule.decision);
@@ -47,7 +48,7 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const result = runOperation((current) =>
+    const result = applyOperation((current) =>
       updateRule(current, rule.id, { tool, pattern, decision, high_risk: highRisk })
     );
     if (result) {

@@ -5,7 +5,7 @@ import { DANGLING_TAG_TONE } from '@/components/tag-badges';
 import { FieldDescription, FieldLegend, FieldSet } from '@/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { compareText } from '@/lib/workspace-operations';
-import { useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 interface TagPickerProps {
   /** 选中的标签 ID，按选择顺序排列。 */
@@ -19,7 +19,7 @@ interface TagPickerProps {
  */
 export function TagPicker({ value, onChange }: TagPickerProps) {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
   const tags = workspace.tags.toSorted((a, b) => compareText(a.key, b.key));
   const dangling = value.filter((id) => !workspace.tags.some((tag) => tag.id === id));
 

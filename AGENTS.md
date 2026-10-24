@@ -15,10 +15,12 @@
 
 - `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动出现在顶部导航和路由中。登记顺序就是导航顺序，第一项也是首页；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
 - `src/lib/`：纯函数，不依赖 React 和 DOM，全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
-- `src/state/`：界面订阅的内存状态，都基于 `create-store.ts` 的 `createStore()`；这里只保存结果、写入本地存储、通知订阅者，不写业务逻辑。
-  - `workspace-store.ts`：当前工作区。界面用 `useWorkspace()` 读取，用 `runOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作。
-  - `device-settings-store.ts`、`gist-settings-store.ts`：本机设置和 Gist 设置，只保存在本机，各自带有读写本地存储的问题。
-  - `theme.ts`：深浅色主题，记录在 `<html>` 的 `dark` class 上。
+- `src/state/`：全局状态，用 Zustand 加 Immer，按生命周期分成两个 store，理由见 `docs/adr/0002-state-layering.md`。两个 store 都按 slices 组织，action 与 state 放在同一个 store 中，只保存结果，业务逻辑留在 `src/lib/`。组件直接用 selector 订阅，一次取多个值时配合 `useShallow`，不另包自定义 Hook；事件处理中读取最新值用 `getState()`。
+  - `app-store.ts`：持久化应用 store，包含工作区、本机设置、Gist 设置、主题，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键。工作区只通过 `applyOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作，或用 `replaceWorkspace()` 整体替换。读取时的校验与回退由 `src/lib/persistence.ts` 的纯函数负责，读写错误写进界面 store。
+  - `ui-store.ts`：非持久化全局界面 store，包含存储状态（回退原因 `fallback`、无法保存的原因 `unsaved`）和多个页面共用的当前选中 Agent。
+  - `devtools.ts`：只在开发环境接入 Redux DevTools，生产构建不包含它。
+  - `theme.ts`：订阅应用 store，把主题同步到 `<html>` 的 `dark` class 上。
+  - 只在一个页面内使用的状态（Tab、筛选条件、表单）用 `useState`，不进 store；跨页面的一次性意图（如带着标签筛选跳到工具页）通过 `history.state` 传递，不进 store，也不放进 URL 查询参数。
 - `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
 - `src/components/`：站点外壳（页眉、页脚、主题切换）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅。只在一个页面中使用的组件放在该页面的目录里。
 - `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。

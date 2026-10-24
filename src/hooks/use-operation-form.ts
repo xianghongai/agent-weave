@@ -2,7 +2,7 @@ import { type FormEvent, useState } from 'react';
 
 import type { Workspace } from '@/lib/workspace';
 import type { OperationProblem, OperationResult } from '@/lib/workspace-operations';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 interface OperationFormOptions {
   /** 只禁用保存、不在输入时提示的原因码，如尚未填写的必填字段。提交时仍会提示。 */
@@ -29,7 +29,8 @@ export function useOperationForm(
   operation: (workspace: Workspace) => OperationResult,
   { quiet, onDone }: OperationFormOptions
 ): OperationForm {
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const [submitProblem, setSubmitProblem] = useState<OperationProblem | null>(null);
 
   const trial = operation(workspace);
@@ -37,7 +38,7 @@ export function useOperationForm(
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    const problem = runOperation(operation);
+    const problem = applyOperation(operation);
     if (problem) {
       setSubmitProblem(problem);
     } else {

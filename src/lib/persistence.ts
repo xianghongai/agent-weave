@@ -1,123 +1,102 @@
 import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
 import { createPresetWorkspace } from '@/lib/presets';
 import { type DeviceSettings, EMPTY_DEVICE_SETTINGS, OPERATING_SYSTEMS, type Workspace } from '@/lib/workspace';
-import { type ImportProblem, importWorkspace } from '@/lib/workspace-file';
+import type { ImportProblem } from '@/lib/workspace-file';
+import { parseWorkspace } from '@/lib/workspace-validation';
 
 /*
- * 持久化：在浏览器本地存储中读写工作区、本机设置和 Gist 设置，三者分键存储。
- * 读、写、解析失败都返回原因码，不抛异常，由界面层翻译成提示。
- * 存储通过参数注入，测试时使用内存中的替身。
+ * 持久化：应用状态在浏览器本地存储中只占一个键，读写由界面层的 store 完成。
+ * 这里只放读取时用到的纯函数：校验上次保存的内容，无效的部分回退到默认值，并给出原因码供界面提示。
  */
 
-/** `localStorage` 中本模块用到的部分。 */
-export interface KeyValueStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-}
+/** 应用状态在本地存储中的键。 */
+export const STORAGE_KEY = 'agent-weave';
 
-/** 三类数据各用独立的键。本机设置和 Gist 设置只存在本机，不进入工作区。 */
-export const STORAGE_KEYS = {
-  workspace: 'agent-weave:workspace',
-  deviceSettings: 'agent-weave:device-settings',
-  gistSettings: 'agent-weave:gist-settings',
-} as const;
+export const THEMES = ['dark', 'light'] as const;
+export type Theme = (typeof THEMES)[number];
+
+/** 页面默认深色，与 `index.html` 中 `<html class="dark">` 一致。 */
+export const DEFAULT_THEME: Theme = 'dark';
 
 /**
+ * 写入本地存储的应用状态。本机设置和 Gist 设置只存在本机：
+ * 与工作区存放在同一个键中，但导出文件和 Gist 推送只序列化工作区。
+ */
+export interface PersistedState {
+  workspace: Workspace;
+  deviceSettings: DeviceSettings;
+  gistSettings: GistSettings;
+  theme: Theme;
+}
+
+/**
+ * 本地存储整体不可用的原因：
  * - `readFailed`：存储不可用或读取时出错，如浏览器禁用了站点数据；
- * - 其余见 `ImportProblem`：本地数据与导入文件走同一套解析、迁移和校验。
+ * - `writeFailed`：存储不可用或写入时出错，如隐私模式、配额已满。
  */
-export type LoadProblem = 'readFailed' | ImportProblem;
+export type StorageProblem = 'readFailed' | 'writeFailed';
 
-/** `writeFailed`：存储不可用或写入时出错，如隐私模式、配额已满。 */
-export type SaveProblem = 'writeFailed';
-
-export type PersistenceProblem = LoadProblem | SaveProblem;
+/** 本地存储相关的全部原因码。工作区的原因与导入文件走同一套解析、迁移和校验，见 `ImportProblem`。 */
+export type PersistenceProblem = StorageProblem | ImportProblem;
 
 /**
- * 读取本地保存的工作区，总是返回一份可用的工作区。
- * 没有本地数据（首次访问）时返回预设；本地数据无法读取或无效时也返回预设，同时给出原因码供界面提示。
+ * 读取时数据无效、已回退到默认值的部分：
+ * - `workspace`：工作区无效的原因，此时已回退到预设；
+ * - `deviceSettings`、`gistSettings`：为 `true` 时该设置无效，已回退到空的设置。
  */
-export function loadWorkspace(storage: KeyValueStorage): { workspace: Workspace; problem: LoadProblem | null } {
-  let text: string | null;
-  try {
-    text = storage.getItem(STORAGE_KEYS.workspace);
-  } catch {
-    return { workspace: createPresetWorkspace(), problem: 'readFailed' };
-  }
-  if (text === null) {
-    return { workspace: createPresetWorkspace(), problem: null };
-  }
-  const parsed = importWorkspace(text);
-  if ('problem' in parsed) {
-    return { workspace: createPresetWorkspace(), problem: parsed.problem };
-  }
-  return { workspace: parsed.workspace, problem: null };
-}
-
-/** 保存工作区。成功时返回 `null`。 */
-export function saveWorkspace(storage: KeyValueStorage, workspace: Workspace): SaveProblem | null {
-  try {
-    storage.setItem(STORAGE_KEYS.workspace, JSON.stringify(workspace));
-    return null;
-  } catch {
-    return 'writeFailed';
-  }
+export interface RestoreFallback {
+  workspace: ImportProblem | null;
+  deviceSettings: boolean;
+  gistSettings: boolean;
 }
 
 /**
- * 读取本机设置或 Gist 设置的问题：
- * - `readFailed`：同 `LoadProblem`；
- * - `invalidStructure`：本地保存的设置无法解析，或不是有效的设置。
+ * 校验从本地存储读到的应用状态，总是返回一份可用的状态。
+ * 没有本地数据（首次访问）时返回默认值且不提示；某一部分无效时只回退这一部分，其余照常恢复。
+ * 主题无效时静默回退到默认主题。
  */
-export type SettingsLoadProblem = 'readFailed' | 'invalidStructure';
-
-/** 设置的存储状态：读取时的问题，或写入时的问题。 */
-export type SettingsProblem = SettingsLoadProblem | SaveProblem;
-
-/** 解析为 JSON 对象；无法解析或不是对象时返回 `null`。 */
-function parseObject(text: string): Record<string, unknown> | null {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    return null;
+export function restorePersistedState(persisted: unknown): {
+  state: PersistedState;
+  fallback: RestoreFallback | null;
+} {
+  if (persisted === undefined || persisted === null) {
+    return { state: defaultPersistedState(), fallback: null };
   }
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  const value = isRecord(persisted) ? persisted : {};
+
+  const workspaceResult = parseWorkspace(value.workspace);
+  const deviceSettings = isRecord(value.deviceSettings) ? parseDeviceSettings(value.deviceSettings) : null;
+  const gistSettings = isRecord(value.gistSettings) ? parseGistSettings(value.gistSettings) : null;
+  const theme = THEMES.find((candidate) => candidate === value.theme) ?? DEFAULT_THEME;
+
+  const fallback: RestoreFallback = {
+    workspace: 'problem' in workspaceResult ? workspaceResult.problem : null,
+    deviceSettings: deviceSettings === null,
+    gistSettings: gistSettings === null,
+  };
+  return {
+    state: {
+      workspace: 'workspace' in workspaceResult ? workspaceResult.workspace : createPresetWorkspace(),
+      deviceSettings: deviceSettings ?? EMPTY_DEVICE_SETTINGS,
+      gistSettings: gistSettings ?? EMPTY_GIST_SETTINGS,
+      theme,
+    },
+    fallback: fallback.workspace || fallback.deviceSettings || fallback.gistSettings ? fallback : null,
+  };
 }
 
-/**
- * 读取一份只存在本机的设置，总是返回一份可用的设置。
- * 没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。
- */
-function loadSettings<T>(
-  storage: KeyValueStorage,
-  key: string,
-  parse: (value: Record<string, unknown>) => T | null,
-  empty: T
-): { settings: T; problem: SettingsLoadProblem | null } {
-  let text: string | null;
-  try {
-    text = storage.getItem(key);
-  } catch {
-    return { settings: empty, problem: 'readFailed' };
-  }
-  if (text === null) {
-    return { settings: empty, problem: null };
-  }
-  const value = parseObject(text);
-  const settings = value && parse(value);
-  return settings ? { settings, problem: null } : { settings: empty, problem: 'invalidStructure' };
+/** 首次访问时的应用状态：预设工作区、空的设置、默认主题。 */
+export function defaultPersistedState(): PersistedState {
+  return {
+    workspace: createPresetWorkspace(),
+    deviceSettings: EMPTY_DEVICE_SETTINGS,
+    gistSettings: EMPTY_GIST_SETTINGS,
+    theme: DEFAULT_THEME,
+  };
 }
 
-function saveSettings(storage: KeyValueStorage, key: string, settings: object): SaveProblem | null {
-  try {
-    storage.setItem(key, JSON.stringify(settings));
-    return null;
-  } catch {
-    return 'writeFailed';
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function parseDeviceSettings(value: Record<string, unknown>): DeviceSettings | null {
@@ -131,43 +110,8 @@ function parseDeviceSettings(value: Record<string, unknown>): DeviceSettings | n
   return { os: parsedOs, user_name: userName };
 }
 
-/** 读取本机设置。没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。 */
-export function loadDeviceSettings(storage: KeyValueStorage): {
-  settings: DeviceSettings;
-  problem: SettingsLoadProblem | null;
-} {
-  return loadSettings(storage, STORAGE_KEYS.deviceSettings, parseDeviceSettings, EMPTY_DEVICE_SETTINGS);
-}
-
-/** 保存本机设置。成功时返回 `null`。 */
-export function saveDeviceSettings(storage: KeyValueStorage, settings: DeviceSettings): SaveProblem | null {
-  return saveSettings(storage, STORAGE_KEYS.deviceSettings, settings);
-}
-
 function parseGistSettings(value: Record<string, unknown>): GistSettings | null {
   const { token, gist_id } = value;
   // 只保留已知属性，丢弃未知属性。
   return typeof token === 'string' && typeof gist_id === 'string' ? { token, gist_id } : null;
 }
-
-/** 读取 Gist 设置。没有本地数据时返回空的设置；无法读取或无效时也返回空的设置，同时给出原因码。 */
-export function loadGistSettings(storage: KeyValueStorage): {
-  settings: GistSettings;
-  problem: SettingsLoadProblem | null;
-} {
-  return loadSettings(storage, STORAGE_KEYS.gistSettings, parseGistSettings, EMPTY_GIST_SETTINGS);
-}
-
-/** 保存 Gist 设置。成功时返回 `null`。 */
-export function saveGistSettings(storage: KeyValueStorage, settings: GistSettings): SaveProblem | null {
-  return saveSettings(storage, STORAGE_KEYS.gistSettings, { token: settings.token, gist_id: settings.gist_id });
-}
-
-/**
- * 浏览器的 `localStorage`。每次调用时才访问它：
- * 有的浏览器在禁用站点数据时，连读取 `localStorage` 属性都会抛异常，这样异常也会落在上面的 `try` 里。
- */
-export const browserStorage: KeyValueStorage = {
-  getItem: (key) => globalThis.localStorage.getItem(key),
-  setItem: (key, value) => globalThis.localStorage.setItem(key, value),
-};

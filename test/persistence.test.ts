@@ -1,199 +1,112 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  type KeyValueStorage,
-  STORAGE_KEYS,
-  loadDeviceSettings,
-  loadGistSettings,
-  loadWorkspace,
-  saveDeviceSettings,
-  saveGistSettings,
-  saveWorkspace,
-} from '@/lib/persistence';
+import { type PersistedState, restorePersistedState } from '@/lib/persistence';
 import { createPresetWorkspace } from '@/lib/presets';
-import { EMPTY_DEVICE_SETTINGS } from '@/lib/workspace';
 import { parseWorkspace } from '@/lib/workspace-validation';
 
 import { corrupt, edited } from './fixtures/workspace';
 
-/**
- * 内存中的存储替身，可以让读或写抛异常，模拟隐私模式和配额已满。
- * 每次读写时才查看选项，用例可以中途切换。
- */
-function memoryStorage(options: { failRead?: boolean; failWrite?: boolean } = {}) {
-  const items = new Map<string, string>();
-  const storage: KeyValueStorage = {
-    getItem: (key) => {
-      if (options.failRead) {
-        throw new Error('SecurityError');
-      }
-      return items.get(key) ?? null;
-    },
-    setItem: (key, value) => {
-      if (options.failWrite) {
-        throw new Error('QuotaExceededError');
-      }
-      items.set(key, value);
-    },
-  };
-  return { storage, items };
+/** 与 `corrupt` 相同，但返回解析后的值：本地存储中的工作区由 `persist` 整体解析后才交给校验。 */
+function corruptValue(path: (string | number)[], value: unknown): unknown {
+  return JSON.parse(corrupt(path, value));
 }
 
-describe('持久化：工作区', () => {
-  it('保存后再读取，得到同样的工作区', () => {
-    const { storage } = memoryStorage();
-    expect(saveWorkspace(storage, edited())).toBeNull();
-    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
+/** 上次保存的应用状态：每一部分都有值，且与默认值不同。 */
+function saved(): PersistedState {
+  return {
+    workspace: edited(),
+    deviceSettings: { os: 'macos', user_name: 'alice' },
+    gistSettings: { token: 'test-token', gist_id: 'aa5a315d61ae9438b18d' },
+    theme: 'light',
+  };
+}
+
+describe('持久化：恢复上次保存的状态', () => {
+  it('数据有效时原样恢复，不提示', () => {
+    expect(restorePersistedState(saved())).toEqual({ state: saved(), fallback: null });
   });
 
-  it('首次访问时没有本地数据，载入预设且不提示', () => {
-    const { storage } = memoryStorage();
-    expect(loadWorkspace(storage)).toEqual({ workspace: createPresetWorkspace(), problem: null });
-  });
-
-  it('本地数据无法解析时回退到预设，并给出原因码', () => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.workspace, '{"schema_version": 1, "tags": [');
-    expect(loadWorkspace(storage)).toEqual({ workspace: createPresetWorkspace(), problem: 'parseFailed' });
-  });
-
-  it.each([
-    ['不是对象', '[]'],
-    ['不是工作区', '"hello"'],
-    ['缺少规则列表', corrupt(['rules'], undefined)],
-    ['修改时间不是字符串', corrupt(['updated_at'], 0)],
-    ['结构版本不是整数', corrupt(['schema_version'], '1')],
-    ['标签缺少名称', corrupt(['tags', 0, 'name'], undefined)],
-    ['命令工具缺少标识', corrupt(['command_tools', 0, 'key'], undefined)],
-    ['标签 ID 不是字符串', corrupt(['command_tools', 0, 'tag_ids'], [1])],
-    ['高危标记不是布尔值', corrupt(['command_tools', 0, 'high_risk'], 'yes')],
-    ['MCP Server 的内容不是对象', corrupt(['mcp_servers', 0, 'content'], [])],
-    ['内置工具缺少模板', corrupt(['agents', 0, 'built_in_tools', 0, 'templates'], undefined)],
-    ['作用域缺少路径', corrupt(['agents', 0, 'permission_output', 'scopes', 0, 'path'], undefined)],
-    ['决策键名映射不完整', corrupt(['agents', 0, 'permission_output', 'decision_keys', 'ask'], undefined)],
-    ['MCP 模板不是字符串', corrupt(['agents', 0, 'permission_output', 'mcp_templates', 'with_pattern'], null)],
-    ['MCP 输出风格未知', corrupt(['agents', 0, 'mcp_output', 'style'], 'yaml')],
-    ['规则的决策不在取值范围内', corrupt(['rules', 0, 'decision'], 'maybe')],
-    ['规则的工具类型未知', corrupt(['rules', 0, 'tool', 'type'], 'plugin')],
-  ])('本地数据结构无效（%s）时回退到预设，并给出原因码', (_, text) => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.workspace, text);
-    expect(loadWorkspace(storage)).toEqual({ workspace: createPresetWorkspace(), problem: 'invalidStructure' });
-  });
-
-  it('本地数据来自更新的版本时回退到预设，并给出原因码', () => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.workspace, corrupt(['schema_version'], 2));
-    expect(loadWorkspace(storage)).toEqual({ workspace: createPresetWorkspace(), problem: 'newerVersion' });
-  });
-
-  it('存储无法读取时回退到预设，并给出原因码', () => {
-    const { storage } = memoryStorage({ failRead: true });
-    expect(loadWorkspace(storage)).toEqual({ workspace: createPresetWorkspace(), problem: 'readFailed' });
-  });
-
-  it('写入失败时返回原因码，不抛异常，原有数据不变', () => {
-    const options = { failWrite: false };
-    const { storage } = memoryStorage(options);
-    expect(saveWorkspace(storage, edited())).toBeNull();
-    options.failWrite = true;
-    expect(saveWorkspace(storage, createPresetWorkspace())).toBe('writeFailed');
-    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
-  });
-
-  it('只写工作区自己的键，不碰本机设置和 Gist 设置', () => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.deviceSettings, 'device');
-    items.set(STORAGE_KEYS.gistSettings, 'gist');
-    saveWorkspace(storage, edited());
-    expect(items.get(STORAGE_KEYS.deviceSettings)).toBe('device');
-    expect(items.get(STORAGE_KEYS.gistSettings)).toBe('gist');
-  });
-});
-
-describe('持久化：本机设置', () => {
-  it('保存后再读取，得到同样的本机设置', () => {
-    const { storage } = memoryStorage();
-    expect(saveDeviceSettings(storage, { os: 'macos', user_name: 'alice' })).toBeNull();
-    expect(loadDeviceSettings(storage)).toEqual({ settings: { os: 'macos', user_name: 'alice' }, problem: null });
-  });
-
-  it('只写本机设置自己的键，不进入工作区', () => {
-    const { storage, items } = memoryStorage();
-    saveWorkspace(storage, edited());
-    saveDeviceSettings(storage, { os: 'linux', user_name: 'alice' });
-    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
-    expect([...items.keys()].toSorted()).toEqual([STORAGE_KEYS.deviceSettings, STORAGE_KEYS.workspace].toSorted());
-  });
-
-  it('首次访问时没有本地数据，返回空的本机设置且不提示', () => {
-    const { storage } = memoryStorage();
-    expect(loadDeviceSettings(storage)).toEqual({ settings: EMPTY_DEVICE_SETTINGS, problem: null });
+  it('首次访问时没有本地数据，使用预设、空的设置和深色主题，不提示', () => {
+    expect(restorePersistedState(undefined)).toEqual({
+      state: {
+        workspace: createPresetWorkspace(),
+        deviceSettings: { os: null, user_name: '' },
+        gistSettings: { token: '', gist_id: '' },
+        theme: 'dark',
+      },
+      fallback: null,
+    });
   });
 
   it.each([
-    ['无法解析', '{"os": '],
-    ['不是对象', '[]'],
-    ['操作系统未知', '{"os": "beos", "user_name": "alice"}'],
-    ['用户名不是字符串', '{"os": "linux", "user_name": 1}'],
-  ])('本地数据%s时返回空的本机设置，并给出原因码', (_, text) => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.deviceSettings, text);
-    expect(loadDeviceSettings(storage)).toEqual({ settings: EMPTY_DEVICE_SETTINGS, problem: 'invalidStructure' });
+    ['缺少规则列表', corruptValue(['rules'], undefined)],
+    ['结构版本不是整数', corruptValue(['schema_version'], '1')],
+    ['规则的决策不在取值范围内', corruptValue(['rules', 0, 'decision'], 'maybe')],
+  ])('工作区结构无效（%s）时只回退工作区到预设，设置照常恢复', (_, workspace) => {
+    expect(restorePersistedState({ ...saved(), workspace })).toEqual({
+      state: { ...saved(), workspace: createPresetWorkspace() },
+      fallback: { workspace: 'invalidStructure', deviceSettings: false, gistSettings: false },
+    });
+  });
+
+  it('工作区来自更新的版本时回退到预设，并给出原因码', () => {
+    expect(restorePersistedState({ ...saved(), workspace: corruptValue(['schema_version'], 2) })).toEqual({
+      state: { ...saved(), workspace: createPresetWorkspace() },
+      fallback: { workspace: 'newerVersion', deviceSettings: false, gistSettings: false },
+    });
+  });
+
+  it.each([
+    ['操作系统未知', { os: 'beos', user_name: 'alice' }],
+    ['用户名不是字符串', { os: 'linux', user_name: 1 }],
+    ['不是对象', []],
+    ['缺失', undefined],
+  ])('本机设置无效（%s）时回退到空的本机设置，其余照常恢复', (_, deviceSettings) => {
+    expect(restorePersistedState({ ...saved(), deviceSettings })).toEqual({
+      state: { ...saved(), deviceSettings: { os: null, user_name: '' } },
+      fallback: { workspace: null, deviceSettings: true, gistSettings: false },
+    });
+  });
+
+  it.each([
+    ['属性不是字符串', { token: 'test-token', gist_id: 42 }],
+    ['不是对象', 'test-token'],
+  ])('Gist 设置无效（%s）时回退到空的 Gist 设置，其余照常恢复', (_, gistSettings) => {
+    expect(restorePersistedState({ ...saved(), gistSettings })).toEqual({
+      state: { ...saved(), gistSettings: { token: '', gist_id: '' } },
+      fallback: { workspace: null, deviceSettings: false, gistSettings: true },
+    });
   });
 
   it('未选择操作系统是合法的本机设置', () => {
-    const { storage } = memoryStorage();
-    saveDeviceSettings(storage, { os: null, user_name: 'alice' });
-    expect(loadDeviceSettings(storage)).toEqual({ settings: { os: null, user_name: 'alice' }, problem: null });
-  });
-
-  it('存储无法读取或写入时返回原因码，不抛异常', () => {
-    expect(loadDeviceSettings(memoryStorage({ failRead: true }).storage)).toEqual({
-      settings: EMPTY_DEVICE_SETTINGS,
-      problem: 'readFailed',
+    const deviceSettings = { os: null, user_name: 'alice' };
+    expect(restorePersistedState({ ...saved(), deviceSettings })).toEqual({
+      state: { ...saved(), deviceSettings },
+      fallback: null,
     });
-    expect(saveDeviceSettings(memoryStorage({ failWrite: true }).storage, EMPTY_DEVICE_SETTINGS)).toBe('writeFailed');
-  });
-});
-
-describe('持久化：Gist 设置', () => {
-  const settings = { token: 'test-token', gist_id: 'aa5a315d61ae9438b18d' };
-
-  it('保存后再读取，得到同样的设置；只写自己的键，不进入工作区', () => {
-    const { storage, items } = memoryStorage();
-    saveWorkspace(storage, edited());
-    expect(saveGistSettings(storage, settings)).toBeNull();
-    expect(loadGistSettings(storage)).toEqual({ settings, problem: null });
-    expect(items.get(STORAGE_KEYS.workspace)).not.toContain('test-token');
-    expect(loadWorkspace(storage)).toEqual({ workspace: edited(), problem: null });
   });
 
-  it('首次访问时没有本地数据，返回空的设置且不提示', () => {
-    const { storage } = memoryStorage();
-    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: null });
+  it('设置中不认识的属性被丢弃', () => {
+    const state = restorePersistedState({
+      ...saved(),
+      deviceSettings: { ...saved().deviceSettings, extra: 'x' },
+      gistSettings: { ...saved().gistSettings, extra: 'x' },
+    });
+    expect(state).toEqual({ state: saved(), fallback: null });
   });
 
-  it.each([
-    ['无法解析', '{"token": '],
-    ['不是对象', '[]'],
-    ['属性不是字符串', JSON.stringify({ token: 'test-token', gist_id: 42 })],
-  ])('本地数据%s时返回空的设置，并给出原因码', (_, text) => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.gistSettings, text);
-    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: 'invalidStructure' });
+  it('主题无效时静默回退到深色', () => {
+    expect(restorePersistedState({ ...saved(), theme: 'sepia' })).toEqual({
+      state: { ...saved(), theme: 'dark' },
+      fallback: null,
+    });
   });
 
-  it('丢弃不认识的属性', () => {
-    const { storage, items } = memoryStorage();
-    items.set(STORAGE_KEYS.gistSettings, JSON.stringify({ ...settings, extra: 'x' }));
-    expect(loadGistSettings(storage)).toEqual({ settings, problem: null });
-  });
-
-  it('存储无法读取或写入时返回原因码，不抛异常', () => {
-    const { storage } = memoryStorage({ failRead: true, failWrite: true });
-    expect(loadGistSettings(storage)).toEqual({ settings: { token: '', gist_id: '' }, problem: 'readFailed' });
-    expect(saveGistSettings(storage, settings)).toBe('writeFailed');
+  it('整体不是对象时，每一部分都回退', () => {
+    expect(restorePersistedState('hello')).toEqual({
+      state: restorePersistedState(undefined).state,
+      fallback: { workspace: 'invalidStructure', deviceSettings: true, gistSettings: true },
+    });
   });
 });
 

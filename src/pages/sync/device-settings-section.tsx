@@ -5,10 +5,10 @@ import { Note } from '@/components/page';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { persistenceProblemMessage } from '@/i18n/problems';
 import { expandText } from '@/lib/placeholders';
 import { OPERATING_SYSTEMS } from '@/lib/workspace';
-import { setDeviceSettings, useDeviceSettings, useDeviceSettingsProblem } from '@/state/device-settings-store';
+import { useAppStore } from '@/state/app-store';
+import { useUiStore } from '@/state/ui-store';
 
 /** 界面上展示的路径占位符，按这个顺序列出展开结果。 */
 const PLACEHOLDERS = ['{{home}}', '{{user}}'] as const;
@@ -16,8 +16,9 @@ const PLACEHOLDERS = ['{{home}}', '{{user}}'] as const;
 /** 同步页的“本机设置”一节：选择操作系统、填写用户名，用于输出时展开路径占位符。修改即保存。 */
 export function DeviceSettingsSection() {
   const { t } = useTranslation();
-  const settings = useDeviceSettings();
-  const problem = useDeviceSettingsProblem();
+  const settings = useAppStore((state) => state.deviceSettings);
+  const setDeviceSettings = useAppStore((state) => state.setDeviceSettings);
+  const settingsInvalid = useUiStore((state) => state.fallback?.deviceSettings ?? false);
   const tokens = { home: PLACEHOLDERS[0], user: PLACEHOLDERS[1] };
   const complete = settings.os !== null && settings.user_name.trim() !== '';
 
@@ -84,16 +85,9 @@ export function DeviceSettingsSection() {
 
       <Note icon={InfoIcon}>{t('deviceSettings.claudePathHint', tokens)}</Note>
 
-      {problem && (
+      {settingsInvalid && (
         <Note tone="warning" icon={TriangleAlertIcon}>
-          {problem === 'invalidStructure' ? (
-            <p>{t('deviceSettings.invalidStructure')}</p>
-          ) : (
-            <>
-              <p>{persistenceProblemMessage(t, problem)}</p>
-              <p>{t('deviceSettings.unsaved')}</p>
-            </>
-          )}
+          {t('deviceSettings.invalidStructure')}
         </Note>
       )}
     </section>

@@ -18,11 +18,12 @@ import { Button } from '@/components/ui/button';
 import type { Tag } from '@/lib/workspace';
 import { compareText, countToolsForTag, deleteTag } from '@/lib/workspace-operations';
 import { TagDialog } from '@/pages/tags/tag-dialog';
-import { runOperation, useWorkspace } from '@/state/workspace-store';
+import { useAppStore } from '@/state/app-store';
 
 export default function TagsPage() {
   const { t } = useTranslation();
-  const workspace = useWorkspace();
+  const workspace = useAppStore((state) => state.workspace);
+  const applyOperation = useAppStore((state) => state.applyOperation);
   const tags = workspace.tags.toSorted((a, b) => compareText(a.key, b.key));
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
@@ -110,7 +111,7 @@ export default function TagsPage() {
               variant="destructive"
               onClick={() => {
                 if (deleteTarget) {
-                  runOperation((current) => deleteTag(current, deleteTarget.id));
+                  applyOperation((current) => deleteTag(current, deleteTarget.id));
                 }
                 setDeleteOpen(false);
               }}
