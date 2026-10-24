@@ -39,9 +39,10 @@ import type { Workspace } from '@/lib/workspace';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
-/** 创建 Token 的页面：经典 Token 预先勾选 `gist`，Fine-grained Token 需要用户自己授予 Gists 读写。 */
-const CLASSIC_TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=gist&description=agent-weave';
-const FINE_GRAINED_TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new';
+/** 创建 Token 的页面：经典 Token 预先勾选 `gist`，Fine-grained Token 预先填好名称并申请 Gists 读写。 */
+const CLASSIC_TOKEN_URL = 'https://github.com/settings/tokens/new?description=agent-weave&scopes=gist';
+const FINE_GRAINED_TOKEN_URL =
+  'https://github.com/settings/personal-access-tokens/new?name=agent-weave&description=agent-weave&gists=write';
 
 /**
  * 已读取远端、等待用户确认的覆盖。
