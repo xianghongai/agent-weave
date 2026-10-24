@@ -100,14 +100,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function parseDeviceSettings(value: Record<string, unknown>): DeviceSettings | null {
-  const { os, user_name: userName } = value;
+  const { os, user_names: userNames } = value;
   // `undefined` 表示取值无效；`null` 表示未选择操作系统，是合法的。
   const parsedOs = os === null ? null : OPERATING_SYSTEMS.find((candidate) => candidate === os);
-  if (parsedOs === undefined || typeof userName !== 'string') {
+  if (parsedOs === undefined || !isRecord(userNames)) {
     return null;
   }
-  // 只保留已知属性，丢弃未知属性。
-  return { os: parsedOs, user_name: userName };
+  // 每种操作系统都要有一个字符串用户名；只保留已知属性，丢弃未知属性。
+  const parsedNames = { ...EMPTY_DEVICE_SETTINGS.user_names };
+  for (const system of OPERATING_SYSTEMS) {
+    const userName = userNames[system];
+    if (typeof userName !== 'string') {
+      return null;
+    }
+    parsedNames[system] = userName;
+  }
+  return { os: parsedOs, user_names: parsedNames };
 }
 
 function parseGistSettings(value: Record<string, unknown>): GistSettings | null {

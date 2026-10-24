@@ -158,7 +158,7 @@ describe('导出工作区', () => {
   });
 
   it('只包含工作区的属性，不含 Gist 设置和本机设置', () => {
-    const leaked = { ...edited(), gist_token: 'secret', gist_id: 'abc', os: 'linux', user_name: 'me' };
+    const leaked = { ...edited(), gist_token: 'secret', gist_id: 'abc', os: 'linux', user_names: { linux: 'me' } };
     const { text } = exportWorkspace(leaked, new Date(2026, 9, 23));
     expect(Object.keys(JSON.parse(text)).toSorted()).toEqual(
       ['agents', 'command_tools', 'mcp_servers', 'rules', 'schema_version', 'tags', 'updated_at'].toSorted()

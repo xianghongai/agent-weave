@@ -15,7 +15,7 @@ function corruptValue(path: (string | number)[], value: unknown): unknown {
 function saved(): PersistedState {
   return {
     workspace: edited(),
-    deviceSettings: { os: 'macos', user_name: 'alice' },
+    deviceSettings: { os: 'macos', user_names: { linux: 'alice', macos: 'alice.m', windows: '' } },
     gistSettings: { token: 'test-token', gist_id: 'aa5a315d61ae9438b18d' },
     theme: 'light',
   };
@@ -30,7 +30,7 @@ describe('持久化：恢复上次保存的状态', () => {
     expect(restorePersistedState(undefined)).toEqual({
       state: {
         workspace: createPresetWorkspace(),
-        deviceSettings: { os: null, user_name: '' },
+        deviceSettings: { os: null, user_names: { linux: '', macos: '', windows: '' } },
         gistSettings: { token: '', gist_id: '' },
         theme: 'dark',
       },
@@ -57,13 +57,16 @@ describe('持久化：恢复上次保存的状态', () => {
   });
 
   it.each([
-    ['操作系统未知', { os: 'beos', user_name: 'alice' }],
-    ['用户名不是字符串', { os: 'linux', user_name: 1 }],
+    ['操作系统未知', { os: 'beos', user_names: { linux: 'alice', macos: '', windows: '' } }],
+    ['某个系统的用户名不是字符串', { os: 'linux', user_names: { linux: 'alice', macos: 1, windows: '' } }],
+    ['缺少某个系统的用户名', { os: 'linux', user_names: { linux: 'alice', macos: '' } }],
+    ['用户名不是对象', { os: 'linux', user_names: 'alice' }],
+    ['只有一个用户名的旧结构', { os: 'linux', user_name: 'alice' }],
     ['不是对象', []],
     ['缺失', undefined],
   ])('本机设置无效（%s）时回退到空的本机设置，其余照常恢复', (_, deviceSettings) => {
     expect(restorePersistedState({ ...saved(), deviceSettings })).toEqual({
-      state: { ...saved(), deviceSettings: { os: null, user_name: '' } },
+      state: { ...saved(), deviceSettings: { os: null, user_names: { linux: '', macos: '', windows: '' } } },
       fallback: { workspace: null, deviceSettings: true, gistSettings: false },
     });
   });
@@ -79,7 +82,7 @@ describe('持久化：恢复上次保存的状态', () => {
   });
 
   it('未选择操作系统是合法的本机设置', () => {
-    const deviceSettings = { os: null, user_name: 'alice' };
+    const deviceSettings = { os: null, user_names: { linux: 'alice', macos: '', windows: '' } };
     expect(restorePersistedState({ ...saved(), deviceSettings })).toEqual({
       state: { ...saved(), deviceSettings },
       fallback: null,
@@ -89,7 +92,11 @@ describe('持久化：恢复上次保存的状态', () => {
   it('设置中不认识的属性被丢弃', () => {
     const state = restorePersistedState({
       ...saved(),
-      deviceSettings: { ...saved().deviceSettings, extra: 'x' },
+      deviceSettings: {
+        ...saved().deviceSettings,
+        user_names: { ...saved().deviceSettings.user_names, beos: 'x' },
+        extra: 'x',
+      },
       gistSettings: { ...saved().gistSettings, extra: 'x' },
     });
     expect(state).toEqual({ state: saved(), fallback: null });

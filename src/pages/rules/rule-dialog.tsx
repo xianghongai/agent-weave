@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Rule } from '@/lib/workspace';
 import { type OperationProblem, resolveTool, updateRule } from '@/lib/workspace-operations';
 import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
+import { PatternLabel } from '@/pages/rules/pattern-label';
 import { usePatternTexts } from '@/pages/rules/rule-owner';
 import { useAppStore } from '@/state/app-store';
 
@@ -67,7 +68,7 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
           {problem && <FieldError>{operationProblemMessage(t, problem)}</FieldError>}
         </Field>
         <Field>
-          <FieldLabel htmlFor="rule-edit-pattern">{t('rules.pattern')}</FieldLabel>
+          <PatternLabel htmlFor="rule-edit-pattern" hint={patternTexts.hint} />
           <Input
             id="rule-edit-pattern"
             value={pattern}
@@ -77,7 +78,6 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
             className="font-mono"
             onChange={(event) => setPattern(event.target.value)}
           />
-          <FieldDescription>{patternTexts.hint}</FieldDescription>
         </Field>
         <Field>
           <FieldLabel>{t('rules.decision')}</FieldLabel>

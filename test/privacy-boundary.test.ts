@@ -20,7 +20,7 @@ const SECRET = {
 
 const state: PersistedState = {
   workspace: edited(),
-  deviceSettings: { os: 'windows', user_name: SECRET.userName },
+  deviceSettings: { os: 'windows', user_names: { linux: '', macos: '', windows: SECRET.userName } },
   gistSettings: { token: SECRET.token, gist_id: SECRET.gistId },
   theme: 'light',
 };

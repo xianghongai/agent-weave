@@ -2,6 +2,7 @@ import { PencilIcon, PlugIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { readTagIdFromHistory } from '@/browser/history-state';
 import { Note, Page, PageScroll } from '@/components/page';
 import { TagBadges } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
@@ -20,12 +21,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { McpServer } from '@/lib/workspace';
 import {
-  NO_TOOL_FILTER,
   type ToolFilter,
   compareText,
   countRulesForTool,
   deleteMcpServer,
   matchesToolFilter,
+  toolFilterForTag,
 } from '@/lib/workspace-operations';
 import { McpServerDialog } from '@/pages/mcp/mcp-server-dialog';
 import { useAppStore } from '@/state/app-store';
@@ -34,8 +35,9 @@ export default function McpPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
+  // 从标签页跳转过来时，history.state 带着要筛选的标签。
+  const [filter, setFilter] = useState<ToolFilter>(() => toolFilterForTag(workspace, readTagIdFromHistory()));
   // 与输出中的顺序一致，按标识排序。
-  const [filter, setFilter] = useState<ToolFilter>(NO_TOOL_FILTER);
   const allServers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
   const servers = allServers.filter((server) => matchesToolFilter(server, filter));
 

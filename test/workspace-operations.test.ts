@@ -7,6 +7,7 @@ import {
   type AgentInput,
   type BuiltInToolInput,
   NO_RULE_FILTER,
+  NO_TOOL_FILTER,
   type OperationContext,
   type RuleFilter,
   type ToolFilter,
@@ -37,6 +38,7 @@ import {
   updateCommandTool,
   updateMcpServer,
   updateRule,
+  toolFilterForTag,
   updateTag,
 } from '@/lib/workspace-operations';
 import { parseWorkspace } from '@/lib/workspace-validation';
@@ -704,6 +706,23 @@ describe('工作区操作：标签', () => {
     expect(kept.agents[0]?.built_in_tools[0]?.tag_ids).toEqual(['fs']);
   });
 
+  it('按种类统计引用某个标签的工具，内置工具跨 Agent 合计', () => {
+    const ctx = context();
+    const ws = apply(
+      withRead,
+      (w) => addCommandTool(w, { key: 'git', description: '', tag_ids: ['vcs'] }, ctx),
+      (w) => addCommandTool(w, { key: 'gh', description: '', tag_ids: ['vcs', 'net'] }, ctx),
+      (w) => addCommandTool(w, { key: 'curl', description: '', tag_ids: ['net'] }, ctx),
+      (w) => addMcpServer(w, { key: 'github', content: '{}', description: '', tag_ids: ['vcs'] }, ctx),
+      (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read', tag_ids: ['vcs'] }), ctx),
+      (w) => addAgent(w, agentInput(), ctx),
+      (w) => addBuiltInTool(w, 'new-5', builtInInput({ tag_ids: ['vcs'] }), ctx)
+    );
+    expect(countToolsForTag(ws, 'vcs')).toEqual({ command: 2, mcp: 1, built_in: 2 });
+    expect(countToolsForTag(ws, 'net')).toEqual({ command: 2, mcp: 0, built_in: 0 });
+    expect(countToolsForTag(ws, 'none')).toEqual({ command: 0, mcp: 0, built_in: 0 });
+  });
+
   it('删除标签时不修改引用它的工具，残留的标签 ID 成为悬空引用', () => {
     const ctx = context();
     const ws = apply(
@@ -713,7 +732,7 @@ describe('工作区操作：标签', () => {
       (w) => addCommandTool(w, { key: 'git', description: '', tag_ids: ['new-1', 'new-2'] }, ctx),
       (w) => updateBuiltInTool(w, 'read', builtInInput({ key: 'Read', tag_ids: ['new-2'] }), ctx)
     );
-    expect(countToolsForTag(ws, 'new-2')).toBe(2);
+    expect(countToolsForTag(ws, 'new-2')).toEqual({ command: 1, mcp: 0, built_in: 1 });
 
     const deleted = apply(ws, (w) => deleteTag(w, 'new-2', ctx));
     expect(deleted.command_tools[0]?.tag_ids).toEqual(['new-1', 'new-2']);
@@ -786,6 +805,12 @@ describe('查询：筛选', () => {
     expect(tools({ name: '', tagId: null })).toEqual(['git', 'curl']);
     expect(tools({ name: ' GI ', tagId: null })).toEqual(['git']);
     expect(tools({ name: '传输', tagId: null })).toEqual(['curl']);
+  });
+
+  it('从标签页跳转带来的标签作为初始筛选；标签不存在或没有带标签时不筛选', () => {
+    expect(toolFilterForTag(ws, 'new-2')).toEqual({ name: '', tagId: 'new-2' });
+    expect(toolFilterForTag(ws, 'deleted')).toEqual(NO_TOOL_FILTER);
+    expect(toolFilterForTag(ws, null)).toEqual(NO_TOOL_FILTER);
   });
 
   it('工具按标签筛选，与名称同时生效', () => {

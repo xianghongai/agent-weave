@@ -11,7 +11,7 @@ import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
  */
 
 const preset = createPresetWorkspace();
-const DEVICE: DeviceSettings = { os: 'linux', user_name: 'alice' };
+const DEVICE: DeviceSettings = { os: 'linux', user_names: { linux: 'alice', macos: '', windows: '' } };
 
 function agentId(name: string): string {
   return preset.agents.find((agent) => agent.name === name)?.id ?? '';
