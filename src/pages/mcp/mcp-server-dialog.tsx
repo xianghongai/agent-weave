@@ -2,10 +2,11 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CodeEditor, type CodeEditorHandle } from '@/components/code-editor';
+import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useOperationForm } from '@/hooks/use-operation-form';
@@ -25,15 +26,15 @@ export function McpServerDialog({ open, onOpenChange, server }: McpServerDialogP
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t(server ? 'mcp.editTitle' : 'mcp.addTitle')}</DialogTitle>
-        </DialogHeader>
-        {/* 每次打开都以当前条目重新初始化表单。 */}
-        {open && <McpServerForm key={server?.id ?? 'new'} server={server} onDone={() => onOpenChange(false)} />}
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      size="wide"
+      title={t(server ? 'mcp.editTitle' : 'mcp.addTitle')}
+    >
+      {/* 每次打开都以当前条目重新初始化表单。 */}
+      {open && <McpServerForm key={server?.id ?? 'new'} server={server} onDone={() => onOpenChange(false)} />}
+    </FormDialog>
   );
 }
 

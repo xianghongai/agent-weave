@@ -53,6 +53,9 @@ importers:
       lucide-react:
         specifier: ^1.48.0
         version: 1.61.0(@types/react@19.3.0)(react@19.3.1)
+      markdown-to-jsx:
+        specifier: ^9.10.3
+        version: 9.10.3(react@19.3.1)
       motion:
         specifier: ^13.4.4
         version: 13.5.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -3034,6 +3037,24 @@ packages:
 
   magic-string@1.4.3:
     resolution: {integrity: sha512-z12OxmaPGE0F4xlpGdjuAUckipLpQlTAuAmyGhNoD7ODpYUzvDfvtxUbjM/jwznyP178oju/KDdyi220wNJ0RQ==}
+
+  markdown-to-jsx@9.10.3:
+    resolution: {integrity: sha512-J5/NCmNYQ0ExsnThzvF3F1fSzNYLgROcW2diUqRqoIoiyhoy8DSI06jLuMYk0c86SQd/FiVYJrV6tIgci9S2tQ==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      react: '>= 16.0.0'
+      react-native: '*'
+      solid-js: '>=1.0.0'
+      vue: '>=3.0.0'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-native:
+        optional: true
+      solid-js:
+        optional: true
+      vue:
+        optional: true
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -6828,6 +6849,10 @@ snapshots:
   magic-string@1.4.3:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  markdown-to-jsx@9.10.3(react@19.3.1):
+    optionalDependencies:
+      react: 19.3.1
 
   math-intrinsics@1.1.0: {}
 

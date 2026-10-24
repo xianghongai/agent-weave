@@ -1,9 +1,10 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
@@ -25,14 +26,9 @@ export function RuleDialog({ open, onOpenChange, rule }: RuleDialogProps) {
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t('rules.editTitle')}</DialogTitle>
-        </DialogHeader>
-        {open && rule && <RuleForm key={rule.id} rule={rule} onDone={() => onOpenChange(false)} />}
-      </DialogContent>
-    </Dialog>
+    <FormDialog open={open} onOpenChange={onOpenChange} size="narrow" title={t('rules.editTitle')}>
+      {open && rule && <RuleForm key={rule.id} rule={rule} onDone={() => onOpenChange(false)} />}
+    </FormDialog>
   );
 }
 
