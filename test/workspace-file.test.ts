@@ -11,8 +11,16 @@ describe('导入工作区', () => {
     expect(importWorkspace(JSON.stringify(edited()))).toEqual({ workspace: edited() });
   });
 
+  it('允许行注释、块注释和尾随逗号：用户可以在编辑器里给导出文件加注释', () => {
+    const json = JSON.stringify(edited(), null, 2);
+    const text = `// 我的工作区\n${json.replace(/\n}$/, ',\n  /* 末尾的说明 */\n}')}`;
+    expect(text).toContain('/* 末尾的说明 */');
+    expect(importWorkspace(text)).toEqual({ workspace: edited() });
+  });
+
   it.each([
     ['空文件', ''],
+    ['只有注释', '// 空的'],
     ['被截断', JSON.stringify(edited()).slice(0, 100)],
     ['不是 JSON', 'schema_version: 1'],
   ])('文件不是合法的 JSON（%s）时返回原因码', (_, text) => {
@@ -158,8 +166,8 @@ describe('导入工作区', () => {
 });
 
 describe('导出工作区', () => {
-  it('文件名带本地日期', () => {
-    expect(exportWorkspace(edited(), new Date(2026, 0, 5, 23, 59)).fileName).toBe('agent-weave-2026-01-05.json');
+  it('文件名带本地日期，扩展名为 .jsonc', () => {
+    expect(exportWorkspace(edited(), new Date(2026, 0, 5, 23, 59)).fileName).toBe('agent-weave-2026-01-05.jsonc');
   });
 
   it('内容就是工作区 JSON，再导入得到同样的工作区', () => {

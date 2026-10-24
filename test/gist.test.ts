@@ -47,10 +47,10 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
 const TOKEN = 'test-token';
 const DESCRIPTION = '调用方提供的 Gist 描述';
 
-/** 请求体中 `agent-weave.json` 的内容。 */
+/** 请求体中 `agent-weave.jsonc` 的内容。 */
 function fileContent(body: unknown): string {
   const files = (body as { files?: Record<string, { content?: string }> }).files;
-  return files?.['agent-weave.json']?.content ?? '';
+  return files?.['agent-weave.jsonc']?.content ?? '';
 }
 
 describe('Gist：推送', () => {
@@ -69,7 +69,7 @@ describe('Gist：推送', () => {
     expect(importWorkspace(fileContent(request?.body))).toEqual({ workspace: edited() });
   });
 
-  it('有 Gist ID 时更新其中的 agent-weave.json，ID 不变', async () => {
+  it('有 Gist ID 时更新其中的 agent-weave.jsonc，ID 不变', async () => {
     const github = fakeGitHub(json(200, { id: 'my-gist', files: {} }));
 
     const result = await pushWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist', edited(), DESCRIPTION);
@@ -85,20 +85,20 @@ describe('Gist：推送', () => {
   });
 });
 
-/** GitHub 返回的 Gist，`agent-weave.json` 的内容为给定文本。 */
+/** GitHub 返回的 Gist，`agent-weave.jsonc` 的内容为给定文本。 */
 function gist(id: string, content: string, file: Record<string, unknown> = {}) {
   return {
     id,
     updated_at: '2026-10-24T08:00:00Z',
     truncated: false,
     files: {
-      'agent-weave.json': { filename: 'agent-weave.json', truncated: false, content, ...file },
+      'agent-weave.jsonc': { filename: 'agent-weave.jsonc', truncated: false, content, ...file },
     },
   };
 }
 
 describe('Gist：拉取', () => {
-  it('读取 agent-weave.json，经导入流程得到工作区', async () => {
+  it('读取 agent-weave.jsonc，经导入流程得到工作区', async () => {
     const github = fakeGitHub(json(200, gist('my-gist', exportWorkspace(edited()).text)));
 
     const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
@@ -119,7 +119,30 @@ describe('Gist：拉取', () => {
     expect(github.requests[0]?.cache).toBe('no-store');
   });
 
-  it('Gist 中没有 agent-weave.json 时返回 fileMissing', async () => {
+  it('内容带注释和尾随逗号时也能拉取：用户可能在 Gist 页面上直接编辑过', async () => {
+    const text = exportWorkspace(edited()).text.replace(/\n}\n$/, ',\n  // 在 Gist 页面上加的注释\n}\n');
+    const github = fakeGitHub(json(200, gist('my-gist', `// 我的工作区\n${text}`)));
+
+    const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
+
+    expect(result).toEqual({ workspace: edited() });
+  });
+
+  it('只有旧文件名 agent-weave.json 时返回 fileMissing，不兼容旧文件名', async () => {
+    const text = exportWorkspace(edited()).text;
+    const github = fakeGitHub(
+      json(200, {
+        ...gist('my-gist', ''),
+        files: { 'agent-weave.json': { filename: 'agent-weave.json', content: text } },
+      })
+    );
+
+    const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
+
+    expect(result).toEqual({ problem: 'fileMissing' });
+  });
+
+  it('Gist 中没有 agent-weave.jsonc 时返回 fileMissing', async () => {
     const github = fakeGitHub(json(200, { ...gist('my-gist', ''), files: { 'notes.md': { content: '# 笔记' } } }));
 
     const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');

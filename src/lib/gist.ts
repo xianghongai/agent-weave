@@ -8,7 +8,7 @@ import { type ImportProblem, exportWorkspace, importWorkspace } from '@/lib/work
  */
 
 /** 工作区在 Gist 中的文件名。 */
-export const GIST_FILE_NAME = 'agent-weave.json';
+export const GIST_FILE_NAME = 'agent-weave.jsonc';
 
 const API_ROOT = 'https://api.github.com';
 
@@ -44,7 +44,7 @@ export type GistRequestProblem = 'unauthorized' | 'notFound' | 'rateLimited' | '
 
 /**
  * 远端内容无法使用的原因：
- * - `fileMissing`：Gist 中没有 `agent-weave.json`；
+ * - `fileMissing`：Gist 中没有 `agent-weave.jsonc`；
  * - `fileTruncated`：文件超过 API 返回内容的上限（1 MB），内容被截断；
  * - `invalidContent`：文件没有通过导入流程，具体原因见 `importProblem`，能定位到条目时带上 `entryId`。
  */
@@ -98,7 +98,7 @@ export async function pushWorkspace(
   return { gistId: id };
 }
 
-/** 拉取工作区：读取 Gist 中的 `agent-weave.json`，交给导入流程解析、迁移和校验。 */
+/** 拉取工作区：读取 Gist 中的 `agent-weave.jsonc`，交给导入流程解析、迁移和校验。 */
 export async function pullWorkspace(connection: GistConnection, gistId: string): Promise<PullResult> {
   const response = await request(connection, gistUrl(gistId), { method: 'GET' });
   if ('problem' in response) {
