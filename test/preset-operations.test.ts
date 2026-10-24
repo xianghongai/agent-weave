@@ -287,6 +287,24 @@ describe('合并预设', () => {
       },
     ]);
   });
+  it('新增的规则按原样带上预设规则的描述', () => {
+    const preset = workspace({
+      command_tools: [entities.commandTool({ id: 'preset-command-git', key: 'git' })],
+      rules: [
+        entities.rule({
+          id: 'preset-rule-git-push-force-deny',
+          tool: { type: 'command', id: 'preset-command-git' },
+          pattern: 'push --force',
+          decision: 'deny',
+          description: '会覆盖远程历史',
+        }),
+      ],
+    });
+
+    const { workspace: merged } = mergePresets(workspace({}), preset, ctx);
+
+    expect(merged.rules.map((r) => r.description)).toEqual(['会覆盖远程历史']);
+  });
 });
 
 describe('重置为预设', () => {

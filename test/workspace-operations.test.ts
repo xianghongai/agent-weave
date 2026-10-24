@@ -307,6 +307,27 @@ describe('工作区操作：权限规则', () => {
     ]);
   });
 
+  it('新增和修改规则时保存描述，去掉首尾空白；修改时不传描述则保留原描述', () => {
+    const local = context();
+    const added = apply(
+      withGit,
+      (w) =>
+        addRule(w, { tool: git, pattern: 'push --force', decision: 'deny', description: ' 会覆盖远程历史 ' }, local),
+      (w) => addRule(w, { tool: git, pattern: 'status', decision: 'allow' }, local)
+    );
+    expect(added.rules.map((r) => r.description)).toEqual(['会覆盖远程历史', '']);
+
+    const kept = apply(added, (w) =>
+      updateRule(w, 'new-1', { tool: git, pattern: 'push -f', decision: 'deny' }, local)
+    );
+    expect(kept.rules[0]?.description).toBe('会覆盖远程历史');
+
+    const cleared = apply(kept, (w) =>
+      updateRule(w, 'new-1', { tool: git, pattern: 'push -f', decision: 'deny', description: '  ' }, local)
+    );
+    expect(cleared.rules[0]?.description).toBe('');
+  });
+
   it('所选工具不存在时返回原因码', () => {
     expect(
       addRule(withGit, { tool: { type: 'command', id: 'missing' }, pattern: '', decision: 'allow' }, context())

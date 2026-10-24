@@ -32,6 +32,7 @@ describe('导入工作区', () => {
     ['缺少结构版本', corrupt(['schema_version'], undefined)],
     ['缺少命令工具列表', corrupt(['command_tools'], undefined)],
     ['规则的决策类型错误', corrupt(['rules', 0, 'decision'], true)],
+    ['规则缺少描述', corrupt(['rules', 1, 'description'], undefined)],
   ])('文件结构无效（%s）时返回原因码', (_, text) => {
     expect(importWorkspace(text)).toEqual({ problem: 'invalidStructure' });
   });
@@ -166,6 +167,7 @@ describe('导出工作区', () => {
   it('内容就是工作区 JSON，再导入得到同样的工作区', () => {
     const { text } = exportWorkspace(edited(), new Date(2026, 9, 23));
     expect(JSON.parse(text)).toEqual(edited());
+    expect(JSON.parse(text)).toHaveProperty('rules.1.description', '源码只读');
     expect(importWorkspace(text)).toEqual({ workspace: edited() });
   });
 

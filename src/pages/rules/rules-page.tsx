@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
-import { ToolSummary } from '@/components/tag-badges';
+import { ItemDescription, ToolSummary } from '@/components/tag-badges';
 import { Button } from '@/components/ui/button';
 import { useFilterQuery } from '@/hooks/use-filter-query';
 import { ruleFilterFromQuery, ruleFilterToQuery } from '@/lib/filter-query';
@@ -97,6 +97,7 @@ export default function RulesPage() {
                           <OwnerBadge tool={tool} />
                         </ToolSummary>
                       </div>
+                      {whole && <ItemDescription description={whole.description} className={RULE_DESCRIPTION} />}
                       {whole && actions(whole)}
                     </div>
                     {patterned.length > 0 && (
@@ -107,6 +108,7 @@ export default function RulesPage() {
                             className="flex items-center gap-3 pr-3 pl-6 transition-colors last:pb-1.5 hover:bg-muted/40"
                           >
                             <code className="min-w-0 flex-1 font-mono text-sm break-all">{rule.pattern}</code>
+                            <ItemDescription description={rule.description} className={RULE_DESCRIPTION} />
                             {actions(rule)}
                           </li>
                         ))}
@@ -124,6 +126,9 @@ export default function RulesPage() {
     </Page>
   );
 }
+
+/** 规则的描述紧挨在决策左侧，最多占半行，免得挤掉模式和工具标识。 */
+const RULE_DESCRIPTION = 'max-w-1/2';
 
 interface RuleActionsProps {
   rule: Rule;

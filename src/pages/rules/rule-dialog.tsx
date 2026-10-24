@@ -47,6 +47,7 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
   const [tool, setTool] = useState<ToolRef | null>(rule?.tool ?? null);
   const [pattern, setPattern] = useState(rule?.pattern ?? '');
   const [decision, setDecision] = useState<Decision>(rule?.decision ?? 'allow');
+  const [description, setDescription] = useState(rule?.description ?? '');
   const [highRisk, setHighRisk] = useState(initialHighRisk(rule));
   const resolved = tool ? resolveTool(workspace, tool) : null;
   const patternTexts = usePatternTexts(resolved);
@@ -54,7 +55,7 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
   const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { tool, pattern, decision, ...highRisk };
+    const input = { tool, pattern, decision, description, ...highRisk };
     return rule ? updateRule(current, rule.id, input) : addRule(current, input);
   };
   // 尚未选择工具只禁用保存；所选工具在填写期间被删除时才提示。
@@ -109,6 +110,16 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
           <FieldLabel>{t('rules.decision')}</FieldLabel>
           <DecisionToggle value={decision} onChange={setDecision} />
         </Field>
+        <Field>
+          <FieldLabel htmlFor="rule-description">{t('rules.description')}</FieldLabel>
+          <Input
+            id="rule-description"
+            value={description}
+            autoComplete="off"
+            placeholder={t('common.optional')}
+            onChange={(event) => setDescription(event.target.value)}
+          />
+        </Field>
         <HighRiskSwitch
           id="rule-high-risk"
           value={highRisk}
@@ -135,6 +146,7 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
               submitAndContinue(() => {
                 setLastAdded([resolved?.tool.key, pattern.trim()].filter(Boolean).join(' '));
                 setPattern('');
+                setDescription('');
                 setHighRisk(NOT_HIGH_RISK);
                 patternRef.current?.focus();
               })

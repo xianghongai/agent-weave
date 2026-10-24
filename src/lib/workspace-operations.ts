@@ -686,6 +686,8 @@ export interface RuleInput extends HighRiskInput {
   tool: ToolRef | null;
   pattern: string;
   decision: Decision;
+  /** 修改时省略表示保留原描述。 */
+  description?: string;
 }
 
 export function addRule(
@@ -703,6 +705,7 @@ export function addRule(
     tool: { ...tool },
     pattern,
     decision: input.decision,
+    description: (input.description ?? '').trim(),
     ...inputHighRisk(input, NOT_HIGH_RISK),
   };
   return commit(workspace, (draft) => void draft.rules.push(rule), ctx);
@@ -729,6 +732,7 @@ export function updateRule(
       rule.tool = { ...tool };
       rule.pattern = pattern;
       rule.decision = input.decision;
+      rule.description = (input.description ?? rule.description).trim();
       Object.assign(rule, inputHighRisk(input, rule));
     },
     ctx
