@@ -53,11 +53,27 @@ export function Page({ icon: Icon, title, description, actions, scroll = 'all', 
  * 页面内的滚动区：宽屏下填满所在纵向 flex 容器的剩余高度，在 Scroll Area 中滚动；窄屏下随整页滚动。
  * 宽屏下两侧伸进页面的水平内边距，给滚动条和焦点环留出位置，内容仍与上方对齐。
  * 窄屏下覆盖 Base UI 写在视口上的 `overflow: scroll`，不形成滚动容器，以免裁掉焦点环或截住触摸滚动。
+ * `framed`：滚动区本身就是带圆角边框的列表框，用于列表页。
  */
-export function PageScroll({ children }: { children: React.ReactNode }) {
+export function PageScroll({ framed = false, children }: { framed?: boolean; children: React.ReactNode }) {
+  if (framed) {
+    return <FramedScroll>{children}</FramedScroll>;
+  }
   return (
-    <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:-mx-3 md:min-h-0 md:flex-1">
-      <div className="pb-6 md:px-3">{children}</div>
+    <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:-mx-3 md:mb-6 md:min-h-0 md:flex-1">
+      <div className="pb-6 md:px-3 md:pb-1">{children}</div>
+    </ScrollArea>
+  );
+}
+
+/**
+ * 带圆角边框的滚动框：边框本身固定，内容在框内滚动，列表短时框随内容收缩。
+ * 宽屏下框和视口都是纵向 flex 子项，靠 `min-h-0` 收缩到剩余高度，不依赖百分比高度。
+ */
+function FramedScroll({ children }: { children: React.ReactNode }) {
+  return (
+    <ScrollArea className="mb-6 overflow-hidden rounded-xl border max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:flex md:min-h-0 md:flex-col md:[&>[data-slot=scroll-area-viewport]]:h-auto md:[&>[data-slot=scroll-area-viewport]]:min-h-0">
+      {children}
     </ScrollArea>
   );
 }

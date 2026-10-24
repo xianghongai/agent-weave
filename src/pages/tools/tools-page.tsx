@@ -82,13 +82,13 @@ export default function ToolsPage() {
           <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
         </div>
 
-        <PageScroll>
-          {allTools.length === 0 ? (
-            <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
-          ) : tools.length === 0 ? (
-            <Note icon={TerminalIcon}>{t('filters.noMatch')}</Note>
-          ) : (
-            <ul className="divide-y rounded-xl border">
+        {allTools.length === 0 ? (
+          <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
+        ) : tools.length === 0 ? (
+          <Note icon={TerminalIcon}>{t('filters.noMatch')}</Note>
+        ) : (
+          <PageScroll framed>
+            <ul className="divide-y">
               {tools.map((tool) => {
                 const ruleCount = countRulesForTool(workspace, { type: 'command', id: tool.id });
                 return (
@@ -124,8 +124,8 @@ export default function ToolsPage() {
                 );
               })}
             </ul>
-          )}
-        </PageScroll>
+          </PageScroll>
+        )}
       </section>
 
       <CommandToolDialog open={editOpen} onOpenChange={setEditOpen} tool={editTarget} />

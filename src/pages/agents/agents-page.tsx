@@ -2,7 +2,7 @@ import { BotIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Note, Page } from '@/components/page';
+import { Note, Page, PageScroll } from '@/components/page';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,18 +13,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Agent } from '@/lib/workspace';
-import { countRulesForAgent, deleteAgent } from '@/lib/workspace-operations';
+import { countRulesForAgent, deleteAgent, findSelectedAgent } from '@/lib/workspace-operations';
 import { AgentDialog } from '@/pages/agents/agent-dialog';
+import { AgentSummary } from '@/pages/agents/agent-summary';
 import { BuiltInToolsSection } from '@/pages/agents/built-in-tools-section';
 import { useAppStore } from '@/state/app-store';
+import { useUiStore } from '@/state/ui-store';
 
 export default function AgentsPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
+  const selectedId = useUiStore((state) => state.selectedAgentId);
+  const selectAgent = useUiStore((state) => state.selectAgent);
+  const agent = findSelectedAgent(workspace, selectedId);
 
   // 对话框关闭时保留目标条目，避免退场动画期间内容跳变。
   const [editOpen, setEditOpen] = useState(false);
@@ -32,14 +37,22 @@ export default function AgentsPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Agent | null>(null);
 
-  function openEditor(agent: Agent | null) {
-    setEditTarget(agent);
+  function openEditor(target: Agent | null) {
+    setEditTarget(target);
     setEditOpen(true);
   }
 
-  function confirmDelete(agent: Agent) {
-    setDeleteTarget(agent);
+  function confirmDelete(target: Agent) {
+    setDeleteTarget(target);
     setDeleteOpen(true);
+  }
+
+  /** 新增的 Agent 排在最后，保存后切换到它的 Tab。 */
+  function selectAddedAgent() {
+    const added = useAppStore.getState().workspace.agents.at(-1);
+    if (added) {
+      selectAgent(added.id);
+    }
   }
 
   return (
@@ -47,6 +60,7 @@ export default function AgentsPage() {
       icon={BotIcon}
       title={t('pages.agents.title')}
       description={t('pages.agents.description')}
+      scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>
           <PlusIcon />
@@ -54,52 +68,55 @@ export default function AgentsPage() {
         </Button>
       }
     >
-      {/* Agent 按录入顺序排列，与输出页的标签顺序一致。 */}
-      {workspace.agents.length === 0 ? (
+      {!agent ? (
         <Note icon={BotIcon}>{t('agents.empty')}</Note>
       ) : (
-        <ul className="divide-y rounded-xl border">
-          {workspace.agents.map((agent) => (
-            <li key={agent.id} className="flex flex-wrap items-center gap-3 px-3 py-2.5">
-              <div className="grid min-w-0 flex-1 gap-0.5">
-                <span className="truncate text-sm font-medium">{agent.name}</span>
-                {agent.description && (
-                  <span className="truncate text-sm text-muted-foreground">{agent.description}</span>
-                )}
+        // Tab 按录入顺序排列，与输出页一致；选中的 Agent 与输出页共用。
+        <Tabs
+          value={agent.id}
+          onValueChange={(value: string) => selectAgent(value)}
+          className="gap-4 md:min-h-0 md:flex-1"
+        >
+          <TabsList className="max-w-full shrink-0 justify-start overflow-x-auto overflow-y-hidden">
+            {workspace.agents.map((candidate) => (
+              <TabsTrigger key={candidate.id} value={candidate.id} className="flex-none">
+                {candidate.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          <TabsContent value={agent.id} className="flex flex-col md:min-h-0">
+            <PageScroll>
+              <div className="grid gap-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-0 flex-1 text-muted-foreground">{agent.description}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={t('agents.editLabel', { name: agent.name })}
+                    onClick={() => openEditor(agent)}
+                  >
+                    <PencilIcon />
+                    {t('common.edit')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-label={t('agents.deleteLabel', { name: agent.name })}
+                    onClick={() => confirmDelete(agent)}
+                  >
+                    <Trash2Icon />
+                    {t('common.delete')}
+                  </Button>
+                </div>
+                <AgentSummary agent={agent} />
+                <BuiltInToolsSection agent={agent} />
               </div>
-              {agent.permission_output ? (
-                <code className="hidden truncate font-mono text-xs text-muted-foreground sm:block">
-                  {agent.permission_output.property_path}
-                </code>
-              ) : (
-                <Badge variant="outline">{t('agents.noPermissionOutput')}</Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('agents.editLabel', { name: agent.name })}
-                title={t('common.edit')}
-                onClick={() => openEditor(agent)}
-              >
-                <PencilIcon />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t('agents.deleteLabel', { name: agent.name })}
-                title={t('common.delete')}
-                onClick={() => confirmDelete(agent)}
-              >
-                <Trash2Icon />
-              </Button>
-              {/* 换行到下一行，占满整行。 */}
-              <BuiltInToolsSection agent={agent} className="basis-full" />
-            </li>
-          ))}
-        </ul>
+            </PageScroll>
+          </TabsContent>
+        </Tabs>
       )}
 
-      <AgentDialog open={editOpen} onOpenChange={setEditOpen} agent={editTarget} />
+      <AgentDialog open={editOpen} onOpenChange={setEditOpen} agent={editTarget} onAdded={selectAddedAgent} />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
