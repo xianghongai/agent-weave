@@ -20,7 +20,7 @@
       "lead": "一份权限规则，",
       "tail": "织进每一个 Agent"
     },
-    "intro": "维护一份与 Agent 无关的权限规则和 MCP Server 清单，生成 Claude Code、Codex CLI、Antigravity…… 各自的配置。全部在浏览器内完成。",
+    "intro": "维护一份与 Agent 无关的权限规则和 MCP Server 清单，生成 Claude Code、Codex CLI、Antigravity… 各自的配置。全部在浏览器内完成。",
     "features": "产品特性",
     "start": "开始编写规则",
     "tools": {
@@ -175,6 +175,7 @@
       "keyDuplicate": "已有相同标识的条目，标识不能重复。",
       "notFound": "该条目已不存在，可能已被删除。",
       "toolEmpty": "请选择工具。",
+      "ruleDuplicate": "已有工具、模式和决策都相同的权限规则。",
       "toolMissing": "所选工具已不存在，请重新选择。",
       "nameEmpty": "名称不能为空。",
       "nameDuplicate": "已有同名的 Agent，名称不能重复。",

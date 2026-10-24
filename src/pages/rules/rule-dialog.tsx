@@ -63,10 +63,14 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
     onDone,
   });
 
+  // 重复是模式与决策的组合问题，提示放在模式下方；其余原因与所选工具有关。
+  const duplicate = problem === 'ruleDuplicate';
+  const toolProblem = problem && !duplicate ? problem : null;
+
   return (
     <form onSubmit={submit} className="grid gap-4">
       <FieldGroup>
-        <Field data-invalid={problem ? true : undefined}>
+        <Field data-invalid={toolProblem ? true : undefined}>
           <FieldLabel htmlFor="rule-tool">{t('rules.tool')}</FieldLabel>
           <ToolSelect
             id="rule-tool"
@@ -79,9 +83,9 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
               patternRef.current?.focus();
             }}
           />
-          {problem && <FieldError>{operationProblemMessage(t, problem)}</FieldError>}
+          {toolProblem && <FieldError>{operationProblemMessage(t, toolProblem)}</FieldError>}
         </Field>
-        <Field>
+        <Field data-invalid={duplicate ? true : undefined}>
           <FieldLabelWithHelp
             htmlFor="rule-pattern"
             help={{ label: t('rules.patternHelp'), content: patternTexts.hint }}
@@ -96,8 +100,10 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
             spellCheck={false}
             placeholder={patternTexts.placeholder}
             className="font-mono"
+            aria-invalid={duplicate ? true : undefined}
             onChange={(event) => setPattern(event.target.value)}
           />
+          {duplicate && <FieldError>{operationProblemMessage(t, 'ruleDuplicate')}</FieldError>}
         </Field>
         <Field>
           <FieldLabel>{t('rules.decision')}</FieldLabel>

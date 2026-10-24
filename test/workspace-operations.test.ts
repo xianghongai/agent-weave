@@ -317,6 +317,21 @@ describe('工作区操作：权限规则', () => {
     ).toEqual({ problem: 'toolMissing' });
   });
 
+  it('同一工具、模式和决策的规则不能重复，模式比较时去掉首尾空白；决策不同时允许（只给冲突提示）', () => {
+    const local = context();
+    const ws = apply(withGit, (w) => addRule(w, { tool: git, pattern: 'push', decision: 'ask' }, local));
+    expect(addRule(ws, { tool: git, pattern: ' push ', decision: 'ask' }, context())).toEqual({
+      problem: 'ruleDuplicate',
+    });
+    expect('workspace' in addRule(ws, { tool: git, pattern: 'push', decision: 'deny' }, context())).toBe(true);
+    const two = apply(ws, (w) => addRule(w, { tool: git, pattern: 'status', decision: 'ask' }, local));
+    // 编辑时可以保持自己不变，但不能改成与另一条相同。
+    expect('workspace' in updateRule(two, 'new-1', { tool: git, pattern: 'push', decision: 'ask' }, local)).toBe(true);
+    expect(updateRule(two, 'new-2', { tool: git, pattern: 'push', decision: 'ask' }, local)).toEqual({
+      problem: 'ruleDuplicate',
+    });
+  });
+
   it('尚未选择工具时返回原因码', () => {
     const input = { tool: null, pattern: '', decision: 'allow' } as const;
     expect(addRule(withGit, input, context())).toEqual({ problem: 'toolEmpty' });

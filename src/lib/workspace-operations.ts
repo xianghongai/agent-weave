@@ -46,6 +46,7 @@ export type OperationProblem =
   | 'decisionKeyDuplicate'
   | 'contentInvalid'
   | 'notFound'
+  | 'ruleDuplicate'
   | 'toolEmpty'
   | 'toolMissing';
 
@@ -684,14 +685,15 @@ export function addRule(
   input: RuleInput,
   ctx: OperationContext = systemContext
 ): OperationResult {
-  const tool = checkRuleTool(workspace, input.tool);
-  if (typeof tool === 'string') {
-    return { problem: tool };
+  const checked = checkRuleInput(workspace, input, null);
+  if ('problem' in checked) {
+    return checked;
   }
+  const { tool, pattern } = checked;
   const rule: Rule = {
     id: ctx.newId(),
     tool: { ...tool },
-    pattern: input.pattern.trim(),
+    pattern,
     decision: input.decision,
     high_risk: input.high_risk ?? false,
   };
@@ -707,16 +709,17 @@ export function updateRule(
   if (!workspace.rules.some((rule) => rule.id === id)) {
     return { problem: 'notFound' };
   }
-  const tool = checkRuleTool(workspace, input.tool);
-  if (typeof tool === 'string') {
-    return { problem: tool };
+  const checked = checkRuleInput(workspace, input, id);
+  if ('problem' in checked) {
+    return checked;
   }
+  const { tool, pattern } = checked;
   return commit(
     workspace,
     (draft) => {
       const rule = byId(draft.rules, id);
       rule.tool = { ...tool };
-      rule.pattern = input.pattern.trim();
+      rule.pattern = pattern;
       rule.decision = input.decision;
       rule.high_risk = input.high_risk ?? rule.high_risk;
     },
@@ -724,12 +727,27 @@ export function updateRule(
   );
 }
 
-/** 规则必须指向一个仍然存在的工具。 */
-function checkRuleTool(workspace: Workspace, tool: ToolRef | null): ToolRef | OperationProblem {
+/**
+ * 规则必须指向一个仍然存在的工具，且不能与另一条规则的工具、模式和决策都相同。
+ * 工具和模式相同而决策不同时允许，生成时给出冲突提示。
+ */
+function checkRuleInput(
+  workspace: Workspace,
+  input: RuleInput,
+  selfId: string | null
+): { problem: OperationProblem } | { tool: ToolRef; pattern: string } {
+  const { tool, decision } = input;
   if (!tool) {
-    return 'toolEmpty';
+    return { problem: 'toolEmpty' };
   }
-  return resolveTool(workspace, tool) ? tool : 'toolMissing';
+  if (!resolveTool(workspace, tool)) {
+    return { problem: 'toolMissing' };
+  }
+  const pattern = input.pattern.trim();
+  const duplicate = workspace.rules.some(
+    (rule) => rule.id !== selfId && refersTo(rule, tool) && rule.pattern === pattern && rule.decision === decision
+  );
+  return duplicate ? { problem: 'ruleDuplicate' } : { tool, pattern };
 }
 
 export function deleteRule(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
