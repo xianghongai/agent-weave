@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type GistConnection, parseGistId, pullWorkspace, pushWorkspace } from '@/lib/gist';
+import { type GistConnection, gistSettingsStatus, parseGistId, pullWorkspace, pushWorkspace } from '@/lib/gist';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 
 import { edited } from './fixtures/workspace';
@@ -263,5 +263,61 @@ describe('Gist：识别用户填写的 ID', () => {
     ['不是十六进制', 'not a gist'],
   ])('无法识别时返回 null：%s', (_, input) => {
     expect(parseGistId(input)).toBeNull();
+  });
+});
+
+describe('Gist：设置的状态', () => {
+  const ID = 'aa5a315d61ae9438b18d';
+
+  it('都没填：缺 Token、缺 Gist ID，不能推送也不能拉取', () => {
+    expect(gistSettingsStatus({ token: '', gist_id: '' })).toEqual({
+      token: 'missing',
+      gist: { status: 'missing' },
+      canPush: false,
+      canPull: false,
+    });
+  });
+
+  it('只有 Token：可以推送（新建 Gist），不能拉取', () => {
+    expect(gistSettingsStatus({ token: TOKEN, gist_id: '  ' })).toEqual({
+      token: 'configured',
+      gist: { status: 'missing' },
+      canPush: true,
+      canPull: false,
+    });
+  });
+
+  it('只有 Gist ID：可以匿名拉取，不能推送', () => {
+    expect(gistSettingsStatus({ token: ' ', gist_id: ID })).toEqual({
+      token: 'missing',
+      gist: { status: 'linked', gistId: ID },
+      canPush: false,
+      canPull: true,
+    });
+  });
+
+  it('Gist ID 无效：不能推送也不能拉取，即使已有 Token', () => {
+    expect(gistSettingsStatus({ token: TOKEN, gist_id: 'not a gist' })).toEqual({
+      token: 'configured',
+      gist: { status: 'invalid' },
+      canPush: false,
+      canPull: false,
+    });
+  });
+
+  it('填的是 Gist 网址：取出其中的 ID', () => {
+    expect(gistSettingsStatus({ token: TOKEN, gist_id: `https://gist.github.com/someone/${ID}` }).gist).toEqual({
+      status: 'linked',
+      gistId: ID,
+    });
+  });
+
+  it('两项都有效：可以推送也可以拉取', () => {
+    expect(gistSettingsStatus({ token: TOKEN, gist_id: ID })).toEqual({
+      token: 'configured',
+      gist: { status: 'linked', gistId: ID },
+      canPush: true,
+      canPull: true,
+    });
   });
 });

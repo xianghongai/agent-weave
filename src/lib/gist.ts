@@ -139,6 +139,34 @@ export function parseGistId(input: string): string | null {
   return /^[0-9a-f]+$/i.test(id) ? id : null;
 }
 
+/**
+ * Gist 设置的状态，由界面翻译成文案、决定按钮是否可用：
+ * - `token`：`configured` 已填写，`missing` 未填写；
+ * - `gist`：`linked` 已关联（附带取出的 ID），`missing` 未填写，`invalid` 无法识别；
+ * - `canPush`：推送需要 Token，没有 Gist ID 时新建，Gist ID 无效时不能推送；
+ * - `canPull`：拉取只需要有效的 Gist ID，没有 Token 时匿名读取。
+ */
+export interface GistSettingsStatus {
+  token: 'configured' | 'missing';
+  gist: { status: 'linked'; gistId: string } | { status: 'missing' | 'invalid' };
+  canPush: boolean;
+  canPull: boolean;
+}
+
+export function gistSettingsStatus(settings: GistSettings): GistSettingsStatus {
+  const token = settings.token.trim() === '' ? 'missing' : 'configured';
+  const input = settings.gist_id.trim();
+  const gistId = input === '' ? null : parseGistId(input);
+  const gist: GistSettingsStatus['gist'] =
+    gistId !== null ? { status: 'linked', gistId } : { status: input === '' ? 'missing' : 'invalid' };
+  return {
+    token,
+    gist,
+    canPush: token === 'configured' && gist.status !== 'invalid',
+    canPull: gist.status === 'linked',
+  };
+}
+
 function gistUrl(gistId: string): string {
   return `${API_ROOT}/gists/${encodeURIComponent(gistId)}`;
 }

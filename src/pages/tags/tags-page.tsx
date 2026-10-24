@@ -44,6 +44,7 @@ export default function TagsPage() {
       icon={TagsIcon}
       title={t('pages.tags.title')}
       description={t('pages.tags.description')}
+      help={{ label: t('tags.listHelp'), content: t('tags.listHint') }}
       scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>
@@ -52,10 +53,8 @@ export default function TagsPage() {
         </Button>
       }
     >
-      {/* 标题和说明固定，只有列表滚动。 */}
+      {/* 宽屏下只有列表滚动。 */}
       <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
-        <p className="shrink-0 text-sm text-muted-foreground">{t('tags.listHint')}</p>
-
         {tags.length === 0 ? (
           <Note icon={TagsIcon}>{t('tags.empty')}</Note>
         ) : (
