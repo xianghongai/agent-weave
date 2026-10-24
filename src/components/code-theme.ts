@@ -56,6 +56,16 @@ const editorTheme = EditorView.theme({
     backgroundColor: 'transparent',
     color: 'var(--foreground)',
   },
+  // 以下只在可编辑实例中出现。
+  '.cm-placeholder': {
+    color: 'var(--muted-foreground)',
+  },
+  '&.cm-focused .cm-matchingBracket': {
+    backgroundColor: 'color-mix(in oklab, var(--brand) 25%, transparent)',
+  },
+  '&.cm-focused .cm-nonmatchingBracket': {
+    backgroundColor: 'color-mix(in oklab, var(--destructive) 25%, transparent)',
+  },
 });
 
 const highlightStyle = HighlightStyle.define([

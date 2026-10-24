@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { CodeEditor, type CodeEditorHandle } from '@/components/code-editor';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { McpServer, Workspace } from '@/lib/workspace';
@@ -46,6 +46,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
   const [description, setDescription] = useState(server?.description ?? '');
   const [highRisk, setHighRisk] = useState(server?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(server?.tag_ids ?? []);
+  const contentEditorRef = useRef<CodeEditorHandle>(null);
 
   const operation = (current: Workspace) => {
     const input = { key, content, description, high_risk: highRisk, tag_ids: tagIds };
@@ -85,23 +86,28 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
           )}
         </Field>
         <Field data-invalid={contentProblem ? true : undefined}>
-          <FieldLabel htmlFor="mcp-server-content">{t('mcp.content')}</FieldLabel>
-          <Textarea
+          {/* 编辑区域不是表单控件，htmlFor 对它无效：名称由 aria-labelledby 关联，点击标签时手动聚焦。 */}
+          <FieldLabel id="mcp-server-content-label" onClick={() => contentEditorRef.current?.focus()}>
+            {t('mcp.content')}
+          </FieldLabel>
+          <CodeEditor
+            ref={contentEditorRef}
             id="mcp-server-content"
+            labelId="mcp-server-content-label"
+            describedBy={contentProblem ? 'mcp-server-content-error' : 'mcp-server-content-hint'}
+            invalid={contentProblem !== null}
+            language="json"
             value={content}
-            spellCheck={false}
             placeholder={CONTENT_PLACEHOLDER}
-            aria-invalid={contentProblem ? true : undefined}
-            className="max-h-80 min-h-32 font-mono text-xs sm:text-sm"
-            onChange={(event) => {
-              setContent(event.target.value);
+            onChange={(value) => {
+              setContent(value);
               clearSubmitProblem();
             }}
           />
           {contentProblem ? (
-            <FieldError>{operationProblemMessage(t, contentProblem)}</FieldError>
+            <FieldError id="mcp-server-content-error">{operationProblemMessage(t, contentProblem)}</FieldError>
           ) : (
-            <FieldDescription>{t('mcp.contentHint')}</FieldDescription>
+            <FieldDescription id="mcp-server-content-hint">{t('mcp.contentHint')}</FieldDescription>
           )}
         </Field>
         <Field>

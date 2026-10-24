@@ -11,6 +11,9 @@ importers:
       '@base-ui/react':
         specifier: ^1.8.0
         version: 1.9.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@codemirror/commands':
+        specifier: ^6.11.1
+        version: 6.11.1
       '@codemirror/lang-json':
         specifier: ^6.0.2
         version: 6.0.2
@@ -718,6 +721,9 @@ packages:
 
   '@code-inspector/webpack@2.0.9':
     resolution: {integrity: sha512-sauXo+GD6QIlqSymNtDTQOyrQid8er71Kr3Jh07viUKd1+U10//EML/tb/IpOzutwauizJeQslKqAvDV+Nqc9w==}
+
+  '@codemirror/commands@6.11.1':
+    resolution: {integrity: sha512-O/4hG3SC1YwcmQ0d2UVNDs+AsaNWd1iHVxbTeEBuqH+6bExAiPK3iS/BvpY6rZGURALv4ZD3sIgcCmRvw3ehBg==}
 
   '@codemirror/lang-json@6.0.2':
     resolution: {integrity: sha512-x2OtO+AvwEHrEwR0FyyPtfDUiloG3rnVTSZV1W8UteaLL8/MajQd8DpvUb2YVzC+/T18aSDv0H9mu+xw0EStoQ==}
@@ -4874,6 +4880,13 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  '@codemirror/commands@6.11.1':
+    dependencies:
+      '@codemirror/language': 6.13.1
+      '@codemirror/state': 6.7.6
+      '@codemirror/view': 6.43.15
+      '@lezer/common': 1.5.4
 
   '@codemirror/lang-json@6.0.2':
     dependencies:
