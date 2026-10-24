@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Note, Page, PageScroll } from '@/components/page';
-import { tagTone } from '@/components/tag-badges';
+import { TAG_TONE } from '@/components/tag-badges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,7 +66,7 @@ export default function TagsPage() {
                 return (
                   <li key={tag.id} className="flex items-center gap-3 px-3 py-2.5">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
-                      <Badge variant="outline" className={tagTone(tag.id)}>
+                      <Badge variant="outline" className={TAG_TONE}>
                         {tag.name}
                       </Badge>
                       <code className="truncate font-mono text-sm text-muted-foreground">{tag.key}</code>
