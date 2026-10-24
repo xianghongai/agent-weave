@@ -4,6 +4,7 @@ import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
+import { HelpPopover } from '@/components/help-popover';
 import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -59,13 +60,13 @@ export default function RulesPage() {
         <AddRuleForm />
 
         <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
-          <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
-            <div className="grid gap-1">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1">
               <h2 className="flex items-center gap-2 font-medium">
                 <ListIcon className="size-4 text-brand" />
                 {t('rules.listTitle')}
               </h2>
-              <p className="text-sm text-muted-foreground">{t('rules.listHint')}</p>
+              <HelpPopover label={t('rules.listHelp')} content={t('rules.listHint')} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <RuleFilterBar workspace={workspace} value={filter} onChange={setFilter} />
@@ -170,12 +171,12 @@ function AddRuleForm() {
 
   return (
     <section className="grid shrink-0 gap-3 rounded-xl border bg-card p-4">
-      <div className="grid gap-1">
+      <div className="flex items-center gap-1">
         <h2 className="flex items-center gap-2 font-medium">
           <PlusIcon className="size-4 text-brand" />
           {t('rules.addTitle')}
         </h2>
-        <p className="text-sm text-muted-foreground">{t('rules.addHint')}</p>
+        <HelpPopover label={t('rules.addHelp')} content={t('rules.addHint')} />
       </div>
 
       {hasTools ? (

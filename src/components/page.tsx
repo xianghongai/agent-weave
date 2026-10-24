@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { HelpPopover } from '@/components/help-popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PageProps {
@@ -7,6 +8,8 @@ interface PageProps {
   title: string;
   /** 宽屏下放不下时截断，悬停显示全文，所以只接受纯文本。 */
   description: string;
+  /** 补充说明，按 Markdown 渲染在标题旁的问号气泡中；`label` 是问号按钮的无障碍标签。 */
+  help?: { label: string; content: string };
   /** 页面级操作，显示在标题行的最右侧。 */
   actions?: React.ReactNode;
   /**
@@ -23,15 +26,18 @@ interface PageProps {
  * 各页面共用的容器：一行标题区，加上页面内容。
  * 宽屏下填满外壳主区域的剩余高度，标题区固定，内容区按 `scroll` 滚动。
  */
-export function Page({ icon: Icon, title, description, actions, scroll = 'all', children }: PageProps) {
+export function Page({ icon: Icon, title, description, help, actions, scroll = 'all', children }: PageProps) {
   return (
     <div className="flex flex-col md:min-h-0 md:flex-1">
-      {/* 窄屏下说明换到标题下方；宽屏下图标、标题、说明、操作排成一行。 */}
+      {/* 窄屏下说明换到标题下方；宽屏下图标、标题、问号、说明、操作排成一行。 */}
       <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 py-4 md:flex-nowrap">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
           <Icon className="size-4" />
         </span>
-        <h1 className="shrink-0 text-xl font-semibold tracking-tight">{title}</h1>
+        <div className="flex shrink-0 items-center gap-1">
+          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          {help && <HelpPopover label={help.label} content={help.content} />}
+        </div>
         <p
           title={description}
           className="order-last basis-full text-sm text-pretty text-muted-foreground md:order-none md:min-w-0 md:flex-1 md:basis-auto md:truncate"
