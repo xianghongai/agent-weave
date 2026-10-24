@@ -1,6 +1,5 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching, indentOnInput } from '@codemirror/language';
-import { Compartment, EditorState } from '@codemirror/state';
 import {
   drawSelection,
   EditorView,
@@ -11,9 +10,10 @@ import {
   placeholder as placeholderExtension,
 } from '@codemirror/view';
 import { cn } from 'cn';
-import { type Ref, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
+import { type Ref, useImperativeHandle, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { type CodeLanguage, codeLanguage, codeTheme } from '@/components/code-theme';
+import { useCodeMirror } from '@/hooks/use-code-mirror';
 
 export interface CodeEditorHandle {
   focus: () => void;
@@ -75,57 +75,14 @@ export function CodeEditor({
   className,
   ref,
 }: CodeEditorProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const viewRef = useRef<EditorView | null>(null);
   // 编辑器只创建一次，回调通过 ref 取最新的 onChange。
   const onChangeRef = useRef(onChange);
-  // 随属性变化的配置放进同一个 Compartment，变化时重新配置，不重建编辑器。
-  const [config] = useState(() => new Compartment());
 
   useLayoutEffect(() => {
     onChangeRef.current = onChange;
   });
 
-  useImperativeHandle(ref, () => ({ focus: () => viewRef.current?.focus() }), []);
-
-  useLayoutEffect(() => {
-    const parent = parentRef.current;
-    if (!parent) {
-      return;
-    }
-    const view = new EditorView({
-      parent,
-      state: EditorState.create({
-        extensions: [
-          lineNumbers(),
-          highlightActiveLineGutter(),
-          highlightActiveLine(),
-          history(),
-          drawSelection(),
-          indentOnInput(),
-          bracketMatching(),
-          EditorView.lineWrapping,
-          keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-          keepEscape,
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
-              onChangeRef.current(update.state.doc.toString());
-            }
-          }),
-          codeTheme,
-          sizeTheme,
-          config.of([]),
-        ],
-      }),
-    });
-    viewRef.current = view;
-    return () => {
-      view.destroy();
-      viewRef.current = null;
-    };
-  }, [config]);
-
-  useLayoutEffect(() => {
+  const config = useMemo(() => {
     const attributes: Record<string, string> = {};
     if (id) {
       attributes.id = id;
@@ -139,22 +96,38 @@ export function CodeEditor({
     if (invalid) {
       attributes['aria-invalid'] = 'true';
     }
-    viewRef.current?.dispatch({
-      effects: config.reconfigure([
-        codeLanguage(language),
-        EditorView.contentAttributes.of(attributes),
-        placeholder ? placeholderExtension(placeholder) : [],
-      ]),
-    });
-  }, [config, language, id, labelId, describedBy, invalid, placeholder]);
+    return [
+      codeLanguage(language),
+      EditorView.contentAttributes.of(attributes),
+      placeholder ? placeholderExtension(placeholder) : [],
+    ];
+  }, [language, id, labelId, describedBy, invalid, placeholder]);
 
-  // 外部改写内容时同步进编辑器；编辑器自己产生的变化已经一致，不会再派发。
-  useLayoutEffect(() => {
-    const view = viewRef.current;
-    if (view && view.state.doc.toString() !== value) {
-      view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } });
-    }
-  }, [value]);
+  const { parentRef, viewRef } = useCodeMirror({
+    value,
+    extensions: () => [
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      highlightActiveLine(),
+      history(),
+      drawSelection(),
+      indentOnInput(),
+      bracketMatching(),
+      EditorView.lineWrapping,
+      keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+      keepEscape,
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          onChangeRef.current(update.state.doc.toString());
+        }
+      }),
+      codeTheme,
+      sizeTheme,
+    ],
+    config,
+  });
+
+  useImperativeHandle(ref, () => ({ focus: () => viewRef.current?.focus() }), [viewRef]);
 
   return (
     <div
