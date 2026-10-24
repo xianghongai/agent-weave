@@ -13,4 +13,5 @@
 
 - **实体对话框**用 `src/hooks/use-operation-form.ts` 的 `useOperationForm()`：实时校验和提交都试运行 `src/lib/workspace-operations.ts` 中的同一个操作，校验规则只在操作里写一遍。
 - **需要持久化的状态**放进 `src/state/app-store.ts` 的一个 slice，并在 `src/lib/persistence.ts` 的 `PersistedState` 与 `restorePersistedState` 中补上校验和回退；组件通过 store 读写，不直接访问本地存储。导出文件和 Gist 推送只序列化工作区，新增的本机状态不能进入其中。
+- **滚动区**：带圆角边框的容器需要滚动时，滚动区就是这个容器本身（列表页用 `PageScroll framed`），滚动时边框和圆角保持完整；滚动区底部与页脚之间留出间距。
 - **命名与文案**使用 `GLOSSARY.md` 的术语，避开各条目 _Avoid_ 列出的词。同一个概念在代码、文案和文档中用同一个词。

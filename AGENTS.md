@@ -40,7 +40,7 @@
 - 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/state/theme.ts` 负责切换。
 - class 合并使用 `import { cn } from 'cn'`，不使用 clsx 与 tailwind-merge。
 - 页面适配窄屏，但不禁止缩放：`index.html` 的 viewport 保持 `width=device-width, initial-scale=1.0`，不加 `maximum-scale`、`user-scalable=no`。
-- 宽屏（md 及以上）为一屏布局：外壳固定为视口高度，页眉和页脚不动，页面通过 `Page` 的 `scroll` 决定标题以下整体滚动，还是只把列表区放进 `PageScroll`；窄屏保持整页滚动。
+- 宽屏（md 及以上）为一屏布局：外壳固定为视口高度，页眉和页脚不动，页面通过 `Page` 的 `scroll` 决定标题以下整体滚动，还是只把一部分放进 `PageScroll`。列表页用 `PageScroll framed`：带圆角边框的列表框本身就是滚动区，列表不再自带边框。窄屏保持整页滚动。
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。
 - 动效：微交互用 CSS 过渡；进场与页面切换用 `motion/react`，应用根部使用 `MotionConfig reducedMotion="user"`。
 
@@ -57,9 +57,9 @@
 mise exec -- pnpm format:check && mise exec -- pnpm lint && mise exec -- pnpm check-types && mise exec -- pnpm test && mise exec -- pnpm build
 ```
 
-CI（`.github/workflows/ci.yml`）在推送和 Pull Request 时运行同样的校验；推送到 `main` 后，`.github/workflows/pages.yml` 构建并部署到 GitHub Pages。
+pre-commit hook（`package.json` 的 `simple-git-hooks`，`pnpm install` 时安装）在提交时运行 `format:check` 和 `lint`。CI（`.github/workflows/ci.yml`）在推送和 Pull Request 时运行全部校验；推送到 `main` 后，`.github/workflows/pages.yml` 构建并部署到 GitHub Pages。
 
-涉及界面的改动需在浏览器中实际验证，并确认运行时只向 `api.github.com` 发出请求。
+涉及界面的改动需在浏览器中实际验证，并确认运行时只向 `api.github.com` 发出请求。5173 端口和用户的浏览器留给用户：子代理用 `mise exec -- pnpm dev --port <空闲端口>` 启动开发服务器，用 `chrome-devtools-isolated` MCP（无头、临时配置）打开页面截图自查。
 
 ## Agent skills
 
