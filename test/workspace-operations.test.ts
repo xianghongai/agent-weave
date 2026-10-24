@@ -26,6 +26,7 @@ import {
   deleteMcpServer,
   deleteRule,
   deleteTag,
+  findSelectedAgent,
   listRules,
   matchesRuleFilter,
   matchesToolFilter,
@@ -511,6 +512,18 @@ describe('工作区操作：Agent', () => {
 
   it('删除不存在的 Agent 时返回原因码', () => {
     expect(deleteAgent(empty, 'missing', context())).toEqual({ problem: 'notFound' });
+  });
+
+  it('当前选中的 Agent 存在时取它；未选择或已被删除时回到第一个 Agent；没有 Agent 时为空', () => {
+    const ws = apply(empty, (w) => addAgent(w, agentInput({ name: 'Codex CLI' }), context()));
+    expect(findSelectedAgent(ws, 'new-1')?.name).toBe('Codex CLI');
+    expect(findSelectedAgent(ws, null)?.id).toBe('agent-claude');
+
+    const deleted = apply(ws, (w) => deleteAgent(w, 'new-1', context()));
+    expect(findSelectedAgent(deleted, 'new-1')?.id).toBe('agent-claude');
+
+    const none = apply(deleted, (w) => deleteAgent(w, 'agent-claude', context()));
+    expect(findSelectedAgent(none, 'agent-claude')).toBeUndefined();
   });
 });
 

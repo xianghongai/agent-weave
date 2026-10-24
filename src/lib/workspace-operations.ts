@@ -519,6 +519,14 @@ function isAgentRule(agent: Agent, rule: Rule): boolean {
   return rule.tool.type === 'built_in' && agent.built_in_tools.some((tool) => tool.id === rule.tool.id);
 }
 
+/**
+ * Agent 页和输出页共用的当前 Agent：选中的 Agent 存在时取它，
+ * 未选择或已被删除时回到第一个 Agent；没有 Agent 时为 `undefined`。
+ */
+export function findSelectedAgent(workspace: Workspace, selectedId: string | null): Agent | undefined {
+  return workspace.agents.find((agent) => agent.id === selectedId) ?? workspace.agents[0];
+}
+
 /** 删除 Agent 前，界面用它在确认框中显示受影响的规则数量。 */
 export function countRulesForAgent(workspace: Workspace, agentId: string): number {
   const agent = workspace.agents.find((candidate) => candidate.id === agentId);

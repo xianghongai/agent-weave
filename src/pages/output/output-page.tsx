@@ -1,12 +1,14 @@
 import { cn } from 'cn';
 import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { CodeView } from '@/components/code-view';
 import { CopyButton } from '@/components/copy-button';
 import { DECISION_TONE } from '@/components/decision-tone';
-import { Note, Page } from '@/components/page';
+import { Note, Page, PageScroll } from '@/components/page';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { skipReasonMessage } from '@/i18n/problems';
 import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
 import type { Notice } from '@/lib/notices';
@@ -18,71 +20,97 @@ import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
+/** 内层 Tab：权限输出或 MCP 输出。 */
+type OutputSection = 'permission' | 'mcp';
+
 export default function OutputPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const device = useAppStore((state) => state.deviceSettings);
   const selectedId = useUiStore((state) => state.selectedAgentId);
   const selectAgent = useUiStore((state) => state.selectAgent);
+  // 页面局部状态：切换 Agent 时保持不变，离开页面后重置。
+  const [section, setSection] = useState<OutputSection>('permission');
 
   // 所选 Agent 不存在（首次打开或已被删除）时，回到第一个 Agent。
   const agent = workspace.agents.find((candidate) => candidate.id === selectedId) ?? workspace.agents[0];
   const output = agent ? generate(workspace, agent.id, device) : null;
 
   return (
-    <Page icon={FileCodeIcon} title={t('pages.output.title')} description={t('pages.output.description')}>
+    <Page
+      icon={FileCodeIcon}
+      title={t('pages.output.title')}
+      description={t('pages.output.description')}
+      scroll="custom"
+    >
       {!agent || !output ? (
         <Note icon={InfoIcon}>{t('output.noAgents')}</Note>
       ) : (
-        <div className="grid gap-6">
-          <Tabs value={agent.id} onValueChange={(value: string) => selectAgent(value)}>
-            <TabsList className="max-w-full overflow-x-auto">
-              {workspace.agents.map((candidate) => (
-                <TabsTrigger key={candidate.id} value={candidate.id}>
-                  {candidate.name}
+        // 宽屏下 Agent Tabs 和权限/MCP Tab 标题固定，下面的 Tab 内容加上提示一起滚动。
+        <Tabs
+          value={agent.id}
+          onValueChange={(value: string) => selectAgent(value)}
+          className="gap-3 md:min-h-0 md:flex-1"
+        >
+          <TabsList className="max-w-full shrink-0 overflow-x-auto overflow-y-hidden">
+            {workspace.agents.map((candidate) => (
+              <TabsTrigger key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          <TabsContent value={agent.id} className="flex flex-col text-base md:min-h-0">
+            <Tabs
+              value={section}
+              onValueChange={(value: OutputSection) => setSection(value)}
+              className="gap-3 md:min-h-0 md:flex-1"
+            >
+              <TabsList variant="line" className="shrink-0">
+                <TabsTrigger value="permission">
+                  <ShieldCheckIcon />
+                  {t('output.permission')}
                 </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+                <TabsTrigger value="mcp">
+                  <PlugIcon />
+                  {t('output.mcp')}
+                </TabsTrigger>
+              </TabsList>
 
-          {/* 复制前最后检查一遍：高危与冲突提示放在输出之前。 */}
-          <RuleNoticeList workspace={workspace} notices={output.notices} />
-          <PlaceholderNotice notices={output.notices} />
+              <PageScroll>
+                <div className="grid gap-6">
+                  <TabsContent value="permission" className="text-base">
+                    {output.permission ? (
+                      <PermissionOutputView
+                        section={output.permission}
+                        lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
+                        workspace={workspace}
+                        skippedRules={output.skippedRules}
+                      />
+                    ) : (
+                      <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="mcp" className="text-base">
+                    {output.mcp ? (
+                      <McpOutputView
+                        section={output.mcp}
+                        lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
+                        workspace={workspace}
+                        notices={output.notices}
+                      />
+                    ) : (
+                      <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
+                    )}
+                  </TabsContent>
 
-          <section className="grid gap-3">
-            <h2 className="flex items-center gap-2 font-medium">
-              <ShieldCheckIcon className="size-4 text-brand" />
-              {t('output.permission')}
-            </h2>
-            {output.permission ? (
-              <PermissionOutputView
-                section={output.permission}
-                lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
-              />
-            ) : (
-              <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
-            )}
-          </section>
-
-          <section className="grid gap-3">
-            <h2 className="flex items-center gap-2 font-medium">
-              <PlugIcon className="size-4 text-brand" />
-              {t('output.mcp')}
-            </h2>
-            {output.mcp ? (
-              <McpOutputView
-                section={output.mcp}
-                lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
-                workspace={workspace}
-                notices={output.notices}
-              />
-            ) : (
-              <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
-            )}
-          </section>
-
-          <SkippedRuleList workspace={workspace} skippedRules={output.skippedRules} />
-        </div>
+                  <RuleNoticeList workspace={workspace} notices={output.notices} />
+                  <PlaceholderNotice notices={output.notices} />
+                </div>
+              </PageScroll>
+            </Tabs>
+          </TabsContent>
+        </Tabs>
       )}
     </Page>
   );
@@ -135,7 +163,18 @@ function SkippedRuleList({ workspace, skippedRules }: { workspace: Workspace; sk
   );
 }
 
-function PermissionOutputView({ section, lastKey }: { section: PermissionSection; lastKey: string }) {
+/** 权限节：作用域、预览、复制说明、跳过的规则。 */
+function PermissionOutputView({
+  section,
+  lastKey,
+  workspace,
+  skippedRules,
+}: {
+  section: PermissionSection;
+  lastKey: string;
+  workspace: Workspace;
+  skippedRules: SkippedRule[];
+}) {
   const { t } = useTranslation();
 
   return (
@@ -157,17 +196,17 @@ function PermissionOutputView({ section, lastKey }: { section: PermissionSection
           ))}
           <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
         </div>
-        <pre className="max-h-[32rem] overflow-auto p-3 font-mono text-xs leading-relaxed sm:text-sm">
-          {section.preview}
-        </pre>
+        <CodeView value={section.preview} language="json" label={t('output.preview')} className="text-xs sm:text-sm" />
       </div>
 
       <p className="text-sm text-muted-foreground text-pretty">{t('output.copyHint', { key: `"${lastKey}"` })}</p>
+
+      <SkippedRuleList workspace={workspace} skippedRules={skippedRules} />
     </div>
   );
 }
 
-/** MCP 节：“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。TOML 风格附带跳过的字段。 */
+/** MCP 节：作用域、预览、复制说明、TOML 跳过的字段。“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。TOML 风格附带跳过的字段。 */
 function McpOutputView({
   section,
   lastKey,
@@ -197,9 +236,12 @@ function McpOutputView({
           )}
           <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
         </div>
-        <pre className="max-h-[32rem] overflow-auto p-3 font-mono text-xs leading-relaxed sm:text-sm">
-          {section.preview}
-        </pre>
+        <CodeView
+          value={section.preview}
+          language={section.style}
+          label={t('output.preview')}
+          className="text-xs sm:text-sm"
+        />
       </div>
 
       <p className="text-sm text-muted-foreground text-pretty">
