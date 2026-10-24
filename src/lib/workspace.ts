@@ -130,6 +130,8 @@ export interface Rule extends HighRisk {
   /** 模式，空字符串表示整个工具。其中的 `*` 原样代入模板。 */
   pattern: string;
   decision: Decision;
+  /** 给人看的说明，空字符串表示没有描述。不进入生成的配置。 */
+  description: string;
 }
 
 export interface Workspace {

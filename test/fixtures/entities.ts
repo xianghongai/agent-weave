@@ -26,5 +26,5 @@ export function builtInTool(fields: Pick<BuiltInTool, 'key'> & Partial<BuiltInTo
 }
 
 export function rule(fields: Pick<Rule, 'id' | 'tool' | 'decision'> & Partial<Rule>): Rule {
-  return { pattern: '', ...NOT_HIGH_RISK, ...fields };
+  return { pattern: '', description: '', ...NOT_HIGH_RISK, ...fields };
 }

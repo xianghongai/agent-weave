@@ -9,6 +9,7 @@ function commandRule(id: string, slug: string, pattern: string, decision: Decisi
     tool: { type: 'command', id: presetCommandId(slug) },
     pattern,
     decision,
+    description: '',
     ...NOT_HIGH_RISK,
   };
 }
@@ -57,6 +58,7 @@ const MCP_ALLOW_RULES: Rule[] = PRESET_MCP_SERVERS.map((server) => ({
   tool: { type: 'mcp', id: server.id },
   pattern: '',
   decision: 'allow',
+  description: '',
   ...NOT_HIGH_RISK,
 }));
 

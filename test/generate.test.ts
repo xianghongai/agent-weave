@@ -177,6 +177,15 @@ describe('生成：预览与复制文本', () => {
   });
 });
 
+describe('生成：规则描述', () => {
+  it('规则描述只给人看，不出现在生成的权限配置中', () => {
+    const described = { ...rule('git', 'push --force', 'deny'), description: '会覆盖远程历史' };
+    const permission = generate(workspace(['git'], [described]), claude.id, EMPTY_DEVICE_SETTINGS)?.permission;
+    expect(permission?.preview).not.toContain('会覆盖远程历史');
+    expect(permission?.decisions.find((d) => d.decision === 'deny')?.entries).toEqual(['Bash(git push --force *)']);
+  });
+});
+
 describe('生成：空决策', () => {
   const permission = generate(
     workspace(['git'], [rule('git', '', 'allow')]),

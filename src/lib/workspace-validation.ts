@@ -287,6 +287,7 @@ function rule(value: unknown): Rule {
     tool: { type: oneOf(TOOL_TYPES, tool.type), id: string(tool.id) },
     pattern: string(v.pattern),
     decision: oneOf(DECISIONS, v.decision),
+    description: string(v.description),
     ...highRisk(v),
   };
 }

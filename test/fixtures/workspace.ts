@@ -48,6 +48,7 @@ export function edited(): Workspace {
         tool: { type: 'built_in', id: 'builtin-1' },
         pattern: './src/**',
         decision: 'deny',
+        description: '源码只读',
         high_risk: true,
       }),
     ],

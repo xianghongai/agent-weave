@@ -63,6 +63,7 @@ function allowWhole(key: string): Rule {
     tool: { type: 'built_in', id: builtInId(key) },
     pattern: '',
     decision: 'allow',
+    description: '',
     ...NOT_HIGH_RISK,
   };
 }
