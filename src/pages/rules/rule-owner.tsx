@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { escapeMarkdown } from '@/lib/markdown';
 import type { Workspace } from '@/lib/workspace';
 import type { ResolvedTool } from '@/lib/workspace-operations';
 
@@ -82,7 +83,8 @@ export function usePatternTexts(tool: ResolvedTool | null): { placeholder: strin
   if (tool?.type === 'built_in') {
     return {
       placeholder: t('rules.builtInPatternPlaceholder'),
-      hint: t('rules.builtInPatternHint', { agent: tool.agent.name }),
+      // 说明按 Markdown 渲染，Agent 名称是用户数据，先转义。
+      hint: t('rules.builtInPatternHint', { agent: escapeMarkdown(tool.agent.name) }),
     };
   }
   // MCP 工具的模式是该 Server 提供的工具名。
