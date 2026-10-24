@@ -90,11 +90,22 @@ describe('导入工作区', () => {
 
   it.each([
     ['标签', ['tags'], { id: 'tag-1', key: 'other', name: '其他' }],
-    ['命令工具', ['command_tools'], { id: 'tool-1', key: 'cmake', description: '', tag_ids: [], high_risk: false }],
+    [
+      '命令工具',
+      ['command_tools'],
+      { id: 'tool-1', key: 'cmake', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+    ],
     [
       '规则',
       ['rules'],
-      { id: 'rule-1', tool: { type: 'command', id: 'tool-1' }, pattern: 'x', decision: 'ask', high_risk: false },
+      {
+        id: 'rule-1',
+        tool: { type: 'command', id: 'tool-1' },
+        pattern: 'x',
+        decision: 'ask',
+        high_risk: false,
+        high_risk_reason: '',
+      },
     ],
     [
       '不同 Agent 的内置工具',
@@ -115,7 +126,11 @@ describe('导入工作区', () => {
 
   it.each([
     ['标签', ['tags'], { id: 'tag-2', key: 'vcs', name: '重复' }],
-    ['命令工具', ['command_tools'], { id: 'tool-2', key: 'make', description: '', tag_ids: [], high_risk: false }],
+    [
+      '命令工具',
+      ['command_tools'],
+      { id: 'tool-2', key: 'make', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+    ],
     ['MCP Server', ['mcp_servers'], { ...edited().mcp_servers[0]!, id: 'mcp-2' }],
     ['Agent 名称', ['agents'], { ...edited().agents[0]!, id: 'agent-2', built_in_tools: [] }],
     [
@@ -138,6 +153,13 @@ describe('导入工作区', () => {
       mcp_output: null,
     };
     expect(importWorkspace(corrupt(['agents'], [...edited().agents, second]))).toHaveProperty('workspace');
+  });
+
+  it('未标记高危的条目导入时清空高危说明，标记了高危的保留', () => {
+    const cleared = importWorkspace(corrupt(['rules', 0, 'high_risk_reason'], '残留的说明'));
+    expect('workspace' in cleared && cleared.workspace.rules[0]?.high_risk_reason).toBe('');
+    const kept = importWorkspace(corrupt(['command_tools', 0, 'high_risk_reason'], '会覆盖产物'));
+    expect('workspace' in kept && kept.workspace.command_tools[0]?.high_risk_reason).toBe('会覆盖产物');
   });
 
   it('工具上残留已删除标签的 ID 是合法的', () => {

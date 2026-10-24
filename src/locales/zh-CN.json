@@ -504,6 +504,8 @@
   },
   "notices": {
     "highRiskFlag": "高危",
+    "highRiskReason": "高危说明",
+    "highRiskReasonPlaceholder": "为什么高危（可选），如：删除后无法恢复",
     "toolHighRiskHint": "允许指向它的规则时产生高危提示。",
     "ruleHighRiskHint": "决策为“允许”时产生高危提示，即使所指工具不是高危工具。",
     "highRiskRule": "高危：允许了高危操作",

@@ -68,7 +68,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
                 <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
               </div>
               {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
-              {tool.high_risk && <HighRiskBadge />}
+              {tool.high_risk && <HighRiskBadge reason={tool.high_risk_reason} />}
               <RuleCountBadge tool={{ type: 'built_in', id: tool.id }} />
               <Button
                 variant="ghost"

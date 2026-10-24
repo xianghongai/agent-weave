@@ -82,7 +82,7 @@ export default function ToolsPage() {
                   <div className="min-w-0 flex-1">
                     <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
                   </div>
-                  {tool.high_risk && <HighRiskBadge />}
+                  {tool.high_risk && <HighRiskBadge reason={tool.high_risk_reason} />}
                   <RuleCountBadge tool={{ type: 'command', id: tool.id }} />
                   <Button
                     variant="ghost"

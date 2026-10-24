@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
-import { HighRiskSwitch } from '@/components/high-risk';
+import { HighRiskSwitch, initialHighRisk } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -10,7 +10,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/c
 import { Input } from '@/components/ui/input';
 import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
-import type { CommandTool, Workspace } from '@/lib/workspace';
+import { NOT_HIGH_RISK, type CommandTool, type Workspace } from '@/lib/workspace';
 import { addCommandTool, updateCommandTool } from '@/lib/workspace-operations';
 
 interface CommandToolDialogProps {
@@ -41,14 +41,14 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
   const { t } = useTranslation();
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
-  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
+  const [highRisk, setHighRisk] = useState(initialHighRisk(tool));
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
   const keyRef = useRef<HTMLInputElement>(null);
   /** “保存并继续新增”后刚新增的标识，提示已保存。 */
   const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { key, description, high_risk: highRisk, tag_ids: tagIds };
+    const input = { key, description, ...highRisk, tag_ids: tagIds };
     return tool ? updateCommandTool(current, tool.id, input) : addCommandTool(current, input);
   };
   // 标识重复时立即提示；空标识只禁用保存，不提示。
@@ -95,8 +95,8 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
         </Field>
         <HighRiskSwitch
           id="command-tool-high-risk"
-          checked={highRisk}
-          onCheckedChange={setHighRisk}
+          value={highRisk}
+          onChange={setHighRisk}
           hint={t('notices.toolHighRiskHint')}
         />
         <TagPicker value={tagIds} onChange={setTagIds} />
@@ -121,7 +121,7 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
                 setLastAdded(key.trim());
                 setKey('');
                 setDescription('');
-                setHighRisk(false);
+                setHighRisk(NOT_HIGH_RISK);
                 keyRef.current?.focus();
               })
             }

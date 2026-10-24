@@ -1,4 +1,4 @@
-import type { Agent, BuiltInTool, Rule } from '@/lib/workspace';
+import { NOT_HIGH_RISK, type Agent, type BuiltInTool, type Rule } from '@/lib/workspace';
 
 function builtInId(key: string): string {
   return `preset-built-in-claude-code-${key.toLowerCase()}`;
@@ -10,7 +10,7 @@ function builtIn(key: string, description: string, writes: boolean, with_pattern
     key,
     description,
     tag_ids: [],
-    high_risk: false,
+    ...NOT_HIGH_RISK,
     writes,
     templates: { with_pattern, without_pattern: key },
   };
@@ -63,7 +63,7 @@ function allowWhole(key: string): Rule {
     tool: { type: 'built_in', id: builtInId(key) },
     pattern: '',
     decision: 'allow',
-    high_risk: false,
+    ...NOT_HIGH_RISK,
   };
 }
 

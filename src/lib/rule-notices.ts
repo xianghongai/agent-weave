@@ -25,6 +25,13 @@ function isHighRisk({ rule, tool }: RuleListItem): boolean {
   return tool.type === 'built_in' && tool.tool.writes && BROAD_WRITE_PATTERNS.has(rule.pattern);
 }
 
+/** 规则的高危说明：先列规则自己的，再列所指工具的；只列标记了高危且填写了说明的。 */
+export function highRiskReasons({ rule, tool }: RuleListItem): string[] {
+  return [rule, tool.tool].flatMap((entry) =>
+    entry.high_risk && entry.high_risk_reason ? [entry.high_risk_reason] : []
+  );
+}
+
 /**
  * 同一工具、同一模式出现不同决策的规则组。
  * 每组带上该工具、该模式下的全部规则，组内与组间都按传入顺序排列。

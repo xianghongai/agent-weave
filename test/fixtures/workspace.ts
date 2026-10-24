@@ -9,7 +9,14 @@ export function edited(): Workspace {
     updated_at: '2026-10-23T12:00:00.000Z',
     tags: [{ id: 'tag-1', key: 'vcs', name: '版本控制' }],
     command_tools: [
-      { id: 'tool-1', key: 'make', description: '构建', tag_ids: ['tag-1', 'tag-gone'], high_risk: true },
+      {
+        id: 'tool-1',
+        key: 'make',
+        description: '构建',
+        tag_ids: ['tag-1', 'tag-gone'],
+        high_risk: true,
+        high_risk_reason: '',
+      },
     ],
     mcp_servers: [
       {
@@ -19,6 +26,7 @@ export function edited(): Workspace {
         description: '',
         tag_ids: [],
         high_risk: false,
+        high_risk_reason: '',
       },
     ],
     agents: [
@@ -33,6 +41,7 @@ export function edited(): Workspace {
             description: '',
             tag_ids: [],
             high_risk: false,
+            high_risk_reason: '',
             writes: false,
             templates: { with_pattern: 'Read({pattern})', without_pattern: 'Read' },
           },
@@ -48,13 +57,21 @@ export function edited(): Workspace {
       },
     ],
     rules: [
-      { id: 'rule-1', tool: { type: 'command', id: 'tool-1' }, pattern: '', decision: 'allow', high_risk: false },
+      {
+        id: 'rule-1',
+        tool: { type: 'command', id: 'tool-1' },
+        pattern: '',
+        decision: 'allow',
+        high_risk: false,
+        high_risk_reason: '',
+      },
       {
         id: 'rule-2',
         tool: { type: 'built_in', id: 'builtin-1' },
         pattern: './src/**',
         decision: 'deny',
         high_risk: true,
+        high_risk_reason: '',
       },
     ],
   };

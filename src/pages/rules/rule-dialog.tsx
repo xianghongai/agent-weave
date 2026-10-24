@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 
 import { FieldLabelWithHelp } from '@/components/field-label-with-help';
 import { FormDialog } from '@/components/form-dialog';
-import { HighRiskSwitch } from '@/components/high-risk';
+import { HighRiskSwitch, initialHighRisk } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
-import type { Decision, Rule, ToolRef, Workspace } from '@/lib/workspace';
+import { NOT_HIGH_RISK, type Decision, type Rule, type ToolRef, type Workspace } from '@/lib/workspace';
 import { addRule, resolveTool, updateRule } from '@/lib/workspace-operations';
 import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
 import { usePatternTexts } from '@/pages/rules/rule-owner';
@@ -47,14 +47,14 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
   const [tool, setTool] = useState<ToolRef | null>(rule?.tool ?? null);
   const [pattern, setPattern] = useState(rule?.pattern ?? '');
   const [decision, setDecision] = useState<Decision>(rule?.decision ?? 'allow');
-  const [highRisk, setHighRisk] = useState(rule?.high_risk ?? false);
+  const [highRisk, setHighRisk] = useState(initialHighRisk(rule));
   const resolved = tool ? resolveTool(workspace, tool) : null;
   const patternTexts = usePatternTexts(resolved);
   /** “保存并继续新增”后刚新增的规则，提示已保存。 */
   const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const operation = (current: Workspace) => {
-    const input = { tool, pattern, decision, high_risk: highRisk };
+    const input = { tool, pattern, decision, ...highRisk };
     return rule ? updateRule(current, rule.id, input) : addRule(current, input);
   };
   // 尚未选择工具只禁用保存；所选工具在填写期间被删除时才提示。
@@ -111,8 +111,8 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
         </Field>
         <HighRiskSwitch
           id="rule-high-risk"
-          checked={highRisk}
-          onCheckedChange={setHighRisk}
+          value={highRisk}
+          onChange={setHighRisk}
           hint={t('notices.ruleHighRiskHint')}
         />
       </FieldGroup>
@@ -135,7 +135,7 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
               submitAndContinue(() => {
                 setLastAdded([resolved?.tool.key, pattern.trim()].filter(Boolean).join(' '));
                 setPattern('');
-                setHighRisk(false);
+                setHighRisk(NOT_HIGH_RISK);
                 patternRef.current?.focus();
               })
             }

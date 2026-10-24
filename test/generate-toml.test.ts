@@ -31,6 +31,7 @@ function workspace(servers: Record<string, JsonObject>, agent: Agent = codex): W
       description: '',
       tag_ids: [],
       high_risk: false,
+      high_risk_reason: '',
     })),
     agents: [agent],
     rules: [],

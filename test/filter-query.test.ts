@@ -4,7 +4,7 @@ import { ruleFilterFromQuery, ruleFilterToQuery, toolFilterFromQuery, toolFilter
 import type { Workspace } from '@/lib/workspace';
 import { NO_RULE_FILTER, NO_TOOL_FILTER } from '@/lib/workspace-operations';
 
-const tool = { description: '', tag_ids: [], high_risk: false };
+const tool = { description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
 
 const ws: Workspace = {
   schema_version: 1,

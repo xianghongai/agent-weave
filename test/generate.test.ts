@@ -33,7 +33,7 @@ const claude: Agent = {
 };
 
 function tool(key: string): CommandTool {
-  return { id: `tool-${key}`, key, description: '', tag_ids: [], high_risk: false };
+  return { id: `tool-${key}`, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
 }
 
 let ruleSeq = 0;
@@ -45,6 +45,7 @@ function rule(toolKey: string, pattern: string, decision: Decision): Rule {
     pattern,
     decision,
     high_risk: false,
+    high_risk_reason: '',
   };
 }
 
@@ -398,7 +399,7 @@ describe('生成：预设的 MCP Server', () => {
 });
 
 function server(key: string, content: McpServer['content'] = {}, description = ''): McpServer {
-  return { id: `server-${key}`, key, content, description, tag_ids: [], high_risk: false };
+  return { id: `server-${key}`, key, content, description, tag_ids: [], high_risk: false, high_risk_reason: '' };
 }
 
 function mcpRule(serverKey: string, pattern: string, decision: Decision): Rule {
@@ -409,6 +410,7 @@ function mcpRule(serverKey: string, pattern: string, decision: Decision): Rule {
     pattern,
     decision,
     high_risk: false,
+    high_risk_reason: '',
   };
 }
 
@@ -584,11 +586,11 @@ describe('生成：JSON 风格的 MCP 输出', () => {
 });
 
 function builtIn(id: string, key: string, templates: TemplatePair): BuiltInTool {
-  return { id, key, description: '', tag_ids: [], high_risk: false, writes: false, templates };
+  return { id, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '', writes: false, templates };
 }
 
 function builtInRule(id: string, toolId: string, pattern: string, decision: Decision): Rule {
-  return { id, tool: { type: 'built_in', id: toolId }, pattern, decision, high_risk: false };
+  return { id, tool: { type: 'built_in', id: toolId }, pattern, decision, high_risk: false, high_risk_reason: '' };
 }
 
 describe('生成：内置工具', () => {

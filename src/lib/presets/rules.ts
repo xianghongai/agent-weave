@@ -1,6 +1,6 @@
 import { PRESET_COMMAND_TOOLS, presetCommandId } from '@/lib/presets/command-tools';
 import { PRESET_MCP_SERVERS } from '@/lib/presets/mcp-servers';
-import type { Decision, Rule } from '@/lib/workspace';
+import { NOT_HIGH_RISK, type Decision, type Rule } from '@/lib/workspace';
 
 /** 针对命令工具的规则。`slug` 与命令工具内部 ID 的后缀相同。 */
 function commandRule(id: string, slug: string, pattern: string, decision: Decision): Rule {
@@ -9,7 +9,7 @@ function commandRule(id: string, slug: string, pattern: string, decision: Decisi
     tool: { type: 'command', id: presetCommandId(slug) },
     pattern,
     decision,
-    high_risk: false,
+    ...NOT_HIGH_RISK,
   };
 }
 
@@ -57,7 +57,7 @@ const MCP_ALLOW_RULES: Rule[] = PRESET_MCP_SERVERS.map((server) => ({
   tool: { type: 'mcp', id: server.id },
   pattern: '',
   decision: 'allow',
-  high_risk: false,
+  ...NOT_HIGH_RISK,
 }));
 
 /** 预设的共享权限规则，所有 Agent 共用。 */

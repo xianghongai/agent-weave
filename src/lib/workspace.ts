@@ -27,7 +27,16 @@ export interface Tag {
   name: string;
 }
 
-export interface CommandTool {
+/** 高危标记与说明，命令工具、MCP Server、内置工具和规则共有。 */
+export interface HighRisk {
+  high_risk: boolean;
+  /** 为什么高危，悬停高危标记时显示；未标记高危或没有填写时为空字符串。 */
+  high_risk_reason: string;
+}
+
+export const NOT_HIGH_RISK: HighRisk = { high_risk: false, high_risk_reason: '' };
+
+export interface CommandTool extends HighRisk {
   id: string;
   /** 标识，即命令本身，如 `git`、`./gradlew`；在全部命令工具中唯一。 */
   key: string;
@@ -35,10 +44,9 @@ export interface CommandTool {
   description: string;
   /** 标签被删除后，这里残留的 ID 保留不动。 */
   tag_ids: string[];
-  high_risk: boolean;
 }
 
-export interface McpServer {
+export interface McpServer extends HighRisk {
   id: string;
   /** 标识，即输出中的 Server 名；在全部 MCP Server 中唯一。 */
   key: string;
@@ -46,7 +54,6 @@ export interface McpServer {
   content: JsonObject;
   description: string;
   tag_ids: string[];
-  high_risk: boolean;
 }
 
 /** 一对输出模板，按模式是否为空选用其一。模板为空字符串表示该 Agent 表达不了。 */
@@ -55,13 +62,12 @@ export interface TemplatePair {
   without_pattern: string;
 }
 
-export interface BuiltInTool {
+export interface BuiltInTool extends HighRisk {
   id: string;
   /** 标识，在所属 Agent 内唯一。 */
   key: string;
   description: string;
   tag_ids: string[];
-  high_risk: boolean;
   /** 写入类工具：模式为空或指向主目录、根目录时，`allow` 规则产生高危提示。 */
   writes: boolean;
   /** 模板中使用 `{pattern}`，如 `Read({pattern})` 与 `Read`。 */
@@ -118,13 +124,12 @@ export interface ToolRef {
   id: string;
 }
 
-export interface Rule {
+export interface Rule extends HighRisk {
   id: string;
   tool: ToolRef;
   /** 模式，空字符串表示整个工具。其中的 `*` 原样代入模板。 */
   pattern: string;
   decision: Decision;
-  high_risk: boolean;
 }
 
 export interface Workspace {

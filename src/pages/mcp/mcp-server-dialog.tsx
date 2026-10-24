@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { CodeEditor, type CodeEditorHandle } from '@/components/code-editor';
 import { FormDialog } from '@/components/form-dialog';
-import { HighRiskSwitch } from '@/components/high-risk';
+import { HighRiskSwitch, initialHighRisk } from '@/components/high-risk';
 import { MarkdownFieldDescription } from '@/components/markdown-field-description';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
@@ -46,12 +46,12 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
   const [key, setKey] = useState(server?.key ?? '');
   const [content, setContent] = useState(server ? JSON.stringify(server.content, null, 2) : '');
   const [description, setDescription] = useState(server?.description ?? '');
-  const [highRisk, setHighRisk] = useState(server?.high_risk ?? false);
+  const [highRisk, setHighRisk] = useState(initialHighRisk(server));
   const [tagIds, setTagIds] = useState<string[]>(server?.tag_ids ?? []);
   const contentEditorRef = useRef<CodeEditorHandle>(null);
 
   const operation = (current: Workspace) => {
-    const input = { key, content, description, high_risk: highRisk, tag_ids: tagIds };
+    const input = { key, content, description, ...highRisk, tag_ids: tagIds };
     return server ? updateMcpServer(current, server.id, input) : addMcpServer(current, input);
   };
   // 重复标识和无效内容立即提示；空标识、空内容只禁用保存，不提示。
@@ -125,8 +125,8 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
         </Field>
         <HighRiskSwitch
           id="mcp-server-high-risk"
-          checked={highRisk}
-          onCheckedChange={setHighRisk}
+          value={highRisk}
+          onChange={setHighRisk}
           hint={t('notices.toolHighRiskHint')}
         />
         <TagPicker value={tagIds} onChange={setTagIds} />

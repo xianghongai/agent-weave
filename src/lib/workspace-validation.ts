@@ -3,6 +3,7 @@ import {
   type BuiltInTool,
   type CommandTool,
   DECISIONS,
+  type HighRisk,
   type JsonObject,
   type JsonValue,
   type McpOutput,
@@ -192,6 +193,13 @@ function tag(value: unknown): Tag {
   return { id: string(v.id), key: string(v.key), name: string(v.name) };
 }
 
+/** 高危标记与说明。未标记高危时说明一律清空，与表单保存的结果一致。 */
+function highRisk(v: Record<string, unknown>): HighRisk {
+  const high_risk = boolean(v.high_risk);
+  const reason = string(v.high_risk_reason);
+  return { high_risk, high_risk_reason: high_risk ? reason : '' };
+}
+
 function commandTool(value: unknown): CommandTool {
   const v = record(value);
   return {
@@ -199,7 +207,7 @@ function commandTool(value: unknown): CommandTool {
     key: string(v.key),
     description: string(v.description),
     tag_ids: list(string, v.tag_ids),
-    high_risk: boolean(v.high_risk),
+    ...highRisk(v),
   };
 }
 
@@ -211,7 +219,7 @@ function mcpServer(value: unknown): McpServer {
     content: jsonObject(v.content),
     description: string(v.description),
     tag_ids: list(string, v.tag_ids),
-    high_risk: boolean(v.high_risk),
+    ...highRisk(v),
   };
 }
 
@@ -227,7 +235,7 @@ function builtInTool(value: unknown): BuiltInTool {
     key: string(v.key),
     description: string(v.description),
     tag_ids: list(string, v.tag_ids),
-    high_risk: boolean(v.high_risk),
+    ...highRisk(v),
     writes: boolean(v.writes),
     templates: templatePair(v.templates),
   };
@@ -279,6 +287,6 @@ function rule(value: unknown): Rule {
     tool: { type: oneOf(TOOL_TYPES, tool.type), id: string(tool.id) },
     pattern: string(v.pattern),
     decision: oneOf(DECISIONS, v.decision),
-    high_risk: boolean(v.high_risk),
+    ...highRisk(v),
   };
 }

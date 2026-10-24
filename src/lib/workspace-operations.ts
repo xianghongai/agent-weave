@@ -1,6 +1,7 @@
 import { type Draft, produce } from 'immer';
 
 import type {
+  HighRisk,
   Agent,
   BuiltInTool,
   CommandTool,
@@ -17,7 +18,7 @@ import type {
   ToolType,
   Workspace,
 } from '@/lib/workspace';
-import { TOOL_TYPES } from '@/lib/workspace';
+import { NOT_HIGH_RISK, TOOL_TYPES } from '@/lib/workspace';
 
 /*
  * 工作区操作：对工作区做的所有修改，以及界面和生成共用的查询。
@@ -186,9 +187,16 @@ export function resolveTags(workspace: Workspace, tagIds: readonly string[]): Ta
 
 /* 命令工具 */
 
-/** 各类表单都可附带的高危标记。省略时新增为 `false`、编辑时保持不变。 */
+/** 各类表单都可附带的高危标记与说明。省略时新增为不高危、编辑时保持不变。 */
 interface HighRiskInput {
   high_risk?: boolean;
+  high_risk_reason?: string;
+}
+
+/** 合并表单中的高危标记与说明。说明去掉首尾空白，不高危时清空，免得取消标记后残留旧说明。 */
+function inputHighRisk(input: HighRiskInput, current: HighRisk): HighRisk {
+  const high_risk = input.high_risk ?? current.high_risk;
+  return { high_risk, high_risk_reason: high_risk ? (input.high_risk_reason ?? current.high_risk_reason).trim() : '' };
 }
 
 export interface CommandToolInput extends HighRiskInput, TagIdsInput {
@@ -222,7 +230,7 @@ export function addCommandTool(
     key,
     description: input.description.trim(),
     tag_ids: inputTagIds(input, []),
-    high_risk: input.high_risk ?? false,
+    ...inputHighRisk(input, NOT_HIGH_RISK),
   };
   return commit(workspace, (draft) => void draft.command_tools.push(tool), ctx);
 }
@@ -248,7 +256,7 @@ export function updateCommandTool(
       tool.key = key;
       tool.description = input.description.trim();
       tool.tag_ids = inputTagIds(input, tool.tag_ids);
-      tool.high_risk = input.high_risk ?? tool.high_risk;
+      Object.assign(tool, inputHighRisk(input, tool));
     },
     ctx
   );
@@ -348,7 +356,7 @@ export function addMcpServer(
     id: ctx.newId(),
     ...checked.fields,
     tag_ids: inputTagIds(input, []),
-    high_risk: input.high_risk ?? false,
+    ...inputHighRisk(input, NOT_HIGH_RISK),
   };
   return commit(workspace, (draft) => void draft.mcp_servers.push(server), ctx);
 }
@@ -372,7 +380,7 @@ export function updateMcpServer(
       const server = byId(draft.mcp_servers, id);
       Object.assign(server, checked.fields);
       server.tag_ids = inputTagIds(input, server.tag_ids);
-      server.high_risk = input.high_risk ?? server.high_risk;
+      Object.assign(server, inputHighRisk(input, server));
     },
     ctx
   );
@@ -604,7 +612,7 @@ export function addBuiltInTool(
     key,
     description: input.description.trim(),
     tag_ids: inputTagIds(input, []),
-    high_risk: input.high_risk ?? false,
+    ...inputHighRisk(input, NOT_HIGH_RISK),
     writes: input.writes,
     templates: trimTemplates(input.templates),
   };
@@ -634,7 +642,7 @@ export function updateBuiltInTool(
       tool.key = key;
       tool.description = input.description.trim();
       tool.tag_ids = inputTagIds(input, tool.tag_ids);
-      tool.high_risk = input.high_risk ?? tool.high_risk;
+      Object.assign(tool, inputHighRisk(input, tool));
       tool.writes = input.writes;
       tool.templates = trimTemplates(input.templates);
     },
@@ -695,7 +703,7 @@ export function addRule(
     tool: { ...tool },
     pattern,
     decision: input.decision,
-    high_risk: input.high_risk ?? false,
+    ...inputHighRisk(input, NOT_HIGH_RISK),
   };
   return commit(workspace, (draft) => void draft.rules.push(rule), ctx);
 }
@@ -721,7 +729,7 @@ export function updateRule(
       rule.tool = { ...tool };
       rule.pattern = pattern;
       rule.decision = input.decision;
-      rule.high_risk = input.high_risk ?? rule.high_risk;
+      Object.assign(rule, inputHighRisk(input, rule));
     },
     ctx
   );

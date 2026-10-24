@@ -10,18 +10,22 @@ function command(
   key: string,
   description: string,
   tags: PresetTagKey[],
-  options: { highRisk?: boolean; slug?: string } = {}
+  options: { highRiskReason?: string; slug?: string } = {}
 ): CommandTool {
   return {
     id: presetCommandId(options.slug ?? key),
     key,
     description,
     tag_ids: tags.map(presetTagId),
-    high_risk: options.highRisk ?? false,
+    high_risk: options.highRiskReason !== undefined,
+    high_risk_reason: options.highRiskReason ?? '',
   };
 }
 
-const HIGH_RISK = { highRisk: true };
+/** 标记为高危，并写明原因。 */
+function highRisk(reason: string): { highRiskReason: string } {
+  return { highRiskReason: reason };
+}
 
 /*
  * 预设命令工具。内部 ID 是固定值，“合并预设”按它判断条目是否已存在。
@@ -122,9 +126,9 @@ export const PRESET_COMMAND_TOOLS: CommandTool[] = [
   command('cp', '复制文件', ['filesystem']),
   command('mv', '移动或重命名文件', ['filesystem']),
   command('ln', '创建链接', ['filesystem']),
-  command('rm', '删除文件', ['filesystem'], HIGH_RISK),
-  command('chmod', '修改文件权限', ['filesystem'], HIGH_RISK),
-  command('chown', '修改文件所有者', ['filesystem'], HIGH_RISK),
+  command('rm', '删除文件', ['filesystem'], highRisk('递归删除可一次清空整个目录，无法恢复')),
+  command('chmod', '修改文件权限', ['filesystem'], highRisk('可放开敏感文件的权限，或让任意脚本可执行')),
+  command('chown', '修改文件所有者', ['filesystem'], highRisk('可改变文件归属，绕开权限隔离')),
   command('tee', '同时写入文件和标准输出', ['filesystem', 'text']),
   command('diff', '比较文件差异', ['filesystem', 'text']),
   command('cmp', '逐字节比较文件', ['filesystem']),
@@ -162,8 +166,8 @@ export const PRESET_COMMAND_TOOLS: CommandTool[] = [
   command('yq', '处理 YAML', ['text']),
 
   // 网络
-  command('curl', '发送 HTTP 请求或下载文件', ['network'], HIGH_RISK),
-  command('wget', '下载文件', ['network'], HIGH_RISK),
+  command('curl', '发送 HTTP 请求或下载文件', ['network'], highRisk('可把本地数据发往任意地址，或下载脚本直接执行')),
+  command('wget', '下载文件', ['network'], highRisk('可下载脚本直接执行')),
   command('xh', '发送 HTTP 请求', ['network']),
   command('dig', 'DNS 查询', ['network']),
   command('drill', 'DNS 查询', ['network']),
@@ -172,15 +176,15 @@ export const PRESET_COMMAND_TOOLS: CommandTool[] = [
   command('nslookup', 'DNS 查询', ['network']),
   command('ping', '检测网络连通性', ['network']),
   command('mtr', '跟踪网络路由', ['network']),
-  command('nc', '建立任意 TCP/UDP 连接（netcat）', ['network'], HIGH_RISK),
-  command('socat', '在任意两端之间转发数据', ['network'], HIGH_RISK),
+  command('nc', '建立任意 TCP/UDP 连接（netcat）', ['network'], highRisk('可把本地数据发往任意地址，或开放监听端口')),
+  command('socat', '在任意两端之间转发数据', ['network'], highRisk('可把本机端口转发出去，或开放监听端口')),
   command('netstat', '查看网络连接', ['network', 'system']),
   command('ss', '查看套接字', ['network', 'system']),
   command('ip', '查看和配置网络接口与路由', ['network', 'system']),
   command('ifconfig', '查看和配置网络接口', ['network', 'system']),
 
   // 系统
-  command('sudo', '以超级用户身份执行', ['system'], HIGH_RISK),
+  command('sudo', '以超级用户身份执行', ['system'], highRisk('以超级用户执行任意命令，绕开全部权限限制')),
   command('ps', '查看进程', ['system']),
   command('pgrep', '按名称查找进程', ['system', 'search']),
   command('lsof', '查看打开的文件与端口', ['system', 'network']),
@@ -207,8 +211,8 @@ export const PRESET_COMMAND_TOOLS: CommandTool[] = [
   command('btmgmt', '管理蓝牙控制器', ['hardware']),
   command('hciconfig', '配置蓝牙设备', ['hardware']),
   command('rfkill', '启用或禁用无线设备', ['hardware']),
-  command('dd', '按块复制数据，可直接写入磁盘', ['hardware', 'filesystem'], HIGH_RISK),
-  command('mkfs', '创建文件系统，会清空分区', ['hardware', 'filesystem'], HIGH_RISK),
+  command('dd', '按块复制数据，可直接写入磁盘', ['hardware', 'filesystem'], highRisk('写错目标会直接覆盖磁盘')),
+  command('mkfs', '创建文件系统，会清空分区', ['hardware', 'filesystem'], highRisk('会清空整个分区')),
 
   // 其他
   command('ffmpeg', '音视频转换与处理', []),

@@ -115,7 +115,7 @@ describe('工作区操作：命令工具', () => {
     const ctx = context();
     const ws = apply(empty, (w) => addCommandTool(w, { key: ' git ', description: ' 版本控制 ' }, ctx));
     expect(ws.command_tools).toEqual([
-      { id: 'new-1', key: 'git', description: '版本控制', tag_ids: [], high_risk: false },
+      { id: 'new-1', key: 'git', description: '版本控制', tag_ids: [], high_risk: false, high_risk_reason: '' },
     ]);
     expect(ws.updated_at).toBe(NOW);
   });
@@ -196,6 +196,7 @@ describe('工作区操作：MCP Server', () => {
         description: '查询文档',
         tag_ids: [],
         high_risk: false,
+        high_risk_reason: '',
       },
     ]);
     expect(ws.updated_at).toBe(NOW);
@@ -387,6 +388,7 @@ const withRead: Workspace = {
         description: '',
         tag_ids: [],
         high_risk: false,
+        high_risk_reason: '',
         writes: false,
         templates: { with_pattern: 'Read({pattern})', without_pattern: 'Read' },
       },
@@ -540,11 +542,32 @@ describe('工作区操作：Agent', () => {
   it('删除 Agent 时连同它的内置工具和指向这些内置工具的规则一起删除，共享规则保留', () => {
     const ws: Workspace = {
       ...withRead,
-      command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false }],
+      command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' }],
       rules: [
-        { id: 'r1', tool: { type: 'command', id: 'git' }, pattern: '', decision: 'allow', high_risk: false },
-        { id: 'r2', tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'allow', high_risk: false },
-        { id: 'r3', tool: { type: 'built_in', id: 'read' }, pattern: '', decision: 'ask', high_risk: false },
+        {
+          id: 'r1',
+          tool: { type: 'command', id: 'git' },
+          pattern: '',
+          decision: 'allow',
+          high_risk: false,
+          high_risk_reason: '',
+        },
+        {
+          id: 'r2',
+          tool: { type: 'built_in', id: 'read' },
+          pattern: './src/',
+          decision: 'allow',
+          high_risk: false,
+          high_risk_reason: '',
+        },
+        {
+          id: 'r3',
+          tool: { type: 'built_in', id: 'read' },
+          pattern: '',
+          decision: 'ask',
+          high_risk: false,
+          high_risk_reason: '',
+        },
       ],
     };
     expect(countRulesForAgent(ws, 'agent-claude')).toBe(2);
@@ -596,6 +619,7 @@ describe('工作区操作：内置工具', () => {
       description: '修改文件',
       tag_ids: [],
       high_risk: false,
+      high_risk_reason: '',
       writes: true,
       templates: { with_pattern: 'Edit({pattern}**)', without_pattern: 'Edit' },
     });
@@ -648,7 +672,12 @@ describe('工作区操作：内置工具', () => {
   it('删除内置工具时连同指向它的规则一起删除，删除前可以查询受影响的规则数量', () => {
     const ctx = context();
     const ws = apply(
-      { ...withRead, command_tools: [{ id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false }] },
+      {
+        ...withRead,
+        command_tools: [
+          { id: 'git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+        ],
+      },
       (w) => addBuiltInTool(w, 'agent-claude', builtInInput(), ctx),
       (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: '', decision: 'allow' }, ctx),
       (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: './src/', decision: 'deny' }, ctx),

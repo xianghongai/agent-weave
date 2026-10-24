@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
-import { HighRiskSwitch } from '@/components/high-risk';
+import { HighRiskSwitch, initialHighRisk } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -53,12 +53,12 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
   const [key, setKey] = useState(tool?.key ?? '');
   const [description, setDescription] = useState(tool?.description ?? '');
   const [writes, setWrites] = useState(tool?.writes ?? false);
-  const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
+  const [highRisk, setHighRisk] = useState(initialHighRisk(tool));
   const [templates, setTemplates] = useState(tool?.templates ?? { with_pattern: '', without_pattern: '' });
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
 
   const operation = (current: Workspace) => {
-    const input = { key, description, writes, templates, high_risk: highRisk, tag_ids: tagIds };
+    const input = { key, description, writes, templates, ...highRisk, tag_ids: tagIds };
     return tool ? updateBuiltInTool(current, tool.id, input) : addBuiltInTool(current, agent.id, input);
   };
   // 标识重复时立即提示；空标识只禁用保存，不提示。
@@ -111,8 +111,8 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
         </Field>
         <HighRiskSwitch
           id="built-in-tool-high-risk"
-          checked={highRisk}
-          onCheckedChange={setHighRisk}
+          value={highRisk}
+          onChange={setHighRisk}
           hint={t('notices.toolHighRiskHint')}
         />
         <TemplatePairFields

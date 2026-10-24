@@ -4,11 +4,11 @@ import { filterToolOptions, toolOptions } from '@/lib/tool-options';
 import { SCHEMA_VERSION, type Agent, type Workspace } from '@/lib/workspace';
 
 function commandTool(id: string, key: string) {
-  return { id, key, description: '', tag_ids: [], high_risk: false };
+  return { id, key, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
 }
 
 function mcpServer(id: string, key: string) {
-  return { id, key, content: {}, description: '', tag_ids: [], high_risk: false };
+  return { id, key, content: {}, description: '', tag_ids: [], high_risk: false, high_risk_reason: '' };
 }
 
 function agent(id: string, name: string, builtInKeys: string[]): Agent {
@@ -22,6 +22,7 @@ function agent(id: string, name: string, builtInKeys: string[]): Agent {
       description: '',
       tag_ids: [],
       high_risk: false,
+      high_risk_reason: '',
       writes: false,
       templates: { with_pattern: '', without_pattern: '' },
     })),

@@ -1,5 +1,5 @@
 import { presetTagId, type PresetTagKey } from '@/lib/presets/tags';
-import type { JsonObject, McpServer } from '@/lib/workspace';
+import { NOT_HIGH_RISK, type JsonObject, type McpServer } from '@/lib/workspace';
 
 /** 预设 MCP Server 的内部 ID。 */
 export function presetMcpServerId(key: string): string {
@@ -13,7 +13,7 @@ function server(key: string, description: string, tags: PresetTagKey[], content:
     content,
     description,
     tag_ids: tags.map(presetTagId),
-    high_risk: false,
+    ...NOT_HIGH_RISK,
   };
 }
 

@@ -85,7 +85,7 @@ export default function McpPage() {
                       {JSON.stringify(server.content)}
                     </code>
                   </div>
-                  {server.high_risk && <HighRiskBadge />}
+                  {server.high_risk && <HighRiskBadge reason={server.high_risk_reason} />}
                   <RuleCountBadge tool={{ type: 'mcp', id: server.id }} />
                   <Button
                     variant="ghost"

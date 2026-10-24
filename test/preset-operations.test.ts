@@ -106,6 +106,7 @@ describe('合并预设', () => {
           description: '',
           tag_ids: ['preset-tag-vcs', 'preset-tag-net'],
           high_risk: false,
+          high_risk_reason: '',
         },
         {
           id: 'preset-command-hg',
@@ -113,8 +114,16 @@ describe('合并预设', () => {
           description: '',
           tag_ids: ['my-vcs', 'preset-tag-vcs'],
           high_risk: false,
+          high_risk_reason: '',
         },
-        { id: 'preset-command-ls', key: 'ls', description: '', tag_ids: ['preset-tag-vcs'], high_risk: false },
+        {
+          id: 'preset-command-ls',
+          key: 'ls',
+          description: '',
+          tag_ids: ['preset-tag-vcs'],
+          high_risk: false,
+          high_risk_reason: '',
+        },
       ],
       mcp_servers: [
         {
@@ -124,6 +133,7 @@ describe('合并预设', () => {
           description: '',
           tag_ids: ['preset-tag-vcs'],
           high_risk: false,
+          high_risk_reason: '',
         },
       ],
       agents: [
@@ -139,7 +149,14 @@ describe('合并预设', () => {
       tags: [{ id: 'my-vcs', key: 'vcs', name: '我的版本控制' }],
       // 已有的工具保持不变，即使它还引用着预设标签的 ID。
       command_tools: [
-        { id: 'preset-command-ls', key: 'ls', description: '', tag_ids: ['preset-tag-vcs'], high_risk: false },
+        {
+          id: 'preset-command-ls',
+          key: 'ls',
+          description: '',
+          tag_ids: ['preset-tag-vcs'],
+          high_risk: false,
+          high_risk_reason: '',
+        },
       ],
       agents: [agent('preset-agent-claude-code', 'Claude Code', [])],
     });
@@ -167,9 +184,30 @@ describe('合并预设', () => {
   it('命令工具与 MCP Server 同样只新增缺少的，已修改的保持不变，标识冲突时跳过', () => {
     const preset = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '版本控制', tag_ids: [], high_risk: false },
-        { id: 'preset-command-rm', key: 'rm', description: '删除文件', tag_ids: [], high_risk: true },
-        { id: 'preset-command-ls', key: 'ls', description: '列出目录', tag_ids: ['preset-tag-fs'], high_risk: false },
+        {
+          id: 'preset-command-git',
+          key: 'git',
+          description: '版本控制',
+          tag_ids: [],
+          high_risk: false,
+          high_risk_reason: '',
+        },
+        {
+          id: 'preset-command-rm',
+          key: 'rm',
+          description: '删除文件',
+          tag_ids: [],
+          high_risk: true,
+          high_risk_reason: '',
+        },
+        {
+          id: 'preset-command-ls',
+          key: 'ls',
+          description: '列出目录',
+          tag_ids: ['preset-tag-fs'],
+          high_risk: false,
+          high_risk_reason: '',
+        },
       ],
       mcp_servers: [
         {
@@ -179,6 +217,7 @@ describe('合并预设', () => {
           description: '',
           tag_ids: [],
           high_risk: false,
+          high_risk_reason: '',
         },
         {
           id: 'preset-mcp-github',
@@ -187,25 +226,55 @@ describe('合并预设', () => {
           description: '',
           tag_ids: [],
           high_risk: false,
+          high_risk_reason: '',
         },
       ],
     });
     const mine = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '我的描述', tag_ids: [], high_risk: true },
-        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false },
+        {
+          id: 'preset-command-git',
+          key: 'git',
+          description: '我的描述',
+          tag_ids: [],
+          high_risk: true,
+          high_risk_reason: '',
+        },
+        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
       ],
       mcp_servers: [
-        { id: 'my-fetch', key: 'fetch', content: { command: 'npx' }, description: '', tag_ids: [], high_risk: false },
+        {
+          id: 'my-fetch',
+          key: 'fetch',
+          content: { command: 'npx' },
+          description: '',
+          tag_ids: [],
+          high_risk: false,
+          high_risk_reason: '',
+        },
       ],
     });
 
     const { workspace: merged, report } = mergePresets(mine, preset, ctx);
 
     expect(merged.command_tools).toEqual([
-      { id: 'preset-command-git', key: 'git', description: '我的描述', tag_ids: [], high_risk: true },
-      { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false },
-      { id: 'preset-command-ls', key: 'ls', description: '列出目录', tag_ids: ['preset-tag-fs'], high_risk: false },
+      {
+        id: 'preset-command-git',
+        key: 'git',
+        description: '我的描述',
+        tag_ids: [],
+        high_risk: true,
+        high_risk_reason: '',
+      },
+      { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+      {
+        id: 'preset-command-ls',
+        key: 'ls',
+        description: '列出目录',
+        tag_ids: ['preset-tag-fs'],
+        high_risk: false,
+        high_risk_reason: '',
+      },
     ]);
     expect(merged.mcp_servers.map((server) => server.id)).toEqual(['my-fetch', 'preset-mcp-github']);
     expect(report.skipped).toEqual([
@@ -228,7 +297,12 @@ describe('合并预设', () => {
     });
     const myClaude = {
       ...agent('preset-agent-claude-code', 'Claude Code', [
-        { ...builtIn('preset-builtin-read', 'Read'), description: '我改过的描述', high_risk: true },
+        {
+          ...builtIn('preset-builtin-read', 'Read'),
+          description: '我改过的描述',
+          high_risk: true,
+          high_risk_reason: '',
+        },
         builtIn('my-write', 'Write'),
       ]),
       description: '我的 Claude Code',
@@ -262,8 +336,8 @@ describe('合并预设', () => {
   it('规则只新增缺少的；所指工具因冲突被跳过时，规则也跳过并列出', () => {
     const preset = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false },
-        { id: 'preset-command-rm', key: 'rm', description: '', tag_ids: [], high_risk: true },
+        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+        { id: 'preset-command-rm', key: 'rm', description: '', tag_ids: [], high_risk: true, high_risk_reason: '' },
       ],
       agents: [
         agent('preset-agent-claude-code', 'Claude Code', [
@@ -281,8 +355,8 @@ describe('合并预设', () => {
     });
     const mine = workspace({
       command_tools: [
-        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false },
-        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false },
+        { id: 'preset-command-git', key: 'git', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
+        { id: 'my-rm', key: 'rm', description: '', tag_ids: [], high_risk: false, high_risk_reason: '' },
       ],
       agents: [agent('preset-agent-claude-code', 'Claude Code', [builtIn('my-write', 'Write')])],
       rules: [rule('preset-rule-git-allow', 'command', 'preset-command-git', '', 'deny')],
@@ -323,7 +397,7 @@ describe('重置为预设', () => {
 });
 
 function rule(id: string, type: ToolType, toolId: string, pattern: string, decision: Decision): Rule {
-  return { id, tool: { type, id: toolId }, pattern, decision, high_risk: false };
+  return { id, tool: { type, id: toolId }, pattern, decision, high_risk: false, high_risk_reason: '' };
 }
 
 function agent(id: string, name: string, built_in_tools: BuiltInTool[]): Agent {
@@ -350,6 +424,7 @@ function builtIn(id: string, key: string): BuiltInTool {
     description: '',
     tag_ids: [],
     high_risk: false,
+    high_risk_reason: '',
     writes: false,
     templates: { with_pattern: `${key}({pattern})`, without_pattern: key },
   };
