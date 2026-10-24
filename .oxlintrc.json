@@ -19,11 +19,26 @@
       "rules": {
         "no-restricted-globals": [
           "error",
-          { "name": "window", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
-          { "name": "document", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
-          { "name": "navigator", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
-          { "name": "localStorage", "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。" },
-          { "name": "sessionStorage", "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。" }
+          {
+            "name": "window",
+            "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。"
+          },
+          {
+            "name": "document",
+            "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。"
+          },
+          {
+            "name": "navigator",
+            "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。"
+          },
+          {
+            "name": "localStorage",
+            "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。"
+          },
+          {
+            "name": "sessionStorage",
+            "message": "src/lib/ 只放纯函数，本地存储由 src/state/app-store.ts 读写。"
+          }
         ],
         "no-restricted-imports": [
           "error",
@@ -36,6 +51,36 @@
               {
                 "group": ["@/components/*", "@/pages/*", "@/state/*", "@/hooks/*", "@/browser/*", "@/i18n/*"],
                 "message": "src/lib/ 不依赖界面层。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "src/lib/preset-composition.ts",
+        "src/lib/jsonc.ts",
+        "src/lib/workspace.ts",
+        "src/lib/workspace-validation.ts",
+        "src/lib/workspace-migrations.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react", "react-dom", "react/*", "react-dom/*", "react-i18next", "i18next"],
+                "message": "src/lib/ 不依赖 React 与界面文案，出错时返回原因码。"
+              },
+              {
+                "group": ["@/components/*", "@/pages/*", "@/state/*", "@/hooks/*", "@/browser/*", "@/i18n/*"],
+                "message": "src/lib/ 不依赖界面层。"
+              },
+              {
+                "group": ["@/**"],
+                "message": "构建插件经由预设合成导入这些模块，那时 @/ 别名还不可用，改用相对路径导入（见 AGENTS.md“技术约定”）。"
               }
             ]
           }

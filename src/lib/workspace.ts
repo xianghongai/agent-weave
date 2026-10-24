@@ -145,6 +145,21 @@ export interface Workspace {
   rules: Rule[];
 }
 
+/** 工作区中取值为条目数组的顶层键。 */
+export type WorkspaceArrayKey = { [K in keyof Workspace]: Workspace[K] extends unknown[] ? K : never }[keyof Workspace];
+
+/**
+ * 工作区的顶层数组键，按导出文件中的顺序排列。导出与预设合成都按它逐个处理。
+ * `satisfies` 保证与 `Workspace` 一致：漏掉或多出一个键都会报类型错误。
+ */
+export const WORKSPACE_ARRAY_KEYS = Object.keys({
+  tags: true,
+  command_tools: true,
+  mcp_servers: true,
+  agents: true,
+  rules: true,
+} satisfies Record<WorkspaceArrayKey, true>) as readonly WorkspaceArrayKey[];
+
 /** 本机设置：只属于当前设备，用于展开路径占位符。不属于工作区，也不同步。 */
 export const OPERATING_SYSTEMS = ['linux', 'macos', 'windows'] as const;
 export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
