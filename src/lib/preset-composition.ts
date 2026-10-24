@@ -1,6 +1,8 @@
-import { type ParseError, parse, printParseErrorCode } from 'jsonc-parser';
+import { printParseErrorCode } from 'jsonc-parser';
 
-import { SCHEMA_VERSION, type Workspace } from './workspace';
+import { parseJsonc } from './jsonc';
+
+import { SCHEMA_VERSION, WORKSPACE_ARRAY_KEYS, type Workspace, type WorkspaceArrayKey } from './workspace';
 import { type WorkspaceProblem, parseWorkspace } from './workspace-validation';
 
 /*
@@ -8,7 +10,7 @@ import { type WorkspaceProblem, parseWorkspace } from './workspace-validation';
  * 每个文件都是一份部分工作区，顶层键与导出文件相同；合成时依次拼接同名数组，
  * 先是根目录下的文件，再是按优先级排好序的 Agent 文件，最后把文案键替换成语言文件中的文字。
  * 只处理文本，不读文件系统，读文件由调用方（构建插件、测试）负责。
- * 构建插件在加载 Vite 配置时导入本模块，那时 `@/` 别名还不可用，因此本模块及其依赖用相对路径导入。
+ * 构建插件在加载 Vite 配置时导入本模块，那时 `@/` 别名还不可用，因此本模块及其依赖用相对路径导入，由 lint 检查。
  */
 
 /** 一个预设文件或语言文件。`path` 相对预设目录，用 `/` 分隔，如 `agents/claude-code.jsonc`。 */
@@ -49,9 +51,7 @@ export type PresetCompositionResult =
 /** 预设的修改时间固定不变，用户的任何一次编辑都会比它新。这是逻辑而不是数据，不写在预设文件中。 */
 const PRESET_UPDATED_AT = '2026-10-23T00:00:00.000Z';
 
-const ARRAY_KEYS = ['tags', 'command_tools', 'mcp_servers', 'agents', 'rules'] as const;
-type ArrayKey = (typeof ARRAY_KEYS)[number];
-type Arrays = Record<ArrayKey, unknown[]>;
+type Arrays = Record<WorkspaceArrayKey, unknown[]>;
 
 /** Agent 文件所在的子目录，只有其中的文件可以声明 `priority`。 */
 const AGENT_DIR = 'agents/';
@@ -78,7 +78,7 @@ export function composePresets(files: readonly PresetFile[], locale: PresetFile)
   }
 
   const warnings: PresetWarning[] = [];
-  const arrays: Arrays = { tags: [], command_tools: [], mcp_servers: [], agents: [], rules: [] };
+  const arrays = Object.fromEntries(WORKSPACE_ARRAY_KEYS.map((key) => [key, [] as unknown[]])) as Arrays;
   for (const file of order(parsed, warnings)) {
     collect(file, arrays, warnings);
   }
@@ -110,8 +110,7 @@ export function composePresets(files: readonly PresetFile[], locale: PresetFile)
 }
 
 function parseText(file: PresetFile, syntaxErrors: PresetSyntaxError[]): unknown {
-  const errors: ParseError[] = [];
-  const value: unknown = parse(file.text, errors, { allowTrailingComma: true });
+  const { value, errors } = parseJsonc(file.text);
   for (const error of errors) {
     syntaxErrors.push({
       path: file.path,
@@ -173,8 +172,8 @@ function collect({ path, value }: ParsedFile, arrays: Arrays, warnings: PresetWa
   }
 }
 
-function isArrayKey(key: string): key is ArrayKey {
-  return (ARRAY_KEYS as readonly string[]).includes(key);
+function isArrayKey(key: string): key is WorkspaceArrayKey {
+  return (WORKSPACE_ARRAY_KEYS as readonly string[]).includes(key);
 }
 
 function readMessages({ path, value }: ParsedFile, warnings: PresetWarning[]): Map<string, string> {
@@ -209,23 +208,24 @@ function translateEntries(arrays: Arrays, translate: (key: string) => string): v
       }
     }
   };
-  const tools = (entries: unknown) => {
-    for (const tool of asArray(entries)) {
-      fields(tool, 'description', 'high_risk_reason');
+  /** 命令工具、MCP Server、内置工具与规则共有的两个字段：描述与高危说明。 */
+  const describedEntries = (entries: unknown) => {
+    for (const entry of asArray(entries)) {
+      fields(entry, 'description', 'high_risk_reason');
     }
   };
   for (const tag of arrays.tags) {
     fields(tag, 'name');
   }
-  tools(arrays.command_tools);
-  tools(arrays.mcp_servers);
-  tools(arrays.rules);
+  describedEntries(arrays.command_tools);
+  describedEntries(arrays.mcp_servers);
+  describedEntries(arrays.rules);
   for (const agent of arrays.agents) {
     if (!isRecord(agent)) {
       continue;
     }
     fields(agent, 'description');
-    tools(agent.built_in_tools);
+    describedEntries(agent.built_in_tools);
     for (const output of [agent.permission_output, agent.mcp_output]) {
       for (const scope of isRecord(output) ? asArray(output.scopes) : []) {
         fields(scope, 'name', 'note');

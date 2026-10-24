@@ -1,6 +1,5 @@
-import { type ParseError, parse } from 'jsonc-parser';
-
-import type { Workspace } from '@/lib/workspace';
+import { parseJsonc } from '@/lib/jsonc';
+import { WORKSPACE_ARRAY_KEYS, type Workspace } from '@/lib/workspace';
 import { WORKSPACE_MIGRATIONS, type WorkspaceMigration } from '@/lib/workspace-migrations';
 import { type WorkspaceProblem, parseWorkspace } from '@/lib/workspace-validation';
 
@@ -33,8 +32,7 @@ export function importWorkspace(
   text: string,
   migrations: readonly WorkspaceMigration[] = WORKSPACE_MIGRATIONS
 ): ImportResult {
-  const errors: ParseError[] = [];
-  const value: unknown = parse(text, errors, { allowTrailingComma: true });
+  const { value, errors } = parseJsonc(text);
   if (errors.length > 0) {
     return { problem: 'parseFailed' };
   }
@@ -52,8 +50,11 @@ export interface WorkspaceFile {
  * Gist 设置和本机设置不属于工作区，即使调用方传入的对象上带有其他属性，也不会写出。
  */
 export function exportWorkspace(workspace: Workspace, now: Date = new Date()): WorkspaceFile {
-  const { schema_version, updated_at, tags, command_tools, mcp_servers, agents, rules } = workspace;
-  const content: Workspace = { schema_version, updated_at, tags, command_tools, mcp_servers, agents, rules };
+  const content = {
+    schema_version: workspace.schema_version,
+    updated_at: workspace.updated_at,
+    ...Object.fromEntries(WORKSPACE_ARRAY_KEYS.map((key) => [key, workspace[key]])),
+  };
   return { fileName: `agent-weave-${localDate(now)}.jsonc`, text: `${JSON.stringify(content, null, 2)}\n` };
 }
 

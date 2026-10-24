@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
-import { ItemDescription, ToolSummary } from '@/components/tag-badges';
+import { ItemDescription } from '@/components/item-description';
+import { ToolSummary } from '@/components/tag-badges';
 import { Button } from '@/components/ui/button';
 import { useFilterQuery } from '@/hooks/use-filter-query';
 import { ruleFilterFromQuery, ruleFilterToQuery } from '@/lib/filter-query';

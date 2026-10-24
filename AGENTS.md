@@ -40,6 +40,7 @@
 - 设计令牌在 `src/index.css` 中用 `@theme` 声明，不使用 `tailwind.config.js`。品牌色为 `brand`。
 - 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/state/theme.ts` 负责切换。
 - class 合并使用 `import { cn } from 'cn'`，不使用 clsx 与 tailwind-merge。
+- `build/` 导入的 `src/lib/` 模块及其依赖链（`preset-composition.ts`、`jsonc.ts`、`workspace.ts`、`workspace-validation.ts`、`workspace-migrations.ts`）一律用相对路径导入：构建插件在加载 Vite 配置时导入它们，那时 `@/` 别名还不可用。`.oxlintrc.json` 对这几个文件禁止 `@/` 导入；依赖链新增模块时把它加进同一个 override。
 - 页面适配窄屏，但不禁止缩放：`index.html` 的 viewport 保持 `width=device-width, initial-scale=1.0`，不加 `maximum-scale`、`user-scalable=no`。
 - 宽屏（md 及以上）为一屏布局：外壳固定为视口高度，页眉和页脚不动，页面通过 `Page` 的 `scroll` 决定标题以下整体滚动，还是只把一部分放进 `PageScroll`。列表页用 `PageScroll framed`：带圆角边框的列表框本身就是滚动区，列表不再自带边框。窄屏保持整页滚动。
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。
