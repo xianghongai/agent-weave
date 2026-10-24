@@ -403,8 +403,10 @@ export function deleteMcpServer(
 export interface AgentInput {
   name: string;
   description: string;
-  permission_output: PermissionOutput | null;
-  mcp_output: McpOutput | null;
+  /** 新增时省略表示不输出权限，先只填基础信息创建 Agent，之后再单独开启。 */
+  permission_output?: PermissionOutput | null;
+  /** 同上，省略表示不输出 MCP。 */
+  mcp_output?: McpOutput | null;
 }
 
 /** 新增 Agent 或开启权限输出时的初始值：决策键名映射默认为 `allow`、`ask`、`deny`，模板留空待填。 */
@@ -460,7 +462,7 @@ function normalizeMcpOutput(output: McpOutput): McpOutput {
 /** 整理并检查 Agent 表单的内容。名称在全部 Agent 中唯一。 */
 function checkAgentInput(
   workspace: Workspace,
-  input: AgentInput,
+  input: Required<AgentInput>,
   selfId: string | null
 ): { problem: OperationProblem } | { fields: Omit<Agent, 'id' | 'built_in_tools'> } {
   const name = input.name.trim();
@@ -496,7 +498,7 @@ export function addAgent(
   input: AgentInput,
   ctx: OperationContext = systemContext
 ): OperationResult {
-  const checked = checkAgentInput(workspace, input, null);
+  const checked = checkAgentInput(workspace, { permission_output: null, mcp_output: null, ...input }, null);
   if ('problem' in checked) {
     return checked;
   }
@@ -504,16 +506,19 @@ export function addAgent(
   return commit(workspace, (draft) => void draft.agents.push(agent), ctx);
 }
 
+/** 只修改 `input` 中给出的字段，其余保持不变：基础信息、权限输出、MCP 输出各自在单独的对话框中编辑。 */
 export function updateAgent(
   workspace: Workspace,
   id: string,
-  input: AgentInput,
+  input: Partial<AgentInput>,
   ctx: OperationContext = systemContext
 ): OperationResult {
-  if (!workspace.agents.some((agent) => agent.id === id)) {
+  const current = workspace.agents.find((agent) => agent.id === id);
+  if (!current) {
     return { problem: 'notFound' };
   }
-  const checked = checkAgentInput(workspace, input, id);
+  const { name, description, permission_output, mcp_output } = current;
+  const checked = checkAgentInput(workspace, { name, description, permission_output, mcp_output, ...input }, id);
   if ('problem' in checked) {
     return checked;
   }

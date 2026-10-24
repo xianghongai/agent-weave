@@ -484,6 +484,11 @@ describe('工作区操作：Agent', () => {
     expect(generate(ws, 'new-1', EMPTY_DEVICE_SETTINGS)?.permission).toBeNull();
   });
 
+  it('新增时可以只填基础信息，两种输出都先不开启', () => {
+    const ws = apply(empty, (w) => addAgent(w, { name: 'Antigravity', description: '' }, context()));
+    expect(ws.agents[1]).toMatchObject({ name: 'Antigravity', permission_output: null, mcp_output: null });
+  });
+
   it('编辑时可以保留自己的名称，但不能改成别人的名称，内置工具保持不变', () => {
     const ctx = context();
     const ws = apply(
@@ -494,6 +499,24 @@ describe('工作区操作：Agent', () => {
     expect(ws.agents[0]).toMatchObject({ name: 'Claude Code', description: '命令行', permission_output: grants });
     expect(ws.agents[0]?.built_in_tools.map((tool) => tool.key)).toEqual(['Read']);
     expect(updateAgent(ws, 'agent-claude', agentInput(), ctx)).toEqual({ problem: 'nameDuplicate' });
+  });
+
+  it('可以只修改一种输出，其余字段保持不变', () => {
+    const mcp_output: McpOutput = { style: 'toml', property_path: 'mcp_servers', scopes: [] };
+    const ws = apply(
+      empty,
+      (w) => addAgent(w, agentInput({ description: '共享配置' }), context()),
+      (w) => updateAgent(w, 'new-1', { mcp_output }, context())
+    );
+    expect(ws.agents[1]).toMatchObject({
+      name: 'Antigravity',
+      description: '共享配置',
+      permission_output: grants,
+      mcp_output,
+    });
+    expect(updateAgent(ws, 'new-1', { permission_output: { ...grants, property_path: '' } }, context())).toEqual({
+      problem: 'propertyPathInvalid',
+    });
   });
 
   it('编辑不存在的 Agent 时返回原因码', () => {

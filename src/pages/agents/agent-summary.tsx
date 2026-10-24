@@ -1,8 +1,10 @@
 import type { LucideIcon } from 'lucide-react';
-import { PlugIcon, ShieldCheckIcon } from 'lucide-react';
+import { PencilIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Item, ItemHeader, ItemTitle } from '@/components/ui/item';
+import { Button } from '@/components/ui/button';
+import { Item, ItemActions, ItemHeader, ItemTitle } from '@/components/ui/item';
 import {
   type Agent,
   DECISIONS,
@@ -11,42 +13,67 @@ import {
   type Scope,
   type TemplatePair,
 } from '@/lib/workspace';
+import { AgentOutputDialog, type OutputKind } from '@/pages/agents/agent-output-dialog';
 
-/** Agent 定义的只读摘要：权限输出与 MCP 输出各一节，上下排列。 */
+/** Agent 定义的摘要：权限输出与 MCP 输出各一节，上下排列，每节各自打开对话框编辑。 */
 export function AgentSummary({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
+  // 对话框关闭时保留编辑的是哪一种输出，避免退场动画期间内容跳变。
+  const [editOpen, setEditOpen] = useState(false);
+  const [editKind, setEditKind] = useState<OutputKind>('permission');
+
+  function openEditor(kind: OutputKind) {
+    setEditKind(kind);
+    setEditOpen(true);
+  }
 
   return (
     <div className="grid gap-4">
-      <SummarySection id={`agent-${agent.id}-permission`} icon={ShieldCheckIcon} title={t('agents.permissionSection')}>
+      <SummarySection
+        id={`agent-${agent.id}-permission`}
+        icon={ShieldCheckIcon}
+        title={t('agents.permissionSection')}
+        editLabel={t('agents.editPermissionLabel', { name: agent.name })}
+        onEdit={() => openEditor('permission')}
+      >
         {agent.permission_output ? (
           <PermissionSummary output={agent.permission_output} />
         ) : (
           <p className="text-muted-foreground">{t('agents.noPermissionOutput')}</p>
         )}
       </SummarySection>
-      <SummarySection id={`agent-${agent.id}-mcp`} icon={PlugIcon} title={t('agents.mcpSection')}>
+      <SummarySection
+        id={`agent-${agent.id}-mcp`}
+        icon={PlugIcon}
+        title={t('agents.mcpSection')}
+        editLabel={t('agents.editMcpLabel', { name: agent.name })}
+        onEdit={() => openEditor('mcp')}
+      >
         {agent.mcp_output ? (
           <McpSummary output={agent.mcp_output} />
         ) : (
           <p className="text-muted-foreground">{t('agents.noMcpOutput')}</p>
         )}
       </SummarySection>
+
+      <AgentOutputDialog open={editOpen} onOpenChange={setEditOpen} agent={agent} kind={editKind} />
     </div>
   );
 }
 
-function SummarySection({
-  id,
-  icon: Icon,
-  title,
-  children,
-}: {
+interface SummarySectionProps {
   id: string;
   icon: LucideIcon;
   title: string;
+  /** 编辑按钮的无障碍标签，带上 Agent 名称。 */
+  editLabel: string;
+  onEdit: () => void;
   children: React.ReactNode;
-}) {
+}
+
+function SummarySection({ id, icon: Icon, title, editLabel, onEdit, children }: SummarySectionProps) {
+  const { t } = useTranslation();
+
   return (
     <Item variant="outline" className="gap-3 p-4" render={<section aria-labelledby={`${id}-title`} />}>
       <ItemHeader>
@@ -54,6 +81,12 @@ function SummarySection({
           <Icon className="size-4 text-brand" />
           {title}
         </ItemTitle>
+        <ItemActions>
+          <Button variant="outline" size="sm" aria-label={editLabel} onClick={onEdit}>
+            <PencilIcon />
+            {t('common.edit')}
+          </Button>
+        </ItemActions>
       </ItemHeader>
       <div className="basis-full text-sm">{children}</div>
     </Item>

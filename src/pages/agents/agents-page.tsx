@@ -83,7 +83,7 @@ export default function AgentsPage() {
                   onClick={() => openEditor(agent)}
                 >
                   <PencilIcon />
-                  {t('common.edit')}
+                  {t('agents.editBasic')}
                 </Button>
                 <Button
                   variant="outline"
