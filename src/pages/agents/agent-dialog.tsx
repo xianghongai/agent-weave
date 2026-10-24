@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
 import { HelpPopover } from '@/components/help-popover';
-import { Markdown } from '@/components/markdown';
+import { MarkdownFieldDescription } from '@/components/markdown-field-description';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -306,10 +306,7 @@ function McpFields({ value, onChange, problem }: McpFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'mcpPropertyPathInvalid')}</FieldError>
         ) : (
-          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
-          <div className="text-sm leading-normal text-muted-foreground">
-            <Markdown>{t('agents.mcpPropertyPathHint')}</Markdown>
-          </div>
+          <MarkdownFieldDescription>{t('agents.mcpPropertyPathHint')}</MarkdownFieldDescription>
         )}
       </Field>
     </FieldGroup>
@@ -350,10 +347,7 @@ function PermissionFields({ value, onChange, problem }: PermissionFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'propertyPathInvalid')}</FieldError>
         ) : (
-          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
-          <div className="text-sm leading-normal text-muted-foreground">
-            <Markdown>{t('agents.propertyPathHint')}</Markdown>
-          </div>
+          <MarkdownFieldDescription>{t('agents.propertyPathHint')}</MarkdownFieldDescription>
         )}
       </Field>
 

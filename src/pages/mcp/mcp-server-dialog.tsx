@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { CodeEditor, type CodeEditorHandle } from '@/components/code-editor';
 import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
-import { Markdown } from '@/components/markdown';
+import { MarkdownFieldDescription } from '@/components/markdown-field-description';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -109,10 +109,7 @@ function McpServerForm({ server, onDone }: { server: McpServer | null; onDone: (
           {contentProblem ? (
             <FieldError id="mcp-server-content-error">{operationProblemMessage(t, contentProblem)}</FieldError>
           ) : (
-            // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
-            <div id="mcp-server-content-hint" className="text-sm leading-normal text-muted-foreground">
-              <Markdown>{t('mcp.contentHint')}</Markdown>
-            </div>
+            <MarkdownFieldDescription id="mcp-server-content-hint">{t('mcp.contentHint')}</MarkdownFieldDescription>
           )}
         </Field>
         <Field>
