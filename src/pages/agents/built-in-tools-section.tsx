@@ -61,9 +61,9 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
       {tools.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('builtInTools.empty')}</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul className="divide-y overflow-hidden rounded-lg border">
           {tools.map((tool) => (
-            <li key={tool.id} className="flex items-center gap-3 px-3 py-1.5">
+            <li key={tool.id} className="flex items-center gap-3 px-3 py-1.5 transition-colors hover:bg-muted/40">
               <div className="min-w-0 flex-1">
                 <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
               </div>

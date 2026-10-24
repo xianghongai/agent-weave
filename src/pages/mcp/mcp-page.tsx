@@ -78,7 +78,7 @@ export default function McpPage() {
           <PageScroll framed>
             <ul className="divide-y">
               {servers.map((server) => (
-                <li key={server.id} className="flex items-center gap-3 px-3 py-2.5">
+                <li key={server.id} className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40">
                   <div className="grid min-w-0 flex-1 gap-0.5">
                     <ToolSummary toolKey={server.key} description={server.description} tagIds={server.tag_ids} />
                     <code className="truncate font-mono text-xs text-muted-foreground">

@@ -84,9 +84,9 @@ export default function RulesPage() {
                   />
                 );
                 return (
-                  <li key={`${tool.type}:${tool.tool.id}`} className="py-1.5">
-                    {/* 组头：工具的标识、类型、归属、描述和标签排成一行，同一工具的规则共用。 */}
-                    <div className="flex min-h-8 items-center gap-3 px-3">
+                  <li key={`${tool.type}:${tool.tool.id}`}>
+                    {/* 组头：工具的标识、类型、归属、描述和标签排成一行，同一工具的规则共用。组的上下间距放在行内，悬停底色才能连成整块。 */}
+                    <div className="flex min-h-8 items-center gap-3 px-3 py-1.5 transition-colors hover:bg-muted/40">
                       <div className="min-w-0 flex-1">
                         <ToolSummary
                           toolKey={tool.tool.key}
@@ -102,7 +102,10 @@ export default function RulesPage() {
                     {patterned.length > 0 && (
                       <ul>
                         {patterned.map((rule) => (
-                          <li key={rule.id} className="flex items-center gap-3 pr-3 pl-6">
+                          <li
+                            key={rule.id}
+                            className="flex items-center gap-3 pr-3 pl-6 transition-colors last:pb-1.5 hover:bg-muted/40"
+                          >
                             <code className="min-w-0 flex-1 font-mono text-sm break-all">{rule.pattern}</code>
                             {actions(rule)}
                           </li>

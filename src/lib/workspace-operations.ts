@@ -853,20 +853,25 @@ export function groupRulesByTool(items: readonly RuleListItem[]): RuleGroup[] {
 
 /* 筛选 */
 
-/** 工具列表的筛选条件：名称关键字为空、标签为 `null` 表示不限。 */
+/** 工具列表的筛选条件：名称关键字为空、标签为 `null`、`highRisk` 为 `false` 表示不限。 */
 export interface ToolFilter {
   name: string;
   tagId: string | null;
+  /** 只看标记为高危的工具。 */
+  highRisk: boolean;
 }
 
-export const NO_TOOL_FILTER: ToolFilter = { name: '', tagId: null };
+export const NO_TOOL_FILTER: ToolFilter = { name: '', tagId: null, highRisk: false };
 
-/** 名称关键字去掉首尾空白后不区分大小写地匹配标识或描述；标签条件与它同时生效。 */
+/** 名称关键字去掉首尾空白后不区分大小写地匹配标识或描述；标签、高危条件与它同时生效。 */
 export function matchesToolFilter(
-  tool: { key: string; description: string; tag_ids: string[] },
+  tool: { key: string; description: string; tag_ids: string[]; high_risk: boolean },
   filter: ToolFilter
 ): boolean {
   if (filter.tagId !== null && !tool.tag_ids.includes(filter.tagId)) {
+    return false;
+  }
+  if (filter.highRisk && !tool.high_risk) {
     return false;
   }
   const keyword = filter.name.trim().toLowerCase();

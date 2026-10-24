@@ -494,6 +494,7 @@
     "toolAll": "全部工具",
     "toolType": "按工具类型筛选",
     "toolTypeAll": "全部类型",
+    "highRisk": "只看高危",
     "toolTypes": {
       "command": "命令工具",
       "mcp": "MCP 工具",

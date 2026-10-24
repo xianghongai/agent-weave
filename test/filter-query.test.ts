@@ -33,14 +33,24 @@ function query(search: string): URLSearchParams {
 
 describe('筛选条件与 URL 查询串', () => {
   it('工具筛选写进查询串，取默认值的条件不写', () => {
-    expect(toolFilterToQuery({ name: 'gi t', tagId: 'vcs' }).toString()).toBe('name=gi+t&tag=vcs');
-    expect(toolFilterToQuery({ name: '', tagId: 'vcs' }).toString()).toBe('tag=vcs');
+    expect(toolFilterToQuery({ name: 'gi t', tagId: 'vcs', highRisk: true }).toString()).toBe(
+      'name=gi+t&tag=vcs&highRisk=1'
+    );
+    expect(toolFilterToQuery({ name: '', tagId: 'vcs', highRisk: false }).toString()).toBe('tag=vcs');
     expect(toolFilterToQuery(NO_TOOL_FILTER).toString()).toBe('');
   });
 
-  it('从查询串读回工具筛选；标签不存在时忽略这个条件', () => {
-    expect(toolFilterFromQuery(ws, query('name=gi+t&tag=vcs'))).toEqual({ name: 'gi t', tagId: 'vcs' });
-    expect(toolFilterFromQuery(ws, query('name=git&tag=deleted'))).toEqual({ name: 'git', tagId: null });
+  it('从查询串读回工具筛选；标签不存在或高危取值无效时忽略这个条件', () => {
+    expect(toolFilterFromQuery(ws, query('name=gi+t&tag=vcs&highRisk=1'))).toEqual({
+      name: 'gi t',
+      tagId: 'vcs',
+      highRisk: true,
+    });
+    expect(toolFilterFromQuery(ws, query('name=git&tag=deleted&highRisk=yes'))).toEqual({
+      name: 'git',
+      tagId: null,
+      highRisk: false,
+    });
     expect(toolFilterFromQuery(ws, query(''))).toEqual(NO_TOOL_FILTER);
   });
 

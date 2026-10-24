@@ -1,8 +1,11 @@
-import { SearchIcon } from 'lucide-react';
+import { SearchIcon, ShieldAlertIcon } from 'lucide-react';
+import { cn } from 'cn';
 import { useTranslation } from 'react-i18next';
 
 import { type FilterOption, FilterSelect } from '@/components/filter-select';
+import { HIGH_RISK_TONE } from '@/components/high-risk';
 import { Input } from '@/components/ui/input';
+import { Toggle } from '@/components/ui/toggle';
 import type { Workspace } from '@/lib/workspace';
 import { type ToolFilter, compareText } from '@/lib/workspace-operations';
 
@@ -19,7 +22,7 @@ interface ToolFilterBarProps {
   onChange: (value: ToolFilter) => void;
 }
 
-/** 工具列表的筛选栏：名称关键字与标签，两者同时生效。 */
+/** 工具列表的筛选栏：名称关键字、标签和只看高危，同时生效。 */
 export function ToolFilterBar({ workspace, value, onChange }: ToolFilterBarProps) {
   const { t } = useTranslation();
 
@@ -45,6 +48,18 @@ export function ToolFilterBar({ workspace, value, onChange }: ToolFilterBarProps
         value={value.tagId}
         onChange={(tagId) => onChange({ ...value, tagId })}
       />
+      <Toggle
+        variant="outline"
+        pressed={value.highRisk}
+        onPressedChange={(highRisk) => onChange({ ...value, highRisk })}
+        aria-label={t('filters.highRisk')}
+        title={t('filters.highRisk')}
+        // 按下时文字保持警示色，悬停也不被变体的 hover 文字色覆盖。
+        className={cn(value.highRisk && [HIGH_RISK_TONE, 'hover:text-destructive'])}
+      >
+        <ShieldAlertIcon />
+        {t('notices.highRiskFlag')}
+      </Toggle>
     </div>
   );
 }

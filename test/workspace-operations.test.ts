@@ -7,6 +7,7 @@ import {
   type AgentInput,
   type BuiltInToolInput,
   NO_RULE_FILTER,
+  NO_TOOL_FILTER,
   type OperationContext,
   type RuleFilter,
   type ToolFilter,
@@ -870,8 +871,10 @@ describe('查询：筛选', () => {
     (w) => addRule(w, { tool: { type: 'built_in', id: 'read' }, pattern: './', decision: 'allow' }, ctx)
   );
 
-  function tools(filter: ToolFilter): string[] {
-    return ws.command_tools.filter((tool) => matchesToolFilter(tool, filter)).map((tool) => tool.key);
+  function tools(filter: Omit<ToolFilter, 'highRisk'>): string[] {
+    return ws.command_tools
+      .filter((tool) => matchesToolFilter(tool, { ...NO_TOOL_FILTER, ...filter }))
+      .map((tool) => tool.key);
   }
 
   function rules(filter: Partial<RuleFilter>): string[] {
@@ -902,6 +905,19 @@ describe('查询：筛选', () => {
     expect(tools({ name: '', tagId: 'new-2' })).toEqual(['curl']);
     expect(tools({ name: 'git', tagId: 'new-2' })).toEqual([]);
     expect(tools({ name: 'git', tagId: 'new-1' })).toEqual(['git']);
+  });
+
+  it('工具可以只看高危的，与名称、标签同时生效', () => {
+    const rm = { key: 'rm', description: '删除文件', tag_ids: ['fs'], high_risk: true };
+    const ls = { key: 'ls', description: '列出目录', tag_ids: ['fs'], high_risk: false };
+    const onlyHighRisk = { ...NO_TOOL_FILTER, highRisk: true };
+    expect([rm, ls].filter((tool) => matchesToolFilter(tool, onlyHighRisk)).map((tool) => tool.key)).toEqual(['rm']);
+    expect(matchesToolFilter(rm, { ...onlyHighRisk, name: 'ls' })).toBe(false);
+    expect(matchesToolFilter(rm, { ...onlyHighRisk, tagId: 'net' })).toBe(false);
+    expect([rm, ls].filter((tool) => matchesToolFilter(tool, NO_TOOL_FILTER)).map((tool) => tool.key)).toEqual([
+      'rm',
+      'ls',
+    ]);
   });
 
   it('规则按所指工具分组，组的顺序与组内规则的顺序沿用列表', () => {

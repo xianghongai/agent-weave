@@ -78,7 +78,7 @@ export default function ToolsPage() {
           <PageScroll framed>
             <ul className="divide-y">
               {tools.map((tool) => (
-                <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
+                <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40">
                   <div className="min-w-0 flex-1">
                     <ToolSummary toolKey={tool.key} description={tool.description} tagIds={tool.tag_ids} />
                   </div>

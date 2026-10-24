@@ -38,6 +38,7 @@ export function toolFilterToQuery(filter: ToolFilter): URLSearchParams {
   return toQuery([
     ['name', filter.name],
     ['tag', filter.tagId],
+    ['highRisk', filter.highRisk ? '1' : null],
   ]);
 }
 
@@ -45,6 +46,7 @@ export function toolFilterFromQuery(workspace: Workspace, query: URLSearchParams
   return {
     name: query.get('name') ?? NO_TOOL_FILTER.name,
     tagId: existingTagId(workspace, query.get('tag')),
+    highRisk: query.get('highRisk') === '1',
   };
 }
 
