@@ -831,13 +831,21 @@ export interface RuleFilter {
   tagId: string | null;
   decision: Decision | null;
   toolType: ToolType | null;
+  /** 规则指向这个工具。 */
+  tool: ToolRef | null;
 }
 
-export const NO_RULE_FILTER: RuleFilter = { tagId: null, decision: null, toolType: null };
+export const NO_RULE_FILTER: RuleFilter = { tagId: null, decision: null, toolType: null, tool: null };
+
+/** 按工具筛选规则的初始条件，用于从工具列表跳转到规则页。工具为 `null` 或已被删除时不筛选。 */
+export function ruleFilterForTool(workspace: Workspace, tool: ToolRef | null): RuleFilter {
+  return tool && resolveTool(workspace, tool) ? { ...NO_RULE_FILTER, tool } : NO_RULE_FILTER;
+}
 
 /** 规则是否同时满足全部筛选条件。 */
 export function matchesRuleFilter({ rule, tool }: RuleListItem, filter: RuleFilter): boolean {
   return (
+    (filter.tool === null || refersTo(rule, filter.tool)) &&
     (filter.tagId === null || tool.tool.tag_ids.includes(filter.tagId)) &&
     (filter.decision === null || rule.decision === filter.decision) &&
     (filter.toolType === null || tool.type === filter.toolType)

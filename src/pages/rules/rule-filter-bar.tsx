@@ -4,6 +4,7 @@ import { FilterSelect } from '@/components/filter-select';
 import { useTagFilterOptions } from '@/components/tool-filter-bar';
 import { DECISIONS, TOOL_TYPES, type Workspace } from '@/lib/workspace';
 import type { RuleFilter } from '@/lib/workspace-operations';
+import { ToolSelect } from '@/pages/rules/rule-fields';
 
 interface RuleFilterBarProps {
   workspace: Workspace;
@@ -11,13 +12,22 @@ interface RuleFilterBarProps {
   onChange: (value: RuleFilter) => void;
 }
 
-/** 规则列表的筛选：所指工具的标签、决策、工具类型。归属筛选由规则页另行放在旁边，全部条件同时生效。 */
+/** 规则列表的筛选：所指工具（可输入过滤）、工具的标签、决策、工具类型。归属筛选由规则页另行放在旁边，全部条件同时生效。 */
 export function RuleFilterBar({ workspace, value, onChange }: RuleFilterBarProps) {
   const { t } = useTranslation();
   const tagOptions = useTagFilterOptions(workspace);
 
   return (
     <>
+      <ToolSelect
+        workspace={workspace}
+        value={value.tool}
+        onChange={(tool) => onChange({ ...value, tool })}
+        clearable
+        label={t('filters.tool')}
+        placeholder={t('filters.toolAll')}
+        className="w-44"
+      />
       <FilterSelect
         label={t('filters.tag')}
         options={tagOptions}

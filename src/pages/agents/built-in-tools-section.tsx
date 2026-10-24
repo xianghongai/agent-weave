@@ -3,7 +3,8 @@ import { PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { TagBadges } from '@/components/tag-badges';
+import { RuleCountBadge } from '@/components/rule-count-badge';
+import { KeyWithTags } from '@/components/tag-badges';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -61,44 +62,38 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
         <p className="text-sm text-muted-foreground">{t('builtInTools.empty')}</p>
       ) : (
         <ul className="divide-y rounded-lg border">
-          {tools.map((tool) => {
-            const ruleCount = countRulesForTool(workspace, { type: 'built_in', id: tool.id });
-            return (
-              <li key={tool.id} className="flex items-center gap-3 px-3 py-1.5">
-                <div className="grid min-w-0 flex-1 gap-0.5">
-                  <code className="truncate font-mono text-sm font-medium">{tool.key}</code>
-                  {tool.description && (
-                    <span className="truncate text-xs text-muted-foreground">{tool.description}</span>
-                  )}
-                  <TagBadges tagIds={tool.tag_ids} />
-                </div>
-                {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
-                {tool.high_risk && <HighRiskBadge />}
-                {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('tools.editLabel', { key: tool.key })}
-                  title={t('common.edit')}
-                  onClick={() => openEditor(tool)}
-                >
-                  <PencilIcon />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t('tools.deleteLabel', { key: tool.key })}
-                  title={t('common.delete')}
-                  onClick={() => {
-                    setDeleteTarget(tool);
-                    setDeleteOpen(true);
-                  }}
-                >
-                  <Trash2Icon />
-                </Button>
-              </li>
-            );
-          })}
+          {tools.map((tool) => (
+            <li key={tool.id} className="flex items-center gap-3 px-3 py-1.5">
+              <div className="grid min-w-0 flex-1 gap-0.5">
+                <KeyWithTags toolKey={tool.key} tagIds={tool.tag_ids} />
+                {tool.description && <span className="truncate text-xs text-muted-foreground">{tool.description}</span>}
+              </div>
+              {tool.writes && <Badge variant="outline">{t('builtInTools.writesBadge')}</Badge>}
+              {tool.high_risk && <HighRiskBadge />}
+              <RuleCountBadge tool={{ type: 'built_in', id: tool.id }} />
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('tools.editLabel', { key: tool.key })}
+                title={t('common.edit')}
+                onClick={() => openEditor(tool)}
+              >
+                <PencilIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={t('tools.deleteLabel', { key: tool.key })}
+                title={t('common.delete')}
+                onClick={() => {
+                  setDeleteTarget(tool);
+                  setDeleteOpen(true);
+                }}
+              >
+                <Trash2Icon />
+              </Button>
+            </li>
+          ))}
         </ul>
       )}
 

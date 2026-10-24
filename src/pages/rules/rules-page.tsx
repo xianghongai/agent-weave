@@ -3,12 +3,19 @@ import { PencilIcon, PlusIcon, ShieldCheckIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { readToolRefFromHistory } from '@/browser/history-state';
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { toolOptions } from '@/lib/tool-options';
 import type { Rule } from '@/lib/workspace';
-import { NO_RULE_FILTER, type RuleFilter, deleteRule, listRules, matchesRuleFilter } from '@/lib/workspace-operations';
+import {
+  type RuleFilter,
+  deleteRule,
+  listRules,
+  matchesRuleFilter,
+  ruleFilterForTool,
+} from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
@@ -21,7 +28,8 @@ export default function RulesPage() {
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
   const [owner, setOwner] = useState<OwnerFilter>('all');
-  const [filter, setFilter] = useState<RuleFilter>(NO_RULE_FILTER);
+  // 从工具列表点击规则数跳转过来时，history.state 带着要筛选的工具。
+  const [filter, setFilter] = useState<RuleFilter>(() => ruleFilterForTool(workspace, readToolRefFromHistory()));
   const allRules = listRules(workspace);
   const rules = allRules.filter((item) => matchesOwner(item.tool, owner) && matchesRuleFilter(item, filter));
   const warnings = ruleWarnings(allRules);
@@ -73,11 +81,8 @@ export default function RulesPage() {
                   <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
                     <code className="font-medium">{tool.tool.key}</code>
                     <ToolTypeBadge type={tool.type} />
-                    {rule.pattern ? (
-                      <code className="break-all">{rule.pattern}</code>
-                    ) : (
-                      <span className="font-sans text-muted-foreground">{t('rules.wholeTool')}</span>
-                    )}
+                    {/* 模式为空表示整个工具，不另外标注。 */}
+                    {rule.pattern && <code className="break-all">{rule.pattern}</code>}
                     <OwnerBadge tool={tool} />
                   </div>
                   <RuleWarningIcons warning={warnings.get(rule.id)} />

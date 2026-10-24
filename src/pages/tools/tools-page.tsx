@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { readTagIdFromHistory } from '@/browser/history-state';
 import { Note, Page, PageScroll } from '@/components/page';
-import { TagBadges } from '@/components/tag-badges';
+import { RuleCountBadge } from '@/components/rule-count-badge';
+import { KeyWithTags } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
@@ -17,7 +18,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { HighRiskBadge } from '@/components/high-risk';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { CommandTool } from '@/lib/workspace';
 import {
@@ -84,40 +84,36 @@ export default function ToolsPage() {
         ) : (
           <PageScroll framed>
             <ul className="divide-y">
-              {tools.map((tool) => {
-                const ruleCount = countRulesForTool(workspace, { type: 'command', id: tool.id });
-                return (
-                  <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
-                    <div className="grid min-w-0 flex-1 gap-0.5">
-                      <code className="truncate font-mono text-sm font-medium">{tool.key}</code>
-                      {tool.description && (
-                        <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
-                      )}
-                      <TagBadges tagIds={tool.tag_ids} />
-                    </div>
-                    {tool.high_risk && <HighRiskBadge />}
-                    {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t('tools.editLabel', { key: tool.key })}
-                      title={t('common.edit')}
-                      onClick={() => openEditor(tool)}
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t('tools.deleteLabel', { key: tool.key })}
-                      title={t('common.delete')}
-                      onClick={() => confirmDelete(tool)}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  </li>
-                );
-              })}
+              {tools.map((tool) => (
+                <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="grid min-w-0 flex-1 gap-0.5">
+                    <KeyWithTags toolKey={tool.key} tagIds={tool.tag_ids} />
+                    {tool.description && (
+                      <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
+                    )}
+                  </div>
+                  {tool.high_risk && <HighRiskBadge />}
+                  <RuleCountBadge tool={{ type: 'command', id: tool.id }} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('tools.editLabel', { key: tool.key })}
+                    title={t('common.edit')}
+                    onClick={() => openEditor(tool)}
+                  >
+                    <PencilIcon />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('tools.deleteLabel', { key: tool.key })}
+                    title={t('common.delete')}
+                    onClick={() => confirmDelete(tool)}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </li>
+              ))}
             </ul>
           </PageScroll>
         )}

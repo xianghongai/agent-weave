@@ -235,7 +235,6 @@
     "keyPlaceholder": "如 git",
     "keyHint": "即命令本身。权限规则的模式只填它之后的命令前缀。",
     "description": "描述",
-    "ruleCount": "{{n}} 条规则",
     "editLabel": "编辑 {{key}}",
     "deleteLabel": "删除 {{key}}",
     "deleteTitle": "删除命令工具 {{key}}？",
@@ -257,7 +256,6 @@
     "contentHint": "Claude 风格的 JSON 对象，如 `command`、`args`、`env`。只检查是不是 JSON 对象，字段的对错由你负责。环境变量占位符 `${VAR}` 原样输出，密钥请留在本机环境变量里。",
     "description": "描述",
     "descriptionHint": "只在本工具中显示，不进入输出。",
-    "ruleCount": "{{n}} 条规则",
     "editLabel": "编辑 {{key}}",
     "deleteLabel": "删除 {{key}}",
     "deleteTitle": "删除 MCP Server {{key}}？",
@@ -289,6 +287,8 @@
     "empty": "还没有权限规则。",
     "noMatch": "没有符合筛选条件的规则。",
     "wholeTool": "整个工具",
+    "count": "{{n}} 条权限规则",
+    "showForTool": "查看指向该工具的权限规则",
     "editTitle": "编辑权限规则",
     "editLabel": "编辑规则",
     "deleteLabel": "删除规则"
@@ -489,6 +489,8 @@
     "tagAll": "全部标签",
     "decision": "按决策筛选",
     "decisionAll": "全部决策",
+    "tool": "按工具筛选",
+    "toolAll": "全部工具",
     "toolType": "按工具类型筛选",
     "toolTypeAll": "全部类型",
     "toolTypes": {

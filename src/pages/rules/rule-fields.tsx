@@ -21,17 +21,30 @@ function encodeToolRef(ref: ToolRef): string {
   return `${ref.type}:${ref.id}`;
 }
 
-interface ToolSelectProps {
+interface ToolSelectBaseProps {
   id?: string;
   workspace: Workspace;
   value: ToolRef | null;
-  onChange: (ref: ToolRef) => void;
+  /** 默认是表单字段的文案；用于筛选时换成筛选的文案。 */
+  label?: string;
+  placeholder?: string;
   autoFocus?: boolean;
   className?: string;
 }
 
+/**
+ * 表单中必须选一个工具，不提供清除；用于筛选时显示清除按钮，清除后回到未选择（`null`）。
+ * 用 `clearable` 区分两种用法，表单一侧的 `onChange` 不会收到 `null`。
+ */
+type ToolSelectProps = ToolSelectBaseProps &
+  (
+    | { clearable?: false; onChange: (ref: ToolRef) => void }
+    | { clearable: true; onChange: (ref: ToolRef | null) => void }
+  );
+
 /** 选择规则指向的工具：输入文字按标识过滤，内置工具也可以用 Agent 名称搜到。 */
-export function ToolSelect({ id, workspace, value, onChange, autoFocus, className }: ToolSelectProps) {
+export function ToolSelect(props: ToolSelectProps) {
+  const { id, workspace, value, label, placeholder, autoFocus, className } = props;
   const { t } = useTranslation();
   const options = useMemo(() => toolOptions(workspace), [workspace]);
   const optionByValue = useMemo(() => new Map(options.map((option) => [encodeToolRef(option.ref), option])), [options]);
@@ -45,9 +58,15 @@ export function ToolSelect({ id, workspace, value, onChange, autoFocus, classNam
       autoHighlight
       value={value ? encodeToolRef(value) : null}
       onValueChange={(next) => {
-        const option = next ? optionByValue.get(next) : undefined;
+        if (next === null) {
+          if (props.clearable) {
+            props.onChange(null);
+          }
+          return;
+        }
+        const option = optionByValue.get(next);
         if (option) {
-          onChange(option.ref);
+          props.onChange(option.ref);
         }
       }}
       filter={(item, query) => {
@@ -58,8 +77,9 @@ export function ToolSelect({ id, workspace, value, onChange, autoFocus, classNam
       <ComboboxInput
         id={id}
         autoFocus={autoFocus}
-        aria-label={t('rules.tool')}
-        placeholder={t('rules.toolPlaceholder')}
+        showClear={props.clearable === true && value !== null}
+        aria-label={label ?? t('rules.tool')}
+        placeholder={placeholder ?? t('rules.toolPlaceholder')}
         autoComplete="off"
         spellCheck={false}
         className={cn('w-full font-mono', className)}

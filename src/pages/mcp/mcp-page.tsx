@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { readTagIdFromHistory } from '@/browser/history-state';
 import { Note, Page, PageScroll } from '@/components/page';
-import { TagBadges } from '@/components/tag-badges';
+import { RuleCountBadge } from '@/components/rule-count-badge';
+import { KeyWithTags } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
   AlertDialog,
@@ -17,7 +18,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { HighRiskBadge } from '@/components/high-risk';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { McpServer } from '@/lib/workspace';
 import {
@@ -84,43 +84,39 @@ export default function McpPage() {
         ) : (
           <PageScroll framed>
             <ul className="divide-y">
-              {servers.map((server) => {
-                const ruleCount = countRulesForTool(workspace, { type: 'mcp', id: server.id });
-                return (
-                  <li key={server.id} className="flex items-center gap-3 px-3 py-2.5">
-                    <div className="grid min-w-0 flex-1 gap-0.5">
-                      <code className="truncate font-mono text-sm font-medium">{server.key}</code>
-                      {server.description && (
-                        <span className="truncate text-sm text-muted-foreground">{server.description}</span>
-                      )}
-                      <code className="truncate font-mono text-xs text-muted-foreground">
-                        {JSON.stringify(server.content)}
-                      </code>
-                      <TagBadges tagIds={server.tag_ids} />
-                    </div>
-                    {server.high_risk && <HighRiskBadge />}
-                    {ruleCount > 0 && <Badge variant="secondary">{t('mcp.ruleCount', { n: ruleCount })}</Badge>}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t('mcp.editLabel', { key: server.key })}
-                      title={t('common.edit')}
-                      onClick={() => openEditor(server)}
-                    >
-                      <PencilIcon />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={t('mcp.deleteLabel', { key: server.key })}
-                      title={t('common.delete')}
-                      onClick={() => confirmDelete(server)}
-                    >
-                      <Trash2Icon />
-                    </Button>
-                  </li>
-                );
-              })}
+              {servers.map((server) => (
+                <li key={server.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="grid min-w-0 flex-1 gap-0.5">
+                    <KeyWithTags toolKey={server.key} tagIds={server.tag_ids} />
+                    {server.description && (
+                      <span className="truncate text-sm text-muted-foreground">{server.description}</span>
+                    )}
+                    <code className="truncate font-mono text-xs text-muted-foreground">
+                      {JSON.stringify(server.content)}
+                    </code>
+                  </div>
+                  {server.high_risk && <HighRiskBadge />}
+                  <RuleCountBadge tool={{ type: 'mcp', id: server.id }} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('mcp.editLabel', { key: server.key })}
+                    title={t('common.edit')}
+                    onClick={() => openEditor(server)}
+                  >
+                    <PencilIcon />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('mcp.deleteLabel', { key: server.key })}
+                    title={t('common.delete')}
+                    onClick={() => confirmDelete(server)}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </li>
+              ))}
             </ul>
           </PageScroll>
         )}

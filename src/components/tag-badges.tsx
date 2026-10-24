@@ -36,3 +36,13 @@ export function TagBadges({ tagIds }: { tagIds: readonly string[] }) {
     </span>
   );
 }
+
+/** 工具列表项的第一行：标识和标签排成一行，标签紧跟在标识右边，放不下时换行。工具、MCP Server、内置工具的列表共用。 */
+export function KeyWithTags({ toolKey, tagIds }: { toolKey: string; tagIds: readonly string[] }) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <code className="min-w-0 truncate font-mono text-sm font-medium">{toolKey}</code>
+      <TagBadges tagIds={tagIds} />
+    </div>
+  );
+}
