@@ -1,8 +1,10 @@
+import { cn } from 'cn';
 import { CopyPlusIcon, RotateCcwIcon, TriangleAlertIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
+import { DIALOG_SIZE_CLASS } from '@/components/form-dialog';
 import { Note } from '@/components/page';
 import {
   AlertDialog,
@@ -38,7 +40,9 @@ export function PresetsDialog() {
         }
       }}
     >
-      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className={cn('flex max-h-[calc(100dvh-2rem)] flex-col overflow-y-auto', DIALOG_SIZE_CLASS.narrow)}
+      >
         <DialogHeader className="shrink-0">
           <DialogTitle>{t('presets.title')}</DialogTitle>
           <DialogDescription>{t('presets.hint')}</DialogDescription>
