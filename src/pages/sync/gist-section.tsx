@@ -1,8 +1,9 @@
 import {
+  CircleCheckIcon,
+  CircleDashedIcon,
   CloudDownloadIcon,
   CloudUploadIcon,
   CloudIcon,
-  ExternalLinkIcon,
   KeyRoundIcon,
   TriangleAlertIcon,
 } from 'lucide-react';
@@ -22,27 +23,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
 import { gistProblemMessage } from '@/i18n/problems';
 import { formatTime } from '@/i18n/format-time';
 import {
   type GistConnection,
   type GistContentFailure,
   browserFetch,
+  gistSettingsStatus,
   isContentFailure,
-  parseGistId,
   pullWorkspace,
   pushWorkspace,
 } from '@/lib/gist';
 import type { Workspace } from '@/lib/workspace';
+import { GistAuthDialog } from '@/pages/sync/gist-auth-dialog';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
-
-/** 创建 Token 的页面：经典 Token 预先勾选 `gist`，Fine-grained Token 预先填好名称并申请 Gists 读写。 */
-const CLASSIC_TOKEN_URL = 'https://github.com/settings/tokens/new?description=agent-weave&scopes=gist';
-const FINE_GRAINED_TOKEN_URL =
-  'https://github.com/settings/personal-access-tokens/new?name=agent-weave&description=agent-weave&gists=write';
 
 /**
  * 已读取远端、等待用户确认的覆盖。
@@ -52,7 +47,10 @@ type Pending =
   | { kind: 'push'; gistId: string; remote: Workspace | GistContentFailure }
   | { kind: 'pull'; remote: Workspace };
 
-/** 同步页的“Gist 同步”一节：Token 指引、本机 Gist 设置，以及手动推送和拉取。 */
+/**
+ * 同步页的“Gist 同步”一节：只显示设置的状态，以及认证配置、手动推送和拉取。
+ * Token、Gist ID 和 Gist 链接只在认证配置对话框中出现，共享屏幕时不会泄露。
+ */
 export function GistSection() {
   const { t } = useTranslation();
   const settings = useAppStore((state) => state.gistSettings);
@@ -61,14 +59,13 @@ export function GistSection() {
   const workspace = useAppStore((state) => state.workspace);
   const settingsInvalid = useUiStore((state) => Boolean(state.fallback?.gistSettings));
   const [busy, setBusy] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   // 对话框关闭时保留待确认的内容，避免退场动画期间内容跳变。
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pending, setPending] = useState<Pending | null>(null);
 
-  const hasToken = settings.token.trim() !== '';
-  const gistIdInput = settings.gist_id.trim();
-  const gistId = gistIdInput === '' ? null : parseGistId(gistIdInput);
-  const gistIdInvalid = gistIdInput !== '' && gistId === null;
+  const status = gistSettingsStatus(settings);
+  const gistId = status.gist.status === 'linked' ? status.gist.gistId : null;
 
   function connection(): GistConnection {
     return { fetch: browserFetch, token: settings.token };
@@ -148,59 +145,12 @@ export function GistSection() {
         <p className="text-sm text-muted-foreground">{t('gist.hint')}</p>
       </div>
 
-      <Note icon={KeyRoundIcon}>
-        <p>{t('gist.tokenGuide')}</p>
-        <p className="flex flex-wrap gap-x-4 gap-y-1">
-          <ExternalLink href={CLASSIC_TOKEN_URL}>{t('gist.createClassicToken')}</ExternalLink>
-          <ExternalLink href={FINE_GRAINED_TOKEN_URL}>{t('gist.createFineGrainedToken')}</ExternalLink>
-        </p>
-        <p>{t('gist.localOnly')}</p>
-      </Note>
-      <Note tone="warning" icon={TriangleAlertIcon}>
-        {t('gist.secretWarning')}
-      </Note>
-
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="gist-token">{t('gist.token')}</FieldLabel>
-          <Input
-            id="gist-token"
-            type="password"
-            value={settings.token}
-            autoComplete="off"
-            spellCheck={false}
-            className="font-mono"
-            onChange={(event) => setGistSettings({ ...settings, token: event.target.value })}
-          />
-          <FieldDescription>{t('gist.tokenHint')}</FieldDescription>
-        </Field>
-        <Field data-invalid={gistIdInvalid ? true : undefined}>
-          <FieldLabel htmlFor="gist-id">{t('gist.gistId')}</FieldLabel>
-          <Input
-            id="gist-id"
-            value={settings.gist_id}
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={t('gist.gistIdPlaceholder')}
-            aria-invalid={gistIdInvalid ? true : undefined}
-            className="font-mono"
-            onChange={(event) => setGistSettings({ ...settings, gist_id: event.target.value })}
-          />
-          {gistIdInvalid ? (
-            <FieldError>{t('gist.gistIdInvalid')}</FieldError>
-          ) : (
-            <FieldDescription>
-              {t('gist.gistIdHint')}
-              {gistId !== null && (
-                <>
-                  {' '}
-                  <ExternalLink href={`https://gist.github.com/${gistId}`}>{t('gist.openGist')}</ExternalLink>
-                </>
-              )}
-            </FieldDescription>
-          )}
-        </Field>
-      </FieldGroup>
+      <ul className="grid gap-1.5 text-sm">
+        <StatusItem state={status.token === 'configured' ? 'ok' : 'missing'}>
+          {t(`gist.status.token.${status.token}`)}
+        </StatusItem>
+        <StatusItem state={STATUS_STATE[status.gist.status]}>{t(`gist.status.gist.${status.gist.status}`)}</StatusItem>
+      </ul>
 
       {settingsInvalid && (
         <Note tone="warning" icon={TriangleAlertIcon}>
@@ -209,16 +159,22 @@ export function GistSection() {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" disabled={busy || !hasToken || gistIdInvalid} onClick={() => void startPush()}>
+        <Button variant="outline" onClick={() => setAuthOpen(true)}>
+          <KeyRoundIcon />
+          {t('gist.auth')}
+        </Button>
+        <Button variant="outline" disabled={busy || !status.canPush} onClick={() => void startPush()}>
           <CloudUploadIcon />
           {t('gist.push')}
         </Button>
-        <Button variant="outline" disabled={busy || gistId === null} onClick={() => void startPull()}>
+        <Button variant="outline" disabled={busy || !status.canPull} onClick={() => void startPull()}>
           <CloudDownloadIcon />
           {t('gist.pull')}
         </Button>
         {busy && <span className="text-sm text-muted-foreground">{t('gist.working')}</span>}
       </div>
+
+      <GistAuthDialog open={authOpen} onOpenChange={setAuthOpen} />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
@@ -282,16 +238,17 @@ function compareTime(a: string, b: string): number {
   return Number.isNaN(diff) ? 0 : diff;
 }
 
-function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+const STATUS_STATE = { linked: 'ok', missing: 'missing', invalid: 'invalid' } as const;
+
+const STATUS_ICON = { ok: CircleCheckIcon, missing: CircleDashedIcon, invalid: TriangleAlertIcon } as const;
+
+/** 状态的一项：已就绪、未填写、无效各用一种图标。 */
+function StatusItem({ state, children }: { state: keyof typeof STATUS_ICON; children: React.ReactNode }) {
+  const Icon = STATUS_ICON[state];
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-1 text-brand underline-offset-4 hover:underline"
-    >
+    <li className={state === 'missing' ? 'flex items-center gap-2 text-muted-foreground' : 'flex items-center gap-2'}>
+      <Icon className={state === 'missing' ? 'size-4 shrink-0' : 'size-4 shrink-0 text-brand'} />
       {children}
-      <ExternalLinkIcon className="size-3.5" />
-    </a>
+    </li>
   );
 }
