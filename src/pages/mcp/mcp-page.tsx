@@ -64,6 +64,7 @@ export default function McpPage() {
       icon={PlugIcon}
       title={t('pages.mcp.title')}
       description={t('pages.mcp.description')}
+      help={{ label: t('mcp.serversHelp'), content: t('mcp.serversHint') }}
       scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>
@@ -74,8 +75,7 @@ export default function McpPage() {
     >
       {/* 标题和筛选栏固定，只有列表滚动。 */}
       <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
-        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
-          <p className="max-w-prose text-sm text-muted-foreground">{t('mcp.serversHint')}</p>
+        <div className="flex shrink-0 justify-end">
           <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
         </div>
 
