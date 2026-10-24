@@ -55,9 +55,9 @@ describe('隐私边界：只有工作区离开本机', () => {
 
     expect(bodies).toHaveLength(1);
     const body = JSON.parse(bodies[0]!) as { files: Record<string, { content: string }> };
-    expect(Object.keys(body.files)).toEqual(['agent-weave.json']);
+    expect(Object.keys(body.files)).toEqual(['agent-weave.jsonc']);
     expect(bodies[0]).not.toContain(SECRET.token);
     expect(bodies[0]).not.toContain(SECRET.userName);
-    expectOnlyWorkspace(body.files['agent-weave.json']!.content);
+    expectOnlyWorkspace(body.files['agent-weave.jsonc']!.content);
   });
 });

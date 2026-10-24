@@ -94,7 +94,7 @@ export function WorkspaceFileSection() {
         <input
           ref={inputRef}
           type="file"
-          accept=".json,application/json"
+          accept=".json,.jsonc,application/json"
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
