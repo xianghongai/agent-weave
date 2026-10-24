@@ -41,6 +41,11 @@
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。
 - 动效：微交互用 CSS 过渡；进场与页面切换用 `motion/react`，应用根部使用 `MotionConfig reducedMotion="user"`。
 
+## 参考文档
+
+- `docs/agent-formats.md`：各 Agent 的权限与 MCP 格式规则和已知的坑。修改 Agent 预设、输出模板或生成逻辑前先读。
+- `CODING_STANDARDS.md`：代码审查依据的判断类规范。
+
 ## 验证
 
 提交前运行：
