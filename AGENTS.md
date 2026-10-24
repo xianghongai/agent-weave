@@ -13,7 +13,7 @@
 
 ## 目录职责
 
-- `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动出现在顶部导航和路由中。登记顺序就是导航顺序；首页 `/` 是宣传页，只从 Logo 进入，不在这里登记；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
+- `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动出现在顶部导航和路由中。登记顺序就是导航顺序；首页 `/` 是宣传页，也是默认入口，点击 Logo 回到这里，不在这里登记；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
 - `src/lib/`：纯函数，不依赖 React 和 DOM，全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
 - `src/state/`：全局状态，用 Zustand 加 Immer，按生命周期分成两个 store，理由见 `docs/adr/0002-state-layering.md`。两个 store 都按 slices 组织，action 与 state 放在同一个 store 中，只保存结果，业务逻辑留在 `src/lib/`。组件直接用 selector 订阅，一次取多个值时配合 `useShallow`，不另包自定义 Hook；事件处理中读取最新值用 `getState()`。
   - `app-store.ts`：持久化应用 store，包含工作区、本机设置、Gist 设置、主题，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键。工作区只通过 `applyOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作，或用 `replaceWorkspace()` 整体替换。读取时的校验与回退由 `src/lib/persistence.ts` 的纯函数负责，读写错误写进界面 store。
