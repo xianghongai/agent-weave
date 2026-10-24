@@ -6,8 +6,8 @@ import { Link } from 'wouter';
 import { buttonVariants } from '@/components/ui/button';
 import { pageById } from '@/pages/registry';
 
-/** 使用流程的三步，依次进入对应的页面；图标和路径取自登记的页面。 */
-const STEPS = ['rules', 'agents', 'output'] as const;
+/** 首页展示的四项特性，各自进入对应的页面；图标和路径取自登记的页面。 */
+const FEATURES = ['tools', 'mcp', 'rules', 'output'] as const;
 
 /** 进场动效：标语、介绍、卡片、按钮依次浮现。 */
 function fadeIn(order: number) {
@@ -39,8 +39,8 @@ export default function HomePage() {
           </motion.p>
         </section>
 
-        <ol aria-label={t('home.steps')} className="mt-10 grid gap-4 md:grid-cols-3">
-          {STEPS.map((id, index) => {
+        <ol aria-label={t('home.features')} className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {FEATURES.map((id, index) => {
             const { path, icon: Icon } = pageById(id);
             return (
               <motion.li key={id} {...fadeIn(index + 2)}>
@@ -48,13 +48,8 @@ export default function HomePage() {
                   href={path}
                   className="group flex h-full flex-col gap-4 rounded-xl bg-card p-5 ring-1 ring-foreground/10 transition-[box-shadow,background-color] hover:ring-brand/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                  <span className="flex items-center justify-between">
-                    <span className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                      <Icon className="size-5" />
-                    </span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {t('home.step', { index: index + 1 })}
-                    </span>
+                  <span className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                    <Icon className="size-5" />
                   </span>
                   <span className="grid gap-1.5">
                     <span className="flex items-center gap-1.5 font-medium">
@@ -69,7 +64,7 @@ export default function HomePage() {
           })}
         </ol>
 
-        <motion.div {...fadeIn(STEPS.length + 2)} className="mt-10">
+        <motion.div {...fadeIn(FEATURES.length + 2)} className="mt-10">
           {/* 跳转用链接而不是按钮，渲染出的元素保留链接语义。 */}
           <Link href={rules.path} className={buttonVariants({ size: 'lg', className: 'h-10 px-4' })}>
             {t('home.start')}
