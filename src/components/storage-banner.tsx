@@ -43,7 +43,7 @@ export function StorageBanner() {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <p className="min-w-0 flex-1 basis-64">
               <span className="mr-1 font-medium">{t('storage.fallbackTitle')}</span>{' '}
-              {persistenceProblemMessage(t, fallback)}
+              {persistenceProblemMessage(t, fallback.problem, fallback.entryId)}
               {t('storage.fallbackHint')}
             </p>
             {/* 负外边距抵掉按钮多出的高度，单行时提示框与只有文字时一样高。 */}

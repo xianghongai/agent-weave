@@ -1,7 +1,7 @@
 import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
 import { createPresetWorkspace } from '@/lib/presets';
 import { type DeviceSettings, EMPTY_DEVICE_SETTINGS, OPERATING_SYSTEMS, type Workspace } from '@/lib/workspace';
-import type { ImportProblem } from '@/lib/workspace-file';
+import type { ImportFailure, ImportProblem } from '@/lib/workspace-file';
 import { parseWorkspace } from '@/lib/workspace-validation';
 
 /*
@@ -46,16 +46,19 @@ export type PersistenceProblem = StorageProblem | ImportProblem;
  */
 export type SettingsProblem = 'parseFailed' | 'invalidStructure';
 
-/** 读取时已回退到默认值的部分，各自给出原因码；没有回退的部分为 `null`。工作区回退到预设，设置回退到空的设置。 */
+/**
+ * 读取时已回退到默认值的部分，各自给出原因码；没有回退的部分为 `null`。工作区回退到预设，设置回退到空的设置。
+ * 工作区的原因能定位到条目时带上条目 ID，见 `ImportFailure`。
+ */
 export interface RestoreFallback {
-  workspace: ImportProblem | null;
+  workspace: ImportFailure | null;
   deviceSettings: SettingsProblem | null;
   gistSettings: SettingsProblem | null;
 }
 
 /** 保存的内容无法解析为 JSON 时的回退：每一部分都使用了默认值。数据仍在本地存储中，直到下一次修改覆盖它。 */
 export function parseFailedFallback(): RestoreFallback {
-  return { workspace: 'parseFailed', deviceSettings: 'parseFailed', gistSettings: 'parseFailed' };
+  return { workspace: { problem: 'parseFailed' }, deviceSettings: 'parseFailed', gistSettings: 'parseFailed' };
 }
 
 /**
@@ -78,7 +81,7 @@ export function restorePersistedState(persisted: unknown): {
   const theme = THEMES.find((candidate) => candidate === value.theme) ?? DEFAULT_THEME;
 
   const fallback: RestoreFallback = {
-    workspace: 'problem' in workspaceResult ? workspaceResult.problem : null,
+    workspace: 'workspace' in workspaceResult ? null : workspaceResult,
     deviceSettings: deviceSettings === null ? 'invalidStructure' : null,
     gistSettings: gistSettings === null ? 'invalidStructure' : null,
   };

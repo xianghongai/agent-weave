@@ -13,7 +13,13 @@ import { type WorkspaceProblem, parseWorkspace } from '@/lib/workspace-validatio
  */
 export type ImportProblem = 'parseFailed' | WorkspaceProblem;
 
-export type ImportResult = { workspace: Workspace } | { problem: ImportProblem };
+/** 导入失败的原因。能定位到条目时带上它的内部 ID，见 `WorkspaceFailure`。 */
+export interface ImportFailure {
+  problem: ImportProblem;
+  entryId?: string;
+}
+
+export type ImportResult = { workspace: Workspace } | ImportFailure;
 
 /**
  * 把一段 JSON 文本转成当前版本的工作区：解析、迁移旧版本、校验结构与引用。不抛异常。

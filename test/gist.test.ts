@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { type GistConnection, gistSettingsStatus, parseGistId, pullWorkspace, pushWorkspace } from '@/lib/gist';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 
-import { edited } from './fixtures/workspace';
+import { corrupt, edited } from './fixtures/workspace';
 
 /** 假的 `fetch` 收到的一次请求。 */
 interface RecordedRequest {
@@ -147,6 +147,14 @@ describe('Gist：拉取', () => {
     const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
 
     expect(result).toEqual({ problem: 'invalidContent', importProblem });
+  });
+
+  it('文件中有规则指向不存在的工具时，invalidContent 附上出问题的规则 ID', async () => {
+    const github = fakeGitHub(json(200, gist('my-gist', corrupt(['rules', 0, 'tool', 'id'], 'tool-gone'))));
+
+    const result = await pullWorkspace({ fetch: github.fetch, token: TOKEN }, 'my-gist');
+
+    expect(result).toEqual({ problem: 'invalidContent', importProblem: 'danglingReference', entryId: 'rule-1' });
   });
 });
 

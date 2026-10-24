@@ -46,11 +46,11 @@ export type GistRequestProblem = 'unauthorized' | 'notFound' | 'rateLimited' | '
  * 远端内容无法使用的原因：
  * - `fileMissing`：Gist 中没有 `agent-weave.json`；
  * - `fileTruncated`：文件超过 API 返回内容的上限（1 MB），内容被截断；
- * - `invalidContent`：文件没有通过导入流程，具体原因见 `importProblem`。
+ * - `invalidContent`：文件没有通过导入流程，具体原因见 `importProblem`，能定位到条目时带上 `entryId`。
  */
 export type GistContentFailure =
   | { problem: 'fileMissing' | 'fileTruncated' }
-  | { problem: 'invalidContent'; importProblem: ImportProblem };
+  | { problem: 'invalidContent'; importProblem: ImportProblem; entryId?: string };
 
 /** 请求本身成功，但远端内容无法使用：推送时仍可以整体覆盖它。 */
 export function isContentFailure(failure: { problem: string }): failure is GistContentFailure {
@@ -120,7 +120,9 @@ export async function pullWorkspace(connection: GistConnection, gistId: string):
     return { problem: 'unexpectedResponse' };
   }
   const imported = importWorkspace(file.content);
-  return 'problem' in imported ? { problem: 'invalidContent', importProblem: imported.problem } : imported;
+  return 'workspace' in imported
+    ? imported
+    : { problem: 'invalidContent', importProblem: imported.problem, entryId: imported.entryId };
 }
 
 /** 浏览器的 `fetch`。每次调用时才访问它，并以 `globalThis` 调用，避免脱离宿主对象后报错。 */

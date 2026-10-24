@@ -82,17 +82,22 @@ describe('导入工作区', () => {
   });
 
   it.each([
-    ['命令工具', corrupt(['rules', 0, 'tool', 'id'], 'tool-gone')],
-    ['内置工具', corrupt(['rules', 1, 'tool', 'id'], 'builtin-gone')],
-    ['类型不符的工具', corrupt(['rules', 0, 'tool', 'type'], 'mcp')],
-  ])('规则引用了不存在的%s时返回原因码', (_, text) => {
-    expect(importWorkspace(text)).toEqual({ problem: 'danglingReference' });
+    ['命令工具', corrupt(['rules', 0, 'tool', 'id'], 'tool-gone'), 'rule-1'],
+    ['内置工具', corrupt(['rules', 1, 'tool', 'id'], 'builtin-gone'), 'rule-2'],
+    ['类型不符的工具', corrupt(['rules', 0, 'tool', 'type'], 'mcp'), 'rule-1'],
+  ])('规则引用了不存在的%s时返回原因码，并指出是哪条规则', (_, text, entryId) => {
+    expect(importWorkspace(text)).toEqual({ problem: 'danglingReference', entryId });
   });
 
   it.each([
-    ['标签', ['tags'], { id: 'tag-1', key: 'other', name: '其他' }],
-    ['命令工具', ['command_tools'], commandTool({ id: 'tool-1', key: 'cmake' })],
-    ['规则', ['rules'], rule({ id: 'rule-1', tool: { type: 'command', id: 'tool-1' }, pattern: 'x', decision: 'ask' })],
+    ['标签', ['tags'], { id: 'tag-1', key: 'other', name: '其他' }, 'tag-1'],
+    ['命令工具', ['command_tools'], commandTool({ id: 'tool-1', key: 'cmake' }), 'tool-1'],
+    [
+      '规则',
+      ['rules'],
+      rule({ id: 'rule-1', tool: { type: 'command', id: 'tool-1' }, pattern: 'x', decision: 'ask' }),
+      'rule-1',
+    ],
     [
       '不同 Agent 的内置工具',
       ['agents'],
@@ -104,25 +109,27 @@ describe('导入工作区', () => {
         permission_output: null,
         mcp_output: null,
       },
+      'builtin-1',
     ],
-  ])('同类条目的内部 ID 重复（%s）时返回原因码', (_, path, item) => {
+  ])('同类条目的内部 ID 重复（%s）时返回原因码，并指出重复的 ID', (_, path, item, entryId) => {
     const list = getIn(edited(), path) as unknown[];
-    expect(importWorkspace(corrupt(path, [...list, item]))).toEqual({ problem: 'duplicateId' });
+    expect(importWorkspace(corrupt(path, [...list, item]))).toEqual({ problem: 'duplicateId', entryId });
   });
 
   it.each([
-    ['标签', ['tags'], { id: 'tag-2', key: 'vcs', name: '重复' }],
-    ['命令工具', ['command_tools'], commandTool({ id: 'tool-2', key: 'make' })],
-    ['MCP Server', ['mcp_servers'], { ...edited().mcp_servers[0]!, id: 'mcp-2' }],
-    ['Agent 名称', ['agents'], { ...edited().agents[0]!, id: 'agent-2', built_in_tools: [] }],
+    ['标签', ['tags'], { id: 'tag-2', key: 'vcs', name: '重复' }, 'tag-2'],
+    ['命令工具', ['command_tools'], commandTool({ id: 'tool-2', key: 'make' }), 'tool-2'],
+    ['MCP Server', ['mcp_servers'], { ...edited().mcp_servers[0]!, id: 'mcp-2' }, 'mcp-2'],
+    ['Agent 名称', ['agents'], { ...edited().agents[0]!, id: 'agent-2', built_in_tools: [] }, 'agent-2'],
     [
       '同一 Agent 的内置工具',
       ['agents', 0, 'built_in_tools'],
       { ...edited().agents[0]!.built_in_tools[0]!, id: 'builtin-2' },
+      'builtin-2',
     ],
-  ])('同类条目的标识重复（%s）时返回原因码', (_, path, item) => {
+  ])('同类条目的标识重复（%s）时返回原因码，并指出后出现的那个条目', (_, path, item, entryId) => {
     const list = getIn(edited(), path) as unknown[];
-    expect(importWorkspace(corrupt(path, [...list, item]))).toEqual({ problem: 'duplicateKey' });
+    expect(importWorkspace(corrupt(path, [...list, item]))).toEqual({ problem: 'duplicateKey', entryId });
   });
 
   it('不同 Agent 的内置工具可以使用相同标识', () => {

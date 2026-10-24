@@ -45,14 +45,26 @@ describe('持久化：恢复上次保存的状态', () => {
   ])('工作区结构无效（%s）时只回退工作区到预设，设置照常恢复', (_, workspace) => {
     expect(restorePersistedState({ ...saved(), workspace })).toEqual({
       state: { ...saved(), workspace: createPresetWorkspace() },
-      fallback: { workspace: 'invalidStructure', deviceSettings: null, gistSettings: null },
+      fallback: { workspace: { problem: 'invalidStructure' }, deviceSettings: null, gistSettings: null },
     });
   });
 
   it('工作区来自更新的版本时回退到预设，并给出原因码', () => {
     expect(restorePersistedState({ ...saved(), workspace: corruptValue(['schema_version'], 2) })).toEqual({
       state: { ...saved(), workspace: createPresetWorkspace() },
-      fallback: { workspace: 'newerVersion', deviceSettings: null, gistSettings: null },
+      fallback: { workspace: { problem: 'newerVersion' }, deviceSettings: null, gistSettings: null },
+    });
+  });
+
+  it('工作区中有规则指向不存在的工具时回退到预设，并指出是哪条规则', () => {
+    const workspace = corruptValue(['rules', 1, 'tool', 'id'], 'builtin-gone');
+    expect(restorePersistedState({ ...saved(), workspace })).toEqual({
+      state: { ...saved(), workspace: createPresetWorkspace() },
+      fallback: {
+        workspace: { problem: 'danglingReference', entryId: 'rule-2' },
+        deviceSettings: null,
+        gistSettings: null,
+      },
     });
   });
 
@@ -112,13 +124,17 @@ describe('持久化：恢复上次保存的状态', () => {
   it('整体不是对象时，每一部分都回退', () => {
     expect(restorePersistedState('hello')).toEqual({
       state: restorePersistedState(undefined).state,
-      fallback: { workspace: 'invalidStructure', deviceSettings: 'invalidStructure', gistSettings: 'invalidStructure' },
+      fallback: {
+        workspace: { problem: 'invalidStructure' },
+        deviceSettings: 'invalidStructure',
+        gistSettings: 'invalidStructure',
+      },
     });
   });
 
   it('保存的内容无法解析时，每一部分都已回退，都以 parseFailed 提示', () => {
     expect(parseFailedFallback()).toEqual({
-      workspace: 'parseFailed',
+      workspace: { problem: 'parseFailed' },
       deviceSettings: 'parseFailed',
       gistSettings: 'parseFailed',
     });
