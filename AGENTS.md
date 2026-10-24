@@ -17,12 +17,12 @@
 - `src/lib/`：纯函数，不依赖 React 和 DOM，全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
 - `src/state/`：全局状态，用 Zustand 加 Immer，按生命周期分成两个 store，理由见 `docs/adr/0002-state-layering.md`。两个 store 都按 slices 组织，action 与 state 放在同一个 store 中，只保存结果，业务逻辑留在 `src/lib/`。组件直接用 selector 订阅，一次取多个值时配合 `useShallow`，不另包自定义 Hook；事件处理中读取最新值用 `getState()`。
   - `app-store.ts`：持久化应用 store，包含工作区、本机设置、Gist 设置、主题，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键。工作区只通过 `applyOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作，或用 `replaceWorkspace()` 整体替换。读取时的校验与回退由 `src/lib/persistence.ts` 的纯函数负责，读写错误写进界面 store。
-  - `ui-store.ts`：非持久化全局界面 store，包含存储状态（回退原因 `fallback`、无法保存的原因 `unsaved`）和多个页面共用的当前选中 Agent。
+  - `ui-store.ts`：非持久化全局界面 store，包含存储状态（回退原因 `fallback`、无法保存的原因 `unsaved`）、多个页面共用的当前选中 Agent，以及当前打开的全局对话框 `openDialog`（本机设置、预设）。
   - `devtools.ts`：只在开发环境接入 Redux DevTools，生产构建不包含它。
   - `theme.ts`：订阅应用 store，把主题同步到 `<html>` 的 `dark` class 上。
   - 只在一个页面内使用的状态（Tab、筛选条件、表单）用 `useState`，不进 store；跨页面的一次性意图（如带着标签筛选跳到工具页）通过 `history.state` 传递，不进 store，也不放进 URL 查询参数。
 - `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
-- `src/components/`：站点外壳（页眉、页脚、主题切换）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单弹窗、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
+- `src/components/`：站点外壳（页眉、页脚、主题切换、设置菜单，以及挂在外壳上的本机设置和预设对话框）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单弹窗、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
 - `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。
 - `src/browser/`：直接调用浏览器 API、又不是组件的界面辅助函数，如让浏览器下载文件的 `download.ts`。
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。

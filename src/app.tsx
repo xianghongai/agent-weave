@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { Redirect, Route, Router, Switch, useLocation } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
 
+import { DeviceSettingsDialog } from '@/components/device-settings-dialog';
+import { PresetsDialog } from '@/components/presets-dialog';
 import { PwaPrompt } from '@/components/pwa-prompt';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
@@ -59,6 +61,9 @@ export function App() {
             <SiteFooter />
           </div>
         </Router>
+        {/* 全局对话框可以从任何页面打开，见 `ui-store` 的 `openDialog`。 */}
+        <DeviceSettingsDialog />
+        <PresetsDialog />
         <Toaster position="bottom-center" />
         <PwaPrompt />
       </TooltipProvider>

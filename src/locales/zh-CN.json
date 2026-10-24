@@ -6,7 +6,10 @@
     "home": "回到首页",
     "pages": "页面",
     "toLight": "切换到浅色",
-    "toDark": "切换到深色"
+    "toDark": "切换到深色",
+    "settings": "设置",
+    "deviceSettings": "本机设置…",
+    "presets": "预设…"
   },
   "footer": {
     "privacy": "数据只保存在你的浏览器和你选择的同步位置，本站不收集任何数据",
@@ -61,7 +64,7 @@
     },
     "sync": {
       "title": "同步",
-      "description": "导入、导出工作区，通过 Gist 在多台设备之间同步，以及管理本机设置。"
+      "description": "导入、导出工作区，或通过 Gist 在多台设备之间同步。"
     }
   },
   "placeholder": {
