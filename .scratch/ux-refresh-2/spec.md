@@ -1,6 +1,6 @@
 # 交互体验调整（第二轮）
 
-Status: ready-for-agent
+Status: done
 
 ## 问题陈述
 
