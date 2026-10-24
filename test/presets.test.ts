@@ -108,6 +108,33 @@ describe('预设：内容整理', () => {
   });
 });
 
+describe('预设：内置工具与作用域按调研确定', () => {
+  function builtInKeys(name: string): string[] {
+    return preset.agents.find((agent) => agent.name === name)?.built_in_tools.map((tool) => tool.key) ?? [];
+  }
+
+  it('Claude Code 不收录规则不会命中的 Write、NotebookEdit、Glob，也不收录无需审批的工具', () => {
+    const keys = builtInKeys('Claude Code');
+    for (const key of ['Write', 'NotebookEdit', 'Glob', 'Grep', 'LSP', 'Agent', 'TodoWrite', 'AskUserQuestion']) {
+      expect(keys).not.toContain(key);
+    }
+    expect(keys).toEqual(expect.arrayContaining(['Read', 'Edit', 'WebFetch', 'WebSearch', 'Skill']));
+  });
+
+  it('Claude Code 的 Skill 规则按技能名匹配', () => {
+    const skill = preset.agents
+      .find((agent) => agent.name === 'Claude Code')
+      ?.built_in_tools.find((tool) => tool.key === 'Skill');
+    expect(skill?.templates).toEqual({ with_pattern: 'Skill({pattern})', without_pattern: 'Skill' });
+  });
+
+  it('Codex CLI 只输出 MCP，没有内置工具', () => {
+    const output = generate(preset, agentId('Codex CLI'), DEVICE);
+    expect(output?.permission).toBeNull();
+    expect(builtInKeys('Codex CLI')).toEqual([]);
+  });
+});
+
 describe('预设：各 Agent 的生成快照', () => {
   it.each(['Claude Code', 'Antigravity', 'Codex CLI'])('%s', (name) => {
     const output = generate(preset, agentId(name), DEVICE);

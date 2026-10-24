@@ -313,11 +313,9 @@ describe('生成：预设 Antigravity', () => {
   const antigravity = preset.agents.find((agent) => agent.name === 'Antigravity');
   const output = antigravity ? generate(preset, antigravity.id, EMPTY_DEVICE_SETTINGS) : null;
 
-  it('预览显示完整的 userSettings.globalPermissionGrants 嵌套，“复制”只到 globalPermissionGrants', () => {
-    expect(output?.permission?.preview.startsWith('{\n  "userSettings": {\n    "globalPermissionGrants": {\n')).toBe(
-      true
-    );
-    expect(output?.permission?.copyText.startsWith('"globalPermissionGrants": {\n  "allow": [\n')).toBe(true);
+  it('按官方公开的 CLI 设置输出到 permissions 下', () => {
+    expect(output?.permission?.preview.startsWith('{\n  "permissions": {\n    "allow": [\n')).toBe(true);
+    expect(output?.permission?.copyText.startsWith('"permissions": {\n  "allow": [\n')).toBe(true);
   });
 
   it('命令工具写成 command(...)', () => {
@@ -352,11 +350,12 @@ describe('生成：预设 Antigravity', () => {
     expect(allowOf(antigravity?.id)).toEqual(['read_url(*)', 'write_file(src/)']);
   });
 
-  it('主作用域是共享配置，第二个作用域是 CLI 设置文件并注明其属性名为 permissions', () => {
-    const [shared, cli] = output?.permission?.scopes ?? [];
-    expect(shared?.path).toBe('~/.gemini/config/config.json');
+  it('主作用域是 CLI 设置文件，第二个作用域是 IDE 的全局授权并注明其属性路径', () => {
+    const [cli, ide] = output?.permission?.scopes ?? [];
     expect(cli?.path).toBe('~/.gemini/antigravity-cli/settings.json');
-    expect(cli?.note).toContain('permissions');
+    expect(ide?.path).toBe('~/.gemini/config/config.json');
+    expect(ide?.note).toContain('userSettings');
+    expect(ide?.note).toContain('globalPermissionGrants');
   });
 });
 
