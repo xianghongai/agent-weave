@@ -26,8 +26,8 @@ export default function HomePage() {
   return (
     // 宽屏下两侧伸进页面的水平内边距，滚动容器不会裁掉卡片描边和焦点环。
     <div className="flex flex-col md:-mx-3 md:min-h-0 md:flex-1 md:overflow-y-auto md:px-3">
-      {/* `my-auto` 在放得下时垂直居中，放不下时从顶部开始，不会裁掉上方内容。 */}
-      <div className="my-auto py-10 md:py-8">
+      {/* 内容从顶部排起，不随视口高度做垂直居中；上留白比下方多一些，让标语离开页眉。 */}
+      <div className="pt-16 pb-12 md:pt-24 md:pb-10">
         <section className="max-w-3xl">
           <motion.h1 {...fadeIn(0)} className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
             {/* 前后两半各自不折行，窄屏下在逗号处换行。 */}
