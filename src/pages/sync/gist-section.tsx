@@ -146,10 +146,8 @@ export function GistSection() {
       </div>
 
       <ul className="grid gap-1.5 text-sm">
-        <StatusItem state={status.token === 'configured' ? 'ok' : 'missing'}>
-          {t(`gist.status.token.${status.token}`)}
-        </StatusItem>
-        <StatusItem state={STATUS_STATE[status.gist.status]}>{t(`gist.status.gist.${status.gist.status}`)}</StatusItem>
+        <StatusItem state={TOKEN_STATE[status.token]}>{t(`gist.status.token.${status.token}`)}</StatusItem>
+        <StatusItem state={GIST_STATE[status.gist.status]}>{t(`gist.status.gist.${status.gist.status}`)}</StatusItem>
       </ul>
 
       {settingsInvalid && (
@@ -238,7 +236,9 @@ function compareTime(a: string, b: string): number {
   return Number.isNaN(diff) ? 0 : diff;
 }
 
-const STATUS_STATE = { linked: 'ok', missing: 'missing', invalid: 'invalid' } as const;
+/** Token 与 Gist 的设置状态各自对应的显示状态。 */
+const TOKEN_STATE = { configured: 'ok', missing: 'missing' } as const;
+const GIST_STATE = { linked: 'ok', missing: 'missing', invalid: 'invalid' } as const;
 
 const STATUS_ICON = { ok: CircleCheckIcon, missing: CircleDashedIcon, invalid: TriangleAlertIcon } as const;
 

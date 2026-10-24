@@ -27,7 +27,8 @@ function MarkdownOrderedList(props: React.ComponentProps<'ol'>) {
 }
 
 const OPTIONS: MarkdownToJSX.Options = {
-  // 文案里插入的用户数据不转义，关闭原始 HTML 解析后它们也只会显示成文字。
+  // 不解析原始 HTML，文案中的尖括号只显示成文字。
+  // 这挡不住链接、强调等 Markdown 语法，插进文案的用户数据要先用 `escapeMarkdown()` 转义。
   disableParsingRawHTML: true,
   // 始终输出包裹元素，`className` 才能落到单行文案上。
   forceWrapper: true,
@@ -40,7 +41,7 @@ const OPTIONS: MarkdownToJSX.Options = {
 };
 
 interface MarkdownProps {
-  /** Markdown 源文本，通常来自 `t()`。 */
+  /** Markdown 源文本，通常来自 `t()`；插值中的用户数据先用 `escapeMarkdown()` 转义。 */
   children: string;
   className?: string;
 }

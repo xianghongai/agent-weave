@@ -3,10 +3,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
+import { Markdown } from '@/components/markdown';
+import { MarkdownFieldDescription } from '@/components/markdown-field-description';
 import { Note } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { expandText, isDeviceSettingsComplete } from '@/lib/placeholders';
@@ -58,7 +60,7 @@ function DeviceSettingsForm({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={save} className="grid gap-4">
-      <p className="text-sm text-muted-foreground text-pretty">{t('deviceSettings.hint', tokens)}</p>
+      <Markdown className="text-sm text-muted-foreground text-pretty">{t('deviceSettings.hint', tokens)}</Markdown>
 
       <Tabs
         value={draft.os}
@@ -97,9 +99,9 @@ function DeviceSettingsForm({ onDone }: { onDone: () => void }) {
                   autoComplete="off"
                   spellCheck={false}
                 />
-                <FieldDescription>
+                <MarkdownFieldDescription>
                   {t('deviceSettings.userNameHint', { os: osName, home: t(`deviceSettings.homeExamples.${os}`) })}
-                </FieldDescription>
+                </MarkdownFieldDescription>
               </Field>
             </TabsContent>
           );
@@ -119,7 +121,9 @@ function DeviceSettingsForm({ onDone }: { onDone: () => void }) {
         <Note icon={InfoIcon}>{t('deviceSettings.incomplete')}</Note>
       )}
 
-      <Note icon={InfoIcon}>{t('deviceSettings.claudePathHint', tokens)}</Note>
+      <Note icon={InfoIcon}>
+        <Markdown>{t('deviceSettings.claudePathHint', tokens)}</Markdown>
+      </Note>
 
       {settingsInvalid && (
         <Note tone="warning" icon={TriangleAlertIcon}>

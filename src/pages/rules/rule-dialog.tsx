@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FieldLabelWithHelp } from '@/components/field-label-with-help';
 import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,6 @@ import { operationProblemMessage } from '@/i18n/problems';
 import type { Rule } from '@/lib/workspace';
 import { type OperationProblem, resolveTool, updateRule } from '@/lib/workspace-operations';
 import { DecisionToggle, ToolSelect } from '@/pages/rules/rule-fields';
-import { PatternLabel } from '@/pages/rules/pattern-label';
 import { usePatternTexts } from '@/pages/rules/rule-owner';
 import { useAppStore } from '@/state/app-store';
 
@@ -64,7 +64,12 @@ function RuleForm({ rule, onDone }: { rule: Rule; onDone: () => void }) {
           {problem && <FieldError>{operationProblemMessage(t, problem)}</FieldError>}
         </Field>
         <Field>
-          <PatternLabel htmlFor="rule-edit-pattern" hint={patternTexts.hint} />
+          <FieldLabelWithHelp
+            htmlFor="rule-edit-pattern"
+            help={{ label: t('rules.patternHelp'), content: patternTexts.hint }}
+          >
+            {t('rules.pattern')}
+          </FieldLabelWithHelp>
           <Input
             id="rule-edit-pattern"
             value={pattern}
