@@ -1,0 +1,124 @@
+{
+  "agents": [
+    // CodeBuddy Code：腾讯的命令行 Agent，权限写法与 Claude Code 高度兼容，写在 settings.json 的 permissions 下。
+    // 路径锚点与 Claude Code 相同：// 绝对路径，~/ 主目录，单个前导 / 表示相对设置文件所在目录，./ 或不带前缀表示当前目录。
+    // 因此路径规则一律写成 ~/ 形式，不能用 {{home}}。
+    {
+      "id": "preset-agent-codebuddy-code",
+      "name": "CodeBuddy Code",
+      "description": "preset-agent-codebuddy-code.description",
+      "built_in_tools": [
+        // Read 的规则尽量作用于所有读取类工具（Grep、Glob、LS 等），因此不单列它们。
+        // Edit 的规则作用于所有改写文件的内置工具（Write、MultiEdit、NotebookEdit 等），因此不单列。
+        // 不需要审批的工具（Agent、任务、ToolSearch 等）不收录；需要审批但用户没有理由事先放行或拒绝的
+        // 交互类工具（AskUserQuestion、ExitPlanMode 等）也不收录。
+        {
+          "id": "preset-built-in-codebuddy-code-read",
+          "key": "Read",
+          "description": "preset-built-in-codebuddy-code-read.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Read({pattern}**)",
+            "without_pattern": "Read",
+          },
+        },
+        {
+          "id": "preset-built-in-codebuddy-code-edit",
+          "key": "Edit",
+          "description": "preset-built-in-codebuddy-code-edit.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": true,
+          "templates": {
+            "with_pattern": "Edit({pattern}**)",
+            "without_pattern": "Edit",
+          },
+        },
+        {
+          "id": "preset-built-in-codebuddy-code-webfetch",
+          "key": "WebFetch",
+          "description": "preset-built-in-codebuddy-code-webfetch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "WebFetch(domain:{pattern})",
+            "without_pattern": "WebFetch",
+          },
+        },
+        // WebSearch 的模式写法没有公开，有模式的规则会进入跳过的规则。
+        {
+          "id": "preset-built-in-codebuddy-code-websearch",
+          "key": "WebSearch",
+          "description": "preset-built-in-codebuddy-code-websearch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "",
+            "without_pattern": "WebSearch",
+          },
+        },
+      ],
+      "permission_output": {
+        "property_path": "permissions",
+        "scopes": [
+          {
+            "name": "preset-agent-codebuddy-code.permission-scope-user.name",
+            "path": "~/.codebuddy/settings.json",
+            "note": "preset-agent-codebuddy-code.permission-scope-user.note",
+          },
+          {
+            "name": "preset-agent-codebuddy-code.permission-scope-project.name",
+            "path": ".codebuddy/settings.json",
+            "note": "preset-agent-codebuddy-code.permission-scope-project.note",
+          },
+          {
+            "name": "preset-agent-codebuddy-code.permission-scope-project-local.name",
+            "path": ".codebuddy/settings.local.json",
+            "note": "preset-agent-codebuddy-code.permission-scope-project-local.note",
+          },
+        ],
+        "decision_keys": {
+          "allow": "allow",
+          "ask": "ask",
+          "deny": "deny",
+        },
+        // 官方文档只给出精确匹配与 :* 前缀两种写法，这里用 :* 前缀，不用 Claude Code 的空格加 *。
+        "command_templates": {
+          "with_pattern": "Bash({command} {pattern}:*)",
+          "without_pattern": "Bash({command}:*)",
+        },
+        // mcp__server 匹配该 Server 的所有工具，等价于 mcp__server__*。
+        "mcp_templates": {
+          "with_pattern": "mcp__{server}__{pattern}",
+          "without_pattern": "mcp__{server}",
+        },
+      },
+      // MCP 配置在独立的 .mcp.json 中，根键 mcpServers，来源是官方 CLI 文档（www.codebuddy.ai/docs/cli/mcp）。
+      // 本地级写在 ~/.codebuddy.json 的 projects.<工作区路径> 下，属性路径随工作区变化，不输出。
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-codebuddy-code.mcp-scope-project.name",
+            "path": ".mcp.json",
+            "note": "preset-agent-codebuddy-code.mcp-scope-project.note",
+          },
+          {
+            "name": "preset-agent-codebuddy-code.mcp-scope-user.name",
+            "path": "~/.codebuddy/.mcp.json",
+            "note": "preset-agent-codebuddy-code.mcp-scope-user.note",
+          },
+        ],
+      },
+    },
+  ],
+}

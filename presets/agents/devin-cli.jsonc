@@ -1,0 +1,116 @@
+{
+  "agents": [
+    // Devin CLI：Cognition 的命令行 Agent（Windsurf 更名后的 Devin 系列），权限写在 config.json 的 permissions 下。
+    // 规则分两类：带作用域的 Read(glob)、Write(glob)、Exec(prefix)、Fetch(pattern)，以及只写工具名的 read、edit、grep、glob、exec。
+    // 路径 glob 中 ~ 展开为主目录，前导 / 是绝对路径，不带前缀相对当前工作目录，因此可以使用 {{home}}。
+    // 来源：官方文档 docs.devin.ai/cli/reference/permissions 与 docs.devin.ai/cli/extensibility/mcp/configuration。
+    {
+      "id": "preset-agent-devin-cli",
+      "name": "Devin CLI",
+      "description": "preset-agent-devin-cli.description",
+      "built_in_tools": [
+        // grep、glob 是只读工具，默认自动批准，不收录；读取路径用 Read 控制。
+        {
+          "id": "preset-built-in-devin-cli-read",
+          "key": "Read",
+          "description": "preset-built-in-devin-cli-read.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Read({pattern}**)",
+            "without_pattern": "read",
+          },
+        },
+        // Write(glob) 同时控制 edit 与 write 两个工具，因此不单列 edit。
+        // 只写工具名的列表里没有 write，整体规则改用匹配整个文件系统的 Write(/**)：不带前导 / 的 ** 只匹配当前目录。
+        {
+          "id": "preset-built-in-devin-cli-write",
+          "key": "Write",
+          "description": "preset-built-in-devin-cli-write.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": true,
+          "templates": {
+            "with_pattern": "Write({pattern}**)",
+            "without_pattern": "Write(/**)",
+          },
+        },
+        // domain: 简写匹配该域名下的任意路径，不含子域名。
+        // 文档没有给出整体放行抓取的规则写法，不带模式的规则会进入跳过的规则。
+        {
+          "id": "preset-built-in-devin-cli-fetch",
+          "key": "Fetch",
+          "description": "preset-built-in-devin-cli-fetch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Fetch(domain:{pattern})",
+            "without_pattern": "",
+          },
+        },
+      ],
+      "permission_output": {
+        "property_path": "permissions",
+        "scopes": [
+          {
+            "name": "preset-agent-devin-cli.permission-scope-user.name",
+            "path": "~/.config/devin/config.json",
+            "note": "preset-agent-devin-cli.permission-scope-user.note",
+          },
+          {
+            "name": "preset-agent-devin-cli.permission-scope-project.name",
+            "path": ".devin/config.json",
+            "note": "preset-agent-devin-cli.permission-scope-project.note",
+          },
+          {
+            "name": "preset-agent-devin-cli.permission-scope-project-local.name",
+            "path": ".devin/config.local.json",
+            "note": "preset-agent-devin-cli.permission-scope-project-local.note",
+          },
+        ],
+        "decision_keys": {
+          "allow": "allow",
+          "ask": "ask",
+          "deny": "deny",
+        },
+        // Exec 按整词前缀匹配：Exec(git) 匹配 git status，不匹配 gitk，结尾不需要 *。
+        "command_templates": {
+          "with_pattern": "Exec({command} {pattern})",
+          "without_pattern": "Exec({command})",
+        },
+        // 文档只列出 mcp__server__tool、mcp__server__* 与 mcp__*，没有不带后缀的 mcp__server。
+        "mcp_templates": {
+          "with_pattern": "mcp__{server}__{pattern}",
+          "without_pattern": "mcp__{server}__*",
+        },
+      },
+      // v3000.3 起 MCP 配置移到独立的 mcp_config.json，根键 mcpServers；旧版本写在 config.json 的 mcpServers 中，启动时自动迁移。
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-devin-cli.mcp-scope-project.name",
+            "path": ".devin/mcp_config.json",
+            "note": "preset-agent-devin-cli.mcp-scope-project.note",
+          },
+          {
+            "name": "preset-agent-devin-cli.mcp-scope-project-local.name",
+            "path": ".devin/mcp_config.local.json",
+            "note": "preset-agent-devin-cli.mcp-scope-project-local.note",
+          },
+          {
+            "name": "preset-agent-devin-cli.mcp-scope-user.name",
+            "path": "~/.config/devin/mcp_config.json",
+            "note": "preset-agent-devin-cli.mcp-scope-user.note",
+          },
+        ],
+      },
+    },
+  ],
+}

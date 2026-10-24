@@ -32,8 +32,15 @@ describe('预设：合成与导入校验', () => {
     expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
   });
 
-  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity 在后', () => {
-    expect(preset.agents.map((agent) => agent.name)).toEqual(['Claude Code', 'Codex CLI', 'Antigravity']);
+  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Qwen Code 居中', () => {
+    expect(preset.agents.map((agent) => agent.name)).toEqual([
+      'Claude Code',
+      'Codex CLI',
+      'Antigravity',
+      'Qwen Code',
+      'CodeBuddy Code',
+      'Devin CLI',
+    ]);
   });
 });
 
@@ -108,8 +115,28 @@ describe('预设：内容整理', () => {
   });
 });
 
+describe('预设：与 Claude Code 写法相近的 Agent', () => {
+  function allowOf(name: string): string[] {
+    return (
+      generate(preset, agentId(name), DEVICE)?.permission?.decisions.find((d) => d.decision === 'allow')?.entries ?? []
+    );
+  }
+
+  it('Qwen Code 的命令规则写作 Bash(git *)，整个 MCP Server 写作 mcp__server', () => {
+    expect(allowOf('Qwen Code')).toEqual(expect.arrayContaining(['Bash(git *)', 'mcp__memory']));
+  });
+
+  it('CodeBuddy Code 的命令规则用文档给出的 :* 前缀写法', () => {
+    expect(allowOf('CodeBuddy Code')).toEqual(expect.arrayContaining(['Bash(git:*)', 'mcp__memory']));
+  });
+
+  it('Devin CLI 的命令规则写作 Exec(prefix)，整个 MCP Server 写作 mcp__server__*', () => {
+    expect(allowOf('Devin CLI')).toEqual(expect.arrayContaining(['Exec(git)', 'mcp__memory__*']));
+  });
+});
+
 describe('预设：各 Agent 的生成快照', () => {
-  it.each(['Claude Code', 'Antigravity', 'Codex CLI'])('%s', (name) => {
+  it.each(['Claude Code', 'Antigravity', 'Codex CLI', 'Qwen Code', 'CodeBuddy Code', 'Devin CLI'])('%s', (name) => {
     const output = generate(preset, agentId(name), DEVICE);
     expect(output).not.toBeNull();
     expect(output).toMatchSnapshot();
