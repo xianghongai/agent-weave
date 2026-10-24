@@ -6,13 +6,11 @@ import { Input } from '@/components/ui/input';
 import type { Workspace } from '@/lib/workspace';
 import { type ToolFilter, compareText } from '@/lib/workspace-operations';
 
-/** 标签筛选的选项：全部标签，以及按标识排序的各个标签。工具列表和规则列表共用。 */
-export function useTagFilterOptions(workspace: Workspace): FilterOption<string>[] {
-  const { t } = useTranslation();
-  return [
-    { value: null, label: t('filters.tagAll') },
-    ...workspace.tags.toSorted((a, b) => compareText(a.key, b.key)).map((tag) => ({ value: tag.id, label: tag.name })),
-  ];
+/** 标签筛选的选项：按标识排序的各个标签。工具列表和规则列表共用。 */
+export function tagFilterOptions(workspace: Workspace): FilterOption<string>[] {
+  return workspace.tags
+    .toSorted((a, b) => compareText(a.key, b.key))
+    .map((tag) => ({ value: tag.id, label: tag.name }));
 }
 
 interface ToolFilterBarProps {
@@ -24,7 +22,6 @@ interface ToolFilterBarProps {
 /** 工具列表的筛选栏：名称关键字与标签，两者同时生效。 */
 export function ToolFilterBar({ workspace, value, onChange }: ToolFilterBarProps) {
   const { t } = useTranslation();
-  const tagOptions = useTagFilterOptions(workspace);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -43,7 +40,8 @@ export function ToolFilterBar({ workspace, value, onChange }: ToolFilterBarProps
       </div>
       <FilterSelect
         label={t('filters.tag')}
-        options={tagOptions}
+        placeholder={t('filters.tagAll')}
+        options={tagFilterOptions(workspace)}
         value={value.tagId}
         onChange={(tagId) => onChange({ ...value, tagId })}
       />

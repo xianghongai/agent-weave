@@ -499,7 +499,8 @@
       "mcp": "MCP 工具",
       "built_in": "内置工具"
     },
-    "noMatch": "没有符合筛选条件的工具。"
+    "noMatch": "没有符合筛选条件的工具。",
+    "clear": "清除筛选"
   },
   "notices": {
     "highRiskFlag": "高危",
