@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormDialog } from '@/components/form-dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useOperationForm } from '@/hooks/use-operation-form';
@@ -22,15 +23,15 @@ export function TagDialog({ open, onOpenChange, tag }: TagDialogProps) {
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t(tag ? 'tags.editTitle' : 'tags.addTitle')}</DialogTitle>
-        </DialogHeader>
-        {/* 每次打开都以当前条目重新初始化表单。 */}
-        {open && <TagForm key={tag?.id ?? 'new'} tag={tag} onDone={() => onOpenChange(false)} />}
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      size="narrow"
+      title={t(tag ? 'tags.editTitle' : 'tags.addTitle')}
+    >
+      {/* 每次打开都以当前条目重新初始化表单。 */}
+      {open && <TagForm key={tag?.id ?? 'new'} tag={tag} onDone={() => onOpenChange(false)} />}
+    </FormDialog>
   );
 }
 

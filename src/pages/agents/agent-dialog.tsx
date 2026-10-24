@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormDialog } from '@/components/form-dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import {
   Field,
   FieldDescription,
@@ -55,17 +56,17 @@ export function AgentDialog({ open, onOpenChange, agent, onAdded }: AgentDialogP
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-3xl">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>{t(agent ? 'agents.editTitle' : 'agents.addTitle')}</DialogTitle>
-        </DialogHeader>
-        {/* 每次打开都以当前条目重新初始化表单。 */}
-        {open && (
-          <AgentForm key={agent?.id ?? 'new'} agent={agent} onClose={() => onOpenChange(false)} onAdded={onAdded} />
-        )}
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      size="wide"
+      title={t(agent ? 'agents.editTitle' : 'agents.addTitle')}
+    >
+      {/* 每次打开都以当前条目重新初始化表单。 */}
+      {open && (
+        <AgentForm key={agent?.id ?? 'new'} agent={agent} onClose={() => onOpenChange(false)} onAdded={onAdded} />
+      )}
+    </FormDialog>
   );
 }
 

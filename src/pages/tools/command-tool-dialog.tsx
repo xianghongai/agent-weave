@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useOperationForm } from '@/hooks/use-operation-form';
@@ -24,15 +25,15 @@ export function CommandToolDialog({ open, onOpenChange, tool }: CommandToolDialo
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t(tool ? 'tools.editTitle' : 'tools.addTitle')}</DialogTitle>
-        </DialogHeader>
-        {/* 每次打开都以当前条目重新初始化表单。 */}
-        {open && <CommandToolForm key={tool?.id ?? 'new'} tool={tool} onDone={() => onOpenChange(false)} />}
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      size="narrow"
+      title={t(tool ? 'tools.editTitle' : 'tools.addTitle')}
+    >
+      {/* 每次打开都以当前条目重新初始化表单。 */}
+      {open && <CommandToolForm key={tool?.id ?? 'new'} tool={tool} onDone={() => onOpenChange(false)} />}
+    </FormDialog>
   );
 }
 

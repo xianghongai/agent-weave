@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { FormDialog } from '@/components/form-dialog';
 import { HighRiskSwitch } from '@/components/high-risk';
 import { TagPicker } from '@/components/tag-picker';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { DialogFooter } from '@/components/ui/dialog';
 import { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -28,24 +29,22 @@ export function BuiltInToolDialog({ open, onOpenChange, agent, tool }: BuiltInTo
   const { t } = useTranslation();
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>
-            {t(tool ? 'builtInTools.editTitle' : 'builtInTools.addTitle', { agent: agent?.name ?? '' })}
-          </DialogTitle>
-        </DialogHeader>
-        {/* 每次打开都以当前条目重新初始化表单。 */}
-        {open && agent && (
-          <BuiltInToolForm
-            key={tool?.id ?? `new:${agent.id}`}
-            agent={agent}
-            tool={tool}
-            onDone={() => onOpenChange(false)}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
+    <FormDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      size="narrow"
+      title={t(tool ? 'builtInTools.editTitle' : 'builtInTools.addTitle', { agent: agent?.name ?? '' })}
+    >
+      {/* 每次打开都以当前条目重新初始化表单。 */}
+      {open && agent && (
+        <BuiltInToolForm
+          key={tool?.id ?? `new:${agent.id}`}
+          agent={agent}
+          tool={tool}
+          onDone={() => onOpenChange(false)}
+        />
+      )}
+    </FormDialog>
   );
 }
 
