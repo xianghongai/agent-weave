@@ -17,6 +17,8 @@ export interface OperationForm {
   /** 试算失败时禁用保存。 */
   canSubmit: boolean;
   submit: (event: FormEvent) => void;
+  /** “保存并继续新增”：成功后不调用 `onDone`，改为调用 `onContinue`，由表单清空需要重填的字段。 */
+  submitAndContinue: (onContinue: () => void) => void;
   /** 用户修改了出错的字段后，清除提交失败的原因。 */
   clearSubmitProblem: () => void;
 }
@@ -36,20 +38,23 @@ export function useOperationForm(
   const trial = operation(workspace);
   const liveProblem = 'problem' in trial && !quiet(trial.problem) ? trial.problem : null;
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function apply(onSuccess: () => void) {
     const problem = applyOperation(operation);
     if (problem) {
       setSubmitProblem(problem);
     } else {
-      onDone();
+      onSuccess();
     }
   }
 
   return {
     problem: submitProblem ?? liveProblem,
     canSubmit: !('problem' in trial),
-    submit,
+    submit: (event) => {
+      event.preventDefault();
+      apply(onDone);
+    },
+    submitAndContinue: apply,
     clearSubmitProblem: () => setSubmitProblem(null),
   };
 }

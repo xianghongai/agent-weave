@@ -48,14 +48,17 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
   const [pattern, setPattern] = useState(rule?.pattern ?? '');
   const [decision, setDecision] = useState<Decision>(rule?.decision ?? 'allow');
   const [highRisk, setHighRisk] = useState(rule?.high_risk ?? false);
-  const patternTexts = usePatternTexts(tool ? resolveTool(workspace, tool) : null);
+  const resolved = tool ? resolveTool(workspace, tool) : null;
+  const patternTexts = usePatternTexts(resolved);
+  /** “保存并继续新增”后刚新增的规则，提示已保存。 */
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const operation = (current: Workspace) => {
     const input = { tool, pattern, decision, high_risk: highRisk };
     return rule ? updateRule(current, rule.id, input) : addRule(current, input);
   };
   // 尚未选择工具只禁用保存；所选工具在填写期间被删除时才提示。
-  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+  const { problem, canSubmit, submit, submitAndContinue, clearSubmitProblem } = useOperationForm(operation, {
     quiet: (candidate) => candidate === 'toolEmpty',
     onDone,
   });
@@ -108,9 +111,32 @@ function RuleForm({ rule, onDone }: { rule: Rule | null; onDone: () => void }) {
         />
       </FieldGroup>
       <DialogFooter>
+        {lastAdded && (
+          <p role="status" className="self-center text-sm break-all text-muted-foreground sm:mr-auto">
+            {t('common.added', { label: lastAdded })}
+          </p>
+        )}
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
+        {/* 只在新增时提供：保留工具和决策，清空模式，便于在同一工具下连续添加多条规则。 */}
+        {!rule && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canSubmit}
+            onClick={() =>
+              submitAndContinue(() => {
+                setLastAdded([resolved?.tool.key, pattern.trim()].filter(Boolean).join(' '));
+                setPattern('');
+                setHighRisk(false);
+                patternRef.current?.focus();
+              })
+            }
+          >
+            {t('common.saveAndContinue')}
+          </Button>
+        )}
         <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>

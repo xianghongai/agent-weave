@@ -79,6 +79,8 @@
     "delete": "删除",
     "cancel": "取消",
     "save": "保存",
+    "saveAndContinue": "保存并继续新增",
+    "added": "已新增 {{label}}",
     "optional": "可选"
   },
   "copy": {

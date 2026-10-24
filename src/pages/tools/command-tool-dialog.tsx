@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
@@ -43,13 +43,16 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
   const [description, setDescription] = useState(tool?.description ?? '');
   const [highRisk, setHighRisk] = useState(tool?.high_risk ?? false);
   const [tagIds, setTagIds] = useState<string[]>(tool?.tag_ids ?? []);
+  const keyRef = useRef<HTMLInputElement>(null);
+  /** “保存并继续新增”后刚新增的标识，提示已保存。 */
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const operation = (current: Workspace) => {
     const input = { key, description, high_risk: highRisk, tag_ids: tagIds };
     return tool ? updateCommandTool(current, tool.id, input) : addCommandTool(current, input);
   };
   // 标识重复时立即提示；空标识只禁用保存，不提示。
-  const { problem, canSubmit, submit, clearSubmitProblem } = useOperationForm(operation, {
+  const { problem, canSubmit, submit, submitAndContinue, clearSubmitProblem } = useOperationForm(operation, {
     quiet: (candidate) => candidate === 'keyEmpty',
     onDone,
   });
@@ -60,6 +63,7 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
         <Field data-invalid={problem ? true : undefined}>
           <FieldLabel htmlFor="command-tool-key">{t('tools.key')}</FieldLabel>
           <Input
+            ref={keyRef}
             id="command-tool-key"
             value={key}
             autoFocus
@@ -98,9 +102,33 @@ function CommandToolForm({ tool, onDone }: { tool: CommandTool | null; onDone: (
         <TagPicker value={tagIds} onChange={setTagIds} />
       </FieldGroup>
       <DialogFooter>
+        {lastAdded && (
+          <p role="status" className="self-center text-sm text-muted-foreground sm:mr-auto">
+            {t('common.added', { label: lastAdded })}
+          </p>
+        )}
         <Button type="button" variant="outline" onClick={onDone}>
           {t('common.cancel')}
         </Button>
+        {/* 只在新增时提供：保留所选标签，清空其余字段，便于连续新增同类工具。 */}
+        {!tool && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canSubmit}
+            onClick={() =>
+              submitAndContinue(() => {
+                setLastAdded(key.trim());
+                setKey('');
+                setDescription('');
+                setHighRisk(false);
+                keyRef.current?.focus();
+              })
+            }
+          >
+            {t('common.saveAndContinue')}
+          </Button>
+        )}
         <Button type="submit" disabled={!canSubmit}>
           {t('common.save')}
         </Button>
