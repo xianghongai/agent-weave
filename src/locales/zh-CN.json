@@ -158,7 +158,7 @@
     "invalidStructure": "本地保存的 Token 和 Gist ID 无效，已清空，请重新填写。",
     "description": "agent-weave 工作区（由 agent-weave 创建，用于在设备之间同步）",
     "confirmPushTitle": "用本地工作区覆盖 Gist？",
-    "confirmPushDescription": "Gist 中的 agent-weave.json 会被本地工作区整体替换，不会合并。",
+    "confirmPushDescription": "Gist 中的 agent-weave.jsonc 会被本地工作区整体替换，不会合并。",
     "confirmPullTitle": "用 Gist 中的工作区替换本地工作区？",
     "confirmPullDescription": "本地工作区的全部内容会被替换，无法撤销。需要保留时，先导出备份。",
     "remote": "远端（Gist）",
@@ -199,7 +199,7 @@
       "danglingReference": "本地保存的工作区中，有权限规则指向不存在的工具。"
     },
     "import": {
-      "parseFailed": "内容不是合法的 JSON，可能不完整或已被截断。",
+      "parseFailed": "内容不是合法的 JSON 或 JSONC，可能不完整或已被截断。",
       "invalidStructure": "内容不是有效的工作区：缺少必要的属性，或某个属性的类型、取值不对。",
       "newerVersion": "内容来自更新版本的站点。刷新页面更新到新版本后再试。",
       "duplicateId": "同一类条目中有重复的内部 ID。",
@@ -212,9 +212,9 @@
       "rateLimited": "超出了 GitHub API 的调用频率限制，请稍后再试。",
       "networkFailed": "无法连接 GitHub，请检查网络后重试。",
       "unexpectedResponse": "GitHub 返回了意外的响应，请稍后再试。",
-      "fileMissing": "Gist 中没有 agent-weave.json 文件。",
-      "fileTruncated": "Gist 中的 agent-weave.json 超过 1 MB，GitHub API 只返回了部分内容。",
-      "invalidContent": "Gist 中的 agent-weave.json 不是有效的工作区。{{reason}}"
+      "fileMissing": "Gist 中没有 agent-weave.jsonc 文件。",
+      "fileTruncated": "Gist 中的 agent-weave.jsonc 超过 1 MB，GitHub API 只返回了部分内容。",
+      "invalidContent": "Gist 中的 agent-weave.jsonc 不是有效的工作区。{{reason}}"
     }
   },
   "storage": {
@@ -341,7 +341,7 @@
   },
   "workspaceFile": {
     "title": "导入与导出",
-    "hint": "把整个工作区保存为 JSON 文件，用于备份或分享给同事；也可以用这样的文件替换当前工作区。",
+    "hint": "把整个工作区保存为 JSONC 文件，用于备份或分享给同事，可以在编辑器里给它加注释；也可以用这样的文件替换当前工作区。",
     "export": "导出",
     "exportHint": "导出文件不含 Gist Token、Gist ID 和本机设置。",
     "import": "导入",
