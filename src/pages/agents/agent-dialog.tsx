@@ -306,9 +306,10 @@ function McpFields({ value, onChange, problem }: McpFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'mcpPropertyPathInvalid')}</FieldError>
         ) : (
-          <FieldDescription>
+          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
+          <div className="text-sm leading-normal text-muted-foreground">
             <Markdown>{t('agents.mcpPropertyPathHint')}</Markdown>
-          </FieldDescription>
+          </div>
         )}
       </Field>
     </FieldGroup>
@@ -349,9 +350,10 @@ function PermissionFields({ value, onChange, problem }: PermissionFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'propertyPathInvalid')}</FieldError>
         ) : (
-          <FieldDescription>
+          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
+          <div className="text-sm leading-normal text-muted-foreground">
             <Markdown>{t('agents.propertyPathHint')}</Markdown>
-          </FieldDescription>
+          </div>
         )}
       </Field>
 
