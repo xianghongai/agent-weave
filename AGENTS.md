@@ -22,7 +22,7 @@
   - `theme.ts`：订阅应用 store，把主题同步到 `<html>` 的 `dark` class 上。
   - 只在一个页面内使用的状态（Tab、筛选条件、表单）用 `useState`，不进 store；跨页面的一次性意图（如带着标签筛选跳到工具页）通过 `history.state` 传递，不进 store，也不放进 URL 查询参数。
 - `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
-- `src/components/`：站点外壳（页眉、页脚、主题切换、设置菜单，以及挂在外壳上的本机设置和预设对话框）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单弹窗、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
+- `src/components/`：站点外壳（页眉、页脚、主题切换、设置菜单，以及挂在外壳上的本机设置和预设对话框）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单对话框、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
 - `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。
 - `src/browser/`：直接调用浏览器 API、又不是组件的界面辅助函数，如让浏览器下载文件的 `download.ts`。
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。
@@ -42,7 +42,7 @@
 - 页面适配窄屏，但不禁止缩放：`index.html` 的 viewport 保持 `width=device-width, initial-scale=1.0`，不加 `maximum-scale`、`user-scalable=no`。
 - 宽屏（md 及以上）为一屏布局：外壳固定为视口高度，页眉和页脚不动，页面通过 `Page` 的 `scroll` 决定标题以下整体滚动，还是只把一部分放进 `PageScroll`。列表页用 `PageScroll framed`：带圆角边框的列表框本身就是滚动区，列表不再自带边框。窄屏保持整页滚动。
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。
-- 带表单输入的弹窗只有窄、宽两档宽度，由共用的表单弹窗组件约束，不单独写宽度；点空白处和按 Esc 都不关闭，只能通过关闭按钮或取消、保存关闭。只有按钮的弹窗和确认框不受此限制。
+- 带表单输入的对话框只有窄、宽两档宽度，由共用的表单对话框组件约束，不单独写宽度；点空白处和按 Esc 都不关闭，只能通过关闭按钮或取消、保存关闭。只有按钮的对话框和确认框不受此限制。
 - 一行放不下的说明文字收进共用的 `HelpPopover`（问号图标，悬停打开），不另起一行。说明含命令、路径、模板等代码时，文案用 Markdown 书写，由共用的 `<Markdown>` 组件渲染，不解析原始 HTML。
 - 动效：微交互用 CSS 过渡；进场与页面切换用 `motion/react`，应用根部使用 `MotionConfig reducedMotion="user"`。
 

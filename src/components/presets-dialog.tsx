@@ -22,7 +22,7 @@ import { useUiStore } from '@/state/ui-store';
 
 /**
  * 预设对话框：合并预设与重置为预设，挂在应用外壳上，由 `ui-store` 的 `openDialog` 控制开关。
- * 没有输入框，不是表单弹窗：点空白处或按 Esc 都可以关闭；宽度与窄的表单弹窗一致。
+ * 没有输入框，不是表单对话框：点空白处或按 Esc 都可以关闭；宽度与窄的表单对话框一致。
  */
 export function PresetsDialog() {
   const { t } = useTranslation();
@@ -43,7 +43,7 @@ export function PresetsDialog() {
           <DialogTitle>{t('presets.title')}</DialogTitle>
           <DialogDescription>{t('presets.hint')}</DialogDescription>
         </DialogHeader>
-        {/* 弹窗关闭后连同内容一起卸载，再次打开时不再显示上一次的跳过报告。 */}
+        {/* 对话框关闭后连同内容一起卸载，再次打开时不再显示上一次的跳过报告。 */}
         <PresetActions />
       </DialogContent>
     </Dialog>
