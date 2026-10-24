@@ -48,7 +48,11 @@ export function DeviceSettingsDialog() {
  */
 function DeviceSettingsForm({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
-  const [draft, setDraft] = useState<DeviceSettings>(() => useAppStore.getState().deviceSettings);
+  // 还没有选择操作系统时默认选中 Linux，保存后才写入。
+  const [draft, setDraft] = useState<DeviceSettings>(() => {
+    const settings = useAppStore.getState().deviceSettings;
+    return { ...settings, os: settings.os ?? 'linux' };
+  });
   const settingsInvalid = useUiStore((state) => Boolean(state.fallback?.deviceSettings));
   const tokens = { home: PLACEHOLDERS[0], user: PLACEHOLDERS[1] };
 
