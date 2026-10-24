@@ -12,5 +12,35 @@
     "curly": "warn",
     "eqeqeq": "warn",
     "no-throw-literal": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "no-restricted-globals": [
+          "error",
+          { "name": "window", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
+          { "name": "document", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
+          { "name": "navigator", "message": "src/lib/ 只放纯函数，浏览器 API 放到 src/browser/ 或 src/state/。" },
+          { "name": "localStorage", "message": "src/lib/ 只放纯函数，本地存储通过注入的 KeyValueStorage 访问。" },
+          { "name": "sessionStorage", "message": "src/lib/ 只放纯函数，本地存储通过注入的 KeyValueStorage 访问。" }
+        ],
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["react", "react-dom", "react/*", "react-dom/*", "react-i18next", "i18next"],
+                "message": "src/lib/ 不依赖 React 与界面文案，出错时返回原因码。"
+              },
+              {
+                "group": ["@/components/*", "@/pages/*", "@/state/*", "@/hooks/*", "@/browser/*", "@/i18n/*"],
+                "message": "src/lib/ 不依赖界面层。"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }
