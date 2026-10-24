@@ -4,18 +4,17 @@
 
 ## 起停开发服务器
 
-用空闲端口，避开 5173（留给用户和用户的浏览器）。记下 PID，结束时按 PID 停：
+用空闲端口，避开 5173（留给用户和用户的浏览器）：
 
 ```sh
 mise exec -- pnpm dev --port 5191 > /tmp/dev-5191.log 2>&1 &
-echo $! > /tmp/dev-5191.pid
 ```
+
+按端口停。`mise` 会再拉起子进程，记录的父进程 PID 杀不干净；`pkill -f "vite.*<端口>"` 又会匹配到执行它的 shell 自身，把当前命令一起杀掉：
 
 ```sh
-kill "$(cat /tmp/dev-5191.pid)"
+lsof -ti tcp:5191 | xargs -r kill
 ```
-
-`pkill -f "vite.*<端口>"` 会匹配到执行它的 shell 自身，把当前命令也一起杀掉，不要用。
 
 ## 打开页面
 

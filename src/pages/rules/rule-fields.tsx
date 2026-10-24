@@ -1,49 +1,24 @@
 import { cn } from 'cn';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from '@/components/ui/combobox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { filterToolOptions, toolOptions } from '@/lib/tool-options';
 import { DECISIONS, type Decision, type ToolRef, type Workspace } from '@/lib/workspace';
-import { compareText } from '@/lib/workspace-operations';
 
-/** Select 的值只能是字符串，把工具引用编码成“类型:内部 ID”。 */
+/** Combobox 的值只能是字符串，把工具引用编码成“类型:内部 ID”。 */
 function encodeToolRef(ref: ToolRef): string {
   return `${ref.type}:${ref.id}`;
-}
-
-type ToolOption = { value: string; label: string; ref: ToolRef };
-
-/** 规则可以指向的工具：先按工具类型（命令、MCP、内置），同类内按标识排序，与规则列表一致。 */
-function toolOptions(workspace: Workspace): ToolOption[] {
-  return [
-    ...sharedToolOptions('command', workspace.command_tools),
-    ...sharedToolOptions('mcp', workspace.mcp_servers),
-    ...builtInToolOptions(workspace),
-  ];
-}
-
-/** 共享工具（命令工具、MCP 工具）的选项，按标识排序。 */
-function sharedToolOptions(type: 'command' | 'mcp', tools: { id: string; key: string }[]): ToolOption[] {
-  return tools
-    .toSorted((a, b) => compareText(a.key, b.key))
-    .map((tool) => {
-      const ref: ToolRef = { type, id: tool.id };
-      return { value: encodeToolRef(ref), label: tool.key, ref };
-    });
-}
-
-/** 内置工具按 Agent 的顺序排列，标签带上所属 Agent 的名称，以便区分同名工具并标明规则归属。 */
-function builtInToolOptions(workspace: Workspace): ToolOption[] {
-  return workspace.agents.flatMap((agent) =>
-    agent.built_in_tools
-      .toSorted((a, b) => compareText(a.key, b.key))
-      .map((tool) => {
-        const ref: ToolRef = { type: 'built_in', id: tool.id };
-        return { value: encodeToolRef(ref), label: `${tool.key} · ${agent.name}`, ref };
-      })
-  );
 }
 
 interface ToolSelectProps {
@@ -54,33 +29,54 @@ interface ToolSelectProps {
   className?: string;
 }
 
+/** 选择规则指向的工具：输入文字按标识过滤，内置工具也可以用 Agent 名称搜到。 */
 export function ToolSelect({ id, workspace, value, onChange, className }: ToolSelectProps) {
   const { t } = useTranslation();
-  const options = toolOptions(workspace);
+  const options = useMemo(() => toolOptions(workspace), [workspace]);
+  const optionByValue = useMemo(() => new Map(options.map((option) => [encodeToolRef(option.ref), option])), [options]);
+  const labelOf = (encoded: string) => optionByValue.get(encoded)?.label ?? encoded;
 
   return (
-    <Select
-      items={options.map(({ value: optionValue, label }) => ({ value: optionValue, label }))}
+    <Combobox
+      items={[...optionByValue.keys()]}
+      itemToStringLabel={labelOf}
+      // 过滤时自动高亮第一项，让 Enter 直接选中它，而不是提交所在的表单。
+      autoHighlight
       value={value ? encodeToolRef(value) : null}
       onValueChange={(next) => {
-        const option = options.find((candidate) => candidate.value === next);
+        const option = next ? optionByValue.get(next) : undefined;
         if (option) {
           onChange(option.ref);
         }
       }}
+      filter={(item, query) => {
+        const option = optionByValue.get(item);
+        return option ? filterToolOptions([option], query).length > 0 : false;
+      }}
     >
-      <SelectTrigger id={id} className={cn('w-full font-mono', className)}>
-        <SelectValue placeholder={t('rules.toolPlaceholder')} />
-      </SelectTrigger>
-      <SelectContent>
-        {options.map((option) => (
-          <SelectItem key={option.value} value={option.value} className="font-mono">
-            {option.label}
-            <ToolTypeBadge type={option.ref.type} />
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <ComboboxInput
+        id={id}
+        aria-label={t('rules.tool')}
+        placeholder={t('rules.toolPlaceholder')}
+        autoComplete="off"
+        spellCheck={false}
+        className={cn('w-full font-mono', className)}
+      />
+      <ComboboxContent>
+        <ComboboxList>
+          {(item: string) => {
+            const option = optionByValue.get(item);
+            return option ? (
+              <ComboboxItem key={item} value={item} className="font-mono">
+                {option.label}
+                <ToolTypeBadge type={option.ref.type} />
+              </ComboboxItem>
+            ) : null;
+          }}
+        </ComboboxList>
+        <ComboboxEmpty>{t('rules.toolNoMatch')}</ComboboxEmpty>
+      </ComboboxContent>
+    </Combobox>
   );
 }
 
