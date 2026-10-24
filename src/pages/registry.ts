@@ -30,10 +30,10 @@ export const PAGES: readonly PageEntry[] = [
   { id: 'rules', path: '/rules', icon: ShieldCheckIcon, component: lazy(() => import('@/pages/rules/rules-page')) },
   { id: 'tools', path: '/tools', icon: WrenchIcon, component: lazy(() => import('@/pages/tools/tools-page')) },
   { id: 'mcp', path: '/mcp', icon: PlugIcon, component: lazy(() => import('@/pages/mcp/mcp-page')) },
-  { id: 'tags', path: '/tags', icon: TagsIcon, component: lazy(() => import('@/pages/tags/tags-page')) },
   { id: 'agents', path: '/agents', icon: BotIcon, component: lazy(() => import('@/pages/agents/agents-page')) },
   { id: 'output', path: '/output', icon: FileCodeIcon, component: lazy(() => import('@/pages/output/output-page')) },
   { id: 'sync', path: '/sync', icon: RefreshCwIcon, component: lazy(() => import('@/pages/sync/sync-page')) },
+  { id: 'tags', path: '/tags', icon: TagsIcon, component: lazy(() => import('@/pages/tags/tags-page')) },
 ];
 
 /** 列出各类工具的页面；内置工具分散在各 Agent 中，没有对应的列表页。新增工具类型时在这里补上。 */
