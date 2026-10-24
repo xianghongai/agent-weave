@@ -9,7 +9,30 @@
     "toDark": "切换到深色"
   },
   "footer": {
-    "privacy": "数据只保存在你的浏览器和你自己的 Gist 中，本站不收集任何数据"
+    "privacy": "数据只保存在你的浏览器和你选择的同步位置，本站不收集任何数据",
+    "repository": "GitHub 仓库"
+  },
+  "home": {
+    "headline": {
+      "lead": "一份权限规则，",
+      "tail": "织进每一个 Agent"
+    },
+    "intro": "维护一份与 Agent 无关的权限规则和 MCP Server 清单，生成 Claude Code、Codex CLI、Antigravity…… 各自的配置。全部在浏览器内完成。",
+    "steps": "使用流程",
+    "step": "第 {{index}} 步",
+    "start": "开始编写规则",
+    "rules": {
+      "title": "编写中立规则集",
+      "summary": "为命令工具、MCP 工具和内置工具编写允许、询问、拒绝规则，整理 MCP Server 清单。"
+    },
+    "agents": {
+      "title": "配置 Agent",
+      "summary": "为每个 Agent 指定权限输出和 MCP 输出的格式，以及配置文件所在的作用域。"
+    },
+    "output": {
+      "title": "复制输出",
+      "summary": "查看生成的配置和提示，复制后粘贴到对应作用域的配置文件中。"
+    }
   },
   "pages": {
     "rules": {
