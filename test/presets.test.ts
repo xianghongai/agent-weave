@@ -32,13 +32,16 @@ describe('预设：合成与导入校验', () => {
     expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
   });
 
-  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Cursor CLI、Gemini CLI 在后', () => {
+  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Cursor CLI、Gemini CLI、Qwen Code 居中，CodeBuddy Code、Devin CLI 在后', () => {
     expect(preset.agents.map((agent) => agent.name)).toEqual([
       'Claude Code',
       'Codex CLI',
       'Antigravity',
       'Cursor CLI',
       'Gemini CLI',
+      'Qwen Code',
+      'CodeBuddy Code',
+      'Devin CLI',
     ]);
   });
 });
@@ -162,8 +165,42 @@ describe('预设：内置工具与作用域按调研确定', () => {
   });
 });
 
+describe('预设：与 Claude Code 写法相近的 Agent', () => {
+  function allowOf(name: string): string[] {
+    return (
+      generate(preset, agentId(name), DEVICE)?.permission?.decisions.find((d) => d.decision === 'allow')?.entries ?? []
+    );
+  }
+
+  it('Qwen Code 的命令规则写作 Bash(git *)，整个 MCP Server 写作 mcp__server', () => {
+    expect(allowOf('Qwen Code')).toEqual(expect.arrayContaining(['Bash(git *)', 'mcp__memory']));
+  });
+
+  it('CodeBuddy Code 的命令规则用文档给出的 :* 前缀写法', () => {
+    expect(allowOf('CodeBuddy Code')).toEqual(expect.arrayContaining(['Bash(git:*)', 'mcp__memory']));
+  });
+
+  it('CodeBuddy Code 收录需要审批的内置工具，不收录 Edit 已覆盖的写入类工具和无需审批的工具', () => {
+    const keys = preset.agents.find((agent) => agent.name === 'CodeBuddy Code')?.built_in_tools.map((tool) => tool.key);
+    expect(keys).toEqual(['Read', 'Edit', 'WebFetch', 'WebSearch', 'Workflow', 'Artifact', 'ImageGen', 'VideoGen']);
+  });
+
+  it('Devin CLI 的命令规则写作 Exec(prefix)，整个 MCP Server 写作 mcp__server__*', () => {
+    expect(allowOf('Devin CLI')).toEqual(expect.arrayContaining(['Exec(git)', 'mcp__memory__*']));
+  });
+});
+
 describe('预设：各 Agent 的生成快照', () => {
-  it.each(['Claude Code', 'Antigravity', 'Codex CLI', 'Cursor CLI', 'Gemini CLI'])('%s', (name) => {
+  it.each([
+    'Claude Code',
+    'Antigravity',
+    'Codex CLI',
+    'Cursor CLI',
+    'Gemini CLI',
+    'Qwen Code',
+    'CodeBuddy Code',
+    'Devin CLI',
+  ])('%s', (name) => {
     const output = generate(preset, agentId(name), DEVICE);
     expect(output).not.toBeNull();
     expect(output).toMatchSnapshot();
