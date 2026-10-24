@@ -2286,3 +2286,1312 @@ args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]",
   "skippedRules": [],
 }
 `;
+
+exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
+{
+  "mcp": {
+    "copyInnerText": ""chrome-devtools": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "chrome-devtools-mcp@latest",
+    "--auto-connect",
+    "--category-extensions",
+    "--no-usage-statistics",
+    "--no-performance-crux"
+  ]
+},
+"context7": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@upstash/context7-mcp@latest"
+  ],
+  "env": {
+    "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+  }
+},
+"filesystem": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/home/alice"
+  ]
+},
+"firefox-devtools": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@mozilla/firefox-devtools-mcp@latest",
+    "--connect-existing",
+    "--tool-preset",
+    "developer"
+  ]
+},
+"github": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-github"
+  ]
+},
+"memory": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-memory"
+  ],
+  "env": {
+    "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+  }
+},
+"playwright": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@playwright/mcp@latest"
+  ]
+},
+"sequential-thinking": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-sequential-thinking"
+  ]
+}",
+    "copyText": ""mcpServers": {
+  "chrome-devtools": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "chrome-devtools-mcp@latest",
+      "--auto-connect",
+      "--category-extensions",
+      "--no-usage-statistics",
+      "--no-performance-crux"
+    ]
+  },
+  "context7": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@upstash/context7-mcp@latest"
+    ],
+    "env": {
+      "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+    }
+  },
+  "filesystem": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "/home/alice"
+    ]
+  },
+  "firefox-devtools": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@mozilla/firefox-devtools-mcp@latest",
+      "--connect-existing",
+      "--tool-preset",
+      "developer"
+    ]
+  },
+  "github": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-github"
+    ]
+  },
+  "memory": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-memory"
+    ],
+    "env": {
+      "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+    }
+  },
+  "playwright": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@playwright/mcp@latest"
+    ]
+  },
+  "sequential-thinking": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-sequential-thinking"
+    ]
+  }
+}",
+    "preview": "{
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--auto-connect",
+        "--category-extensions",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/alice"
+      ]
+    },
+    "firefox-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mozilla/firefox-devtools-mcp@latest",
+        "--connect-existing",
+        "--tool-preset",
+        "developer"
+      ]
+    },
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+      }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    }
+  }
+}",
+    "scopes": [
+      {
+        "name": "用户级",
+        "note": "对当前用户的所有项目生效，CLI 与 IDE 共用。Cursor 的环境变量写作 \${env:NAME}，本工具不转换 \${VAR}，粘贴后需要自行修改。",
+        "path": "~/.cursor/mcp.json",
+      },
+      {
+        "name": "项目级",
+        "note": "与用户级合并，同名 Server 以这里为准。Cursor 的环境变量写作 \${env:NAME}，本工具不转换 \${VAR}，粘贴后需要自行修改。",
+        "path": ".cursor/mcp.json",
+      },
+    ],
+    "style": "json",
+  },
+  "notices": [
+    {
+      "ruleId": "preset-rule-curl-allow",
+      "type": "highRisk",
+    },
+    {
+      "ruleId": "preset-rule-nc-allow",
+      "type": "highRisk",
+    },
+    {
+      "ruleId": "preset-rule-socat-allow",
+      "type": "highRisk",
+    },
+    {
+      "ruleId": "preset-rule-wget-allow",
+      "type": "highRisk",
+    },
+  ],
+  "permission": {
+    "copyText": ""permissions": {
+  "allow": [
+    "Shell(./gradlew)",
+    "Shell(./mvnw)",
+    "Shell(agy)",
+    "Shell(apt-cache)",
+    "Shell(arch)",
+    "Shell(ast-grep)",
+    "Shell(awk)",
+    "Shell(base64)",
+    "Shell(basename)",
+    "Shell(bluetoothctl)",
+    "Shell(btmgmt)",
+    "Shell(bzip2)",
+    "Shell(cal)",
+    "Shell(cargo)",
+    "Shell(cat)",
+    "Shell(cd)",
+    "Shell(clang)",
+    "Shell(cmake)",
+    "Shell(cmp)",
+    "Shell(code)",
+    "Shell(comm)",
+    "Shell(corepack)",
+    "Shell(cp)",
+    "Shell(curl)",
+    "Shell(cut)",
+    "Shell(date)",
+    "Shell(df)",
+    "Shell(diff)",
+    "Shell(dig)",
+    "Shell(dir)",
+    "Shell(dirname)",
+    "Shell(docker)",
+    "Shell(doggo)",
+    "Shell(dpkg)",
+    "Shell(drill)",
+    "Shell(du)",
+    "Shell(echo)",
+    "Shell(egrep)",
+    "Shell(eslint)",
+    "Shell(fd)",
+    "Shell(fdfind)",
+    "Shell(ffmpeg)",
+    "Shell(fgrep)",
+    "Shell(file)",
+    "Shell(find)",
+    "Shell(free)",
+    "Shell(g++)",
+    "Shell(gcc)",
+    "Shell(gh)",
+    "Shell(gifsicle)",
+    "Shell(git)",
+    "Shell(go)",
+    "Shell(gpg)",
+    "Shell(gradle)",
+    "Shell(grep)",
+    "Shell(gunzip)",
+    "Shell(gzip)",
+    "Shell(hciconfig)",
+    "Shell(head)",
+    "Shell(host)",
+    "Shell(hostname)",
+    "Shell(hyperfine)",
+    "Shell(id)",
+    "Shell(ifconfig)",
+    "Shell(ip)",
+    "Shell(java)",
+    "Shell(javac)",
+    "Shell(jest)",
+    "Shell(jq)",
+    "Shell(ln)",
+    "Shell(ls)",
+    "Shell(lsblk)",
+    "Shell(lscpu)",
+    "Shell(lsmod)",
+    "Shell(lsof)",
+    "Shell(lspci)",
+    "Shell(lsusb)",
+    "Shell(make)",
+    "Shell(md5)",
+    "Shell(md5sum)",
+    "Shell(mise)",
+    "Shell(mkdir)",
+    "Shell(mtr)",
+    "Shell(mv)",
+    "Shell(mvn)",
+    "Shell(nc)",
+    "Shell(netstat)",
+    "Shell(nm)",
+    "Shell(node)",
+    "Shell(npm)",
+    "Shell(npx)",
+    "Shell(nrm)",
+    "Shell(nslookup)",
+    "Shell(objdump)",
+    "Shell(openclaw)",
+    "Shell(patch)",
+    "Shell(pgrep)",
+    "Shell(ping)",
+    "Shell(pip)",
+    "Shell(pip3)",
+    "Shell(pnpm)",
+    "Shell(pnpx)",
+    "Shell(podman)",
+    "Shell(prettier)",
+    "Shell(printenv)",
+    "Shell(printf)",
+    "Shell(ps)",
+    "Shell(pwd)",
+    "Shell(python)",
+    "Shell(python3)",
+    "Shell(readlink)",
+    "Shell(realpath)",
+    "Shell(rfkill)",
+    "Shell(rg)",
+    "Shell(rustc)",
+    "Shell(sed)",
+    "Shell(sha1sum)",
+    "Shell(sha256sum)",
+    "Shell(shasum)",
+    "Shell(shellcheck)",
+    "Shell(sleep)",
+    "Shell(socat)",
+    "Shell(sort)",
+    "Shell(ss)",
+    "Shell(stat)",
+    "Shell(strings)",
+    "Shell(swift)",
+    "Shell(tail)",
+    "Shell(tar)",
+    "Shell(tee)",
+    "Shell(tldr)",
+    "Shell(tokei)",
+    "Shell(touch)",
+    "Shell(tr)",
+    "Shell(tree)",
+    "Shell(tsc)",
+    "Shell(type)",
+    "Shell(uname)",
+    "Shell(uniq)",
+    "Shell(unzip)",
+    "Shell(uptime)",
+    "Shell(uv)",
+    "Shell(uvx)",
+    "Shell(vite)",
+    "Shell(vitest)",
+    "Shell(wc)",
+    "Shell(wget)",
+    "Shell(whereis)",
+    "Shell(which)",
+    "Shell(whoami)",
+    "Shell(xcode-select)",
+    "Shell(xcodebuild)",
+    "Shell(xh)",
+    "Shell(xz)",
+    "Shell(yarn)",
+    "Shell(yarnpkg)",
+    "Shell(yq)",
+    "Shell(zcat)",
+    "Shell(zip)",
+    "Mcp(chrome-devtools:*)",
+    "Mcp(context7:*)",
+    "Mcp(filesystem:*)",
+    "Mcp(firefox-devtools:*)",
+    "Mcp(github:*)",
+    "Mcp(memory:*)",
+    "Mcp(playwright:*)",
+    "Mcp(sequential-thinking:*)",
+    "WebFetch(*)"
+  ],
+  "deny": [
+    "Shell(sudo)"
+  ]
+}",
+    "decisions": [
+      {
+        "copyInnerText": ""Shell(./gradlew)",
+"Shell(./mvnw)",
+"Shell(agy)",
+"Shell(apt-cache)",
+"Shell(arch)",
+"Shell(ast-grep)",
+"Shell(awk)",
+"Shell(base64)",
+"Shell(basename)",
+"Shell(bluetoothctl)",
+"Shell(btmgmt)",
+"Shell(bzip2)",
+"Shell(cal)",
+"Shell(cargo)",
+"Shell(cat)",
+"Shell(cd)",
+"Shell(clang)",
+"Shell(cmake)",
+"Shell(cmp)",
+"Shell(code)",
+"Shell(comm)",
+"Shell(corepack)",
+"Shell(cp)",
+"Shell(curl)",
+"Shell(cut)",
+"Shell(date)",
+"Shell(df)",
+"Shell(diff)",
+"Shell(dig)",
+"Shell(dir)",
+"Shell(dirname)",
+"Shell(docker)",
+"Shell(doggo)",
+"Shell(dpkg)",
+"Shell(drill)",
+"Shell(du)",
+"Shell(echo)",
+"Shell(egrep)",
+"Shell(eslint)",
+"Shell(fd)",
+"Shell(fdfind)",
+"Shell(ffmpeg)",
+"Shell(fgrep)",
+"Shell(file)",
+"Shell(find)",
+"Shell(free)",
+"Shell(g++)",
+"Shell(gcc)",
+"Shell(gh)",
+"Shell(gifsicle)",
+"Shell(git)",
+"Shell(go)",
+"Shell(gpg)",
+"Shell(gradle)",
+"Shell(grep)",
+"Shell(gunzip)",
+"Shell(gzip)",
+"Shell(hciconfig)",
+"Shell(head)",
+"Shell(host)",
+"Shell(hostname)",
+"Shell(hyperfine)",
+"Shell(id)",
+"Shell(ifconfig)",
+"Shell(ip)",
+"Shell(java)",
+"Shell(javac)",
+"Shell(jest)",
+"Shell(jq)",
+"Shell(ln)",
+"Shell(ls)",
+"Shell(lsblk)",
+"Shell(lscpu)",
+"Shell(lsmod)",
+"Shell(lsof)",
+"Shell(lspci)",
+"Shell(lsusb)",
+"Shell(make)",
+"Shell(md5)",
+"Shell(md5sum)",
+"Shell(mise)",
+"Shell(mkdir)",
+"Shell(mtr)",
+"Shell(mv)",
+"Shell(mvn)",
+"Shell(nc)",
+"Shell(netstat)",
+"Shell(nm)",
+"Shell(node)",
+"Shell(npm)",
+"Shell(npx)",
+"Shell(nrm)",
+"Shell(nslookup)",
+"Shell(objdump)",
+"Shell(openclaw)",
+"Shell(patch)",
+"Shell(pgrep)",
+"Shell(ping)",
+"Shell(pip)",
+"Shell(pip3)",
+"Shell(pnpm)",
+"Shell(pnpx)",
+"Shell(podman)",
+"Shell(prettier)",
+"Shell(printenv)",
+"Shell(printf)",
+"Shell(ps)",
+"Shell(pwd)",
+"Shell(python)",
+"Shell(python3)",
+"Shell(readlink)",
+"Shell(realpath)",
+"Shell(rfkill)",
+"Shell(rg)",
+"Shell(rustc)",
+"Shell(sed)",
+"Shell(sha1sum)",
+"Shell(sha256sum)",
+"Shell(shasum)",
+"Shell(shellcheck)",
+"Shell(sleep)",
+"Shell(socat)",
+"Shell(sort)",
+"Shell(ss)",
+"Shell(stat)",
+"Shell(strings)",
+"Shell(swift)",
+"Shell(tail)",
+"Shell(tar)",
+"Shell(tee)",
+"Shell(tldr)",
+"Shell(tokei)",
+"Shell(touch)",
+"Shell(tr)",
+"Shell(tree)",
+"Shell(tsc)",
+"Shell(type)",
+"Shell(uname)",
+"Shell(uniq)",
+"Shell(unzip)",
+"Shell(uptime)",
+"Shell(uv)",
+"Shell(uvx)",
+"Shell(vite)",
+"Shell(vitest)",
+"Shell(wc)",
+"Shell(wget)",
+"Shell(whereis)",
+"Shell(which)",
+"Shell(whoami)",
+"Shell(xcode-select)",
+"Shell(xcodebuild)",
+"Shell(xh)",
+"Shell(xz)",
+"Shell(yarn)",
+"Shell(yarnpkg)",
+"Shell(yq)",
+"Shell(zcat)",
+"Shell(zip)",
+"Mcp(chrome-devtools:*)",
+"Mcp(context7:*)",
+"Mcp(filesystem:*)",
+"Mcp(firefox-devtools:*)",
+"Mcp(github:*)",
+"Mcp(memory:*)",
+"Mcp(playwright:*)",
+"Mcp(sequential-thinking:*)",
+"WebFetch(*)"",
+        "decision": "allow",
+        "entries": [
+          "Shell(./gradlew)",
+          "Shell(./mvnw)",
+          "Shell(agy)",
+          "Shell(apt-cache)",
+          "Shell(arch)",
+          "Shell(ast-grep)",
+          "Shell(awk)",
+          "Shell(base64)",
+          "Shell(basename)",
+          "Shell(bluetoothctl)",
+          "Shell(btmgmt)",
+          "Shell(bzip2)",
+          "Shell(cal)",
+          "Shell(cargo)",
+          "Shell(cat)",
+          "Shell(cd)",
+          "Shell(clang)",
+          "Shell(cmake)",
+          "Shell(cmp)",
+          "Shell(code)",
+          "Shell(comm)",
+          "Shell(corepack)",
+          "Shell(cp)",
+          "Shell(curl)",
+          "Shell(cut)",
+          "Shell(date)",
+          "Shell(df)",
+          "Shell(diff)",
+          "Shell(dig)",
+          "Shell(dir)",
+          "Shell(dirname)",
+          "Shell(docker)",
+          "Shell(doggo)",
+          "Shell(dpkg)",
+          "Shell(drill)",
+          "Shell(du)",
+          "Shell(echo)",
+          "Shell(egrep)",
+          "Shell(eslint)",
+          "Shell(fd)",
+          "Shell(fdfind)",
+          "Shell(ffmpeg)",
+          "Shell(fgrep)",
+          "Shell(file)",
+          "Shell(find)",
+          "Shell(free)",
+          "Shell(g++)",
+          "Shell(gcc)",
+          "Shell(gh)",
+          "Shell(gifsicle)",
+          "Shell(git)",
+          "Shell(go)",
+          "Shell(gpg)",
+          "Shell(gradle)",
+          "Shell(grep)",
+          "Shell(gunzip)",
+          "Shell(gzip)",
+          "Shell(hciconfig)",
+          "Shell(head)",
+          "Shell(host)",
+          "Shell(hostname)",
+          "Shell(hyperfine)",
+          "Shell(id)",
+          "Shell(ifconfig)",
+          "Shell(ip)",
+          "Shell(java)",
+          "Shell(javac)",
+          "Shell(jest)",
+          "Shell(jq)",
+          "Shell(ln)",
+          "Shell(ls)",
+          "Shell(lsblk)",
+          "Shell(lscpu)",
+          "Shell(lsmod)",
+          "Shell(lsof)",
+          "Shell(lspci)",
+          "Shell(lsusb)",
+          "Shell(make)",
+          "Shell(md5)",
+          "Shell(md5sum)",
+          "Shell(mise)",
+          "Shell(mkdir)",
+          "Shell(mtr)",
+          "Shell(mv)",
+          "Shell(mvn)",
+          "Shell(nc)",
+          "Shell(netstat)",
+          "Shell(nm)",
+          "Shell(node)",
+          "Shell(npm)",
+          "Shell(npx)",
+          "Shell(nrm)",
+          "Shell(nslookup)",
+          "Shell(objdump)",
+          "Shell(openclaw)",
+          "Shell(patch)",
+          "Shell(pgrep)",
+          "Shell(ping)",
+          "Shell(pip)",
+          "Shell(pip3)",
+          "Shell(pnpm)",
+          "Shell(pnpx)",
+          "Shell(podman)",
+          "Shell(prettier)",
+          "Shell(printenv)",
+          "Shell(printf)",
+          "Shell(ps)",
+          "Shell(pwd)",
+          "Shell(python)",
+          "Shell(python3)",
+          "Shell(readlink)",
+          "Shell(realpath)",
+          "Shell(rfkill)",
+          "Shell(rg)",
+          "Shell(rustc)",
+          "Shell(sed)",
+          "Shell(sha1sum)",
+          "Shell(sha256sum)",
+          "Shell(shasum)",
+          "Shell(shellcheck)",
+          "Shell(sleep)",
+          "Shell(socat)",
+          "Shell(sort)",
+          "Shell(ss)",
+          "Shell(stat)",
+          "Shell(strings)",
+          "Shell(swift)",
+          "Shell(tail)",
+          "Shell(tar)",
+          "Shell(tee)",
+          "Shell(tldr)",
+          "Shell(tokei)",
+          "Shell(touch)",
+          "Shell(tr)",
+          "Shell(tree)",
+          "Shell(tsc)",
+          "Shell(type)",
+          "Shell(uname)",
+          "Shell(uniq)",
+          "Shell(unzip)",
+          "Shell(uptime)",
+          "Shell(uv)",
+          "Shell(uvx)",
+          "Shell(vite)",
+          "Shell(vitest)",
+          "Shell(wc)",
+          "Shell(wget)",
+          "Shell(whereis)",
+          "Shell(which)",
+          "Shell(whoami)",
+          "Shell(xcode-select)",
+          "Shell(xcodebuild)",
+          "Shell(xh)",
+          "Shell(xz)",
+          "Shell(yarn)",
+          "Shell(yarnpkg)",
+          "Shell(yq)",
+          "Shell(zcat)",
+          "Shell(zip)",
+          "Mcp(chrome-devtools:*)",
+          "Mcp(context7:*)",
+          "Mcp(filesystem:*)",
+          "Mcp(firefox-devtools:*)",
+          "Mcp(github:*)",
+          "Mcp(memory:*)",
+          "Mcp(playwright:*)",
+          "Mcp(sequential-thinking:*)",
+          "WebFetch(*)",
+        ],
+        "key": "allow",
+      },
+      {
+        "copyInnerText": ""Shell(sudo)"",
+        "decision": "deny",
+        "entries": [
+          "Shell(sudo)",
+        ],
+        "key": "deny",
+      },
+    ],
+    "preview": "{
+  "permissions": {
+    "allow": [
+      "Shell(./gradlew)",
+      "Shell(./mvnw)",
+      "Shell(agy)",
+      "Shell(apt-cache)",
+      "Shell(arch)",
+      "Shell(ast-grep)",
+      "Shell(awk)",
+      "Shell(base64)",
+      "Shell(basename)",
+      "Shell(bluetoothctl)",
+      "Shell(btmgmt)",
+      "Shell(bzip2)",
+      "Shell(cal)",
+      "Shell(cargo)",
+      "Shell(cat)",
+      "Shell(cd)",
+      "Shell(clang)",
+      "Shell(cmake)",
+      "Shell(cmp)",
+      "Shell(code)",
+      "Shell(comm)",
+      "Shell(corepack)",
+      "Shell(cp)",
+      "Shell(curl)",
+      "Shell(cut)",
+      "Shell(date)",
+      "Shell(df)",
+      "Shell(diff)",
+      "Shell(dig)",
+      "Shell(dir)",
+      "Shell(dirname)",
+      "Shell(docker)",
+      "Shell(doggo)",
+      "Shell(dpkg)",
+      "Shell(drill)",
+      "Shell(du)",
+      "Shell(echo)",
+      "Shell(egrep)",
+      "Shell(eslint)",
+      "Shell(fd)",
+      "Shell(fdfind)",
+      "Shell(ffmpeg)",
+      "Shell(fgrep)",
+      "Shell(file)",
+      "Shell(find)",
+      "Shell(free)",
+      "Shell(g++)",
+      "Shell(gcc)",
+      "Shell(gh)",
+      "Shell(gifsicle)",
+      "Shell(git)",
+      "Shell(go)",
+      "Shell(gpg)",
+      "Shell(gradle)",
+      "Shell(grep)",
+      "Shell(gunzip)",
+      "Shell(gzip)",
+      "Shell(hciconfig)",
+      "Shell(head)",
+      "Shell(host)",
+      "Shell(hostname)",
+      "Shell(hyperfine)",
+      "Shell(id)",
+      "Shell(ifconfig)",
+      "Shell(ip)",
+      "Shell(java)",
+      "Shell(javac)",
+      "Shell(jest)",
+      "Shell(jq)",
+      "Shell(ln)",
+      "Shell(ls)",
+      "Shell(lsblk)",
+      "Shell(lscpu)",
+      "Shell(lsmod)",
+      "Shell(lsof)",
+      "Shell(lspci)",
+      "Shell(lsusb)",
+      "Shell(make)",
+      "Shell(md5)",
+      "Shell(md5sum)",
+      "Shell(mise)",
+      "Shell(mkdir)",
+      "Shell(mtr)",
+      "Shell(mv)",
+      "Shell(mvn)",
+      "Shell(nc)",
+      "Shell(netstat)",
+      "Shell(nm)",
+      "Shell(node)",
+      "Shell(npm)",
+      "Shell(npx)",
+      "Shell(nrm)",
+      "Shell(nslookup)",
+      "Shell(objdump)",
+      "Shell(openclaw)",
+      "Shell(patch)",
+      "Shell(pgrep)",
+      "Shell(ping)",
+      "Shell(pip)",
+      "Shell(pip3)",
+      "Shell(pnpm)",
+      "Shell(pnpx)",
+      "Shell(podman)",
+      "Shell(prettier)",
+      "Shell(printenv)",
+      "Shell(printf)",
+      "Shell(ps)",
+      "Shell(pwd)",
+      "Shell(python)",
+      "Shell(python3)",
+      "Shell(readlink)",
+      "Shell(realpath)",
+      "Shell(rfkill)",
+      "Shell(rg)",
+      "Shell(rustc)",
+      "Shell(sed)",
+      "Shell(sha1sum)",
+      "Shell(sha256sum)",
+      "Shell(shasum)",
+      "Shell(shellcheck)",
+      "Shell(sleep)",
+      "Shell(socat)",
+      "Shell(sort)",
+      "Shell(ss)",
+      "Shell(stat)",
+      "Shell(strings)",
+      "Shell(swift)",
+      "Shell(tail)",
+      "Shell(tar)",
+      "Shell(tee)",
+      "Shell(tldr)",
+      "Shell(tokei)",
+      "Shell(touch)",
+      "Shell(tr)",
+      "Shell(tree)",
+      "Shell(tsc)",
+      "Shell(type)",
+      "Shell(uname)",
+      "Shell(uniq)",
+      "Shell(unzip)",
+      "Shell(uptime)",
+      "Shell(uv)",
+      "Shell(uvx)",
+      "Shell(vite)",
+      "Shell(vitest)",
+      "Shell(wc)",
+      "Shell(wget)",
+      "Shell(whereis)",
+      "Shell(which)",
+      "Shell(whoami)",
+      "Shell(xcode-select)",
+      "Shell(xcodebuild)",
+      "Shell(xh)",
+      "Shell(xz)",
+      "Shell(yarn)",
+      "Shell(yarnpkg)",
+      "Shell(yq)",
+      "Shell(zcat)",
+      "Shell(zip)",
+      "Mcp(chrome-devtools:*)",
+      "Mcp(context7:*)",
+      "Mcp(filesystem:*)",
+      "Mcp(firefox-devtools:*)",
+      "Mcp(github:*)",
+      "Mcp(memory:*)",
+      "Mcp(playwright:*)",
+      "Mcp(sequential-thinking:*)",
+      "WebFetch(*)"
+    ],
+    "deny": [
+      "Shell(sudo)"
+    ]
+  }
+}",
+    "scopes": [
+      {
+        "name": "用户级",
+        "note": "对当前用户的所有项目生效，只作用于 CLI；IDE 的权限在另一套配置中。",
+        "path": "~/.cursor/cli-config.json",
+      },
+      {
+        "name": "项目级",
+        "note": "这个文件只接受 permissions，写入其他键会被忽略。",
+        "path": ".cursor/cli.json",
+      },
+    ],
+  },
+  "skippedRules": [
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-docker-run-privileged-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-docker-run-socket-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-docker-system-prune-volumes-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-branch-force-delete-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-clean-f-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-clean-fd-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-push-force-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-push-f-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-git-reset-hard-deny",
+    },
+    {
+      "reason": "decisionKeyMissing",
+      "ruleId": "preset-rule-rm-ask",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-rm-rf-root-deny",
+    },
+    {
+      "reason": "templateMissing",
+      "ruleId": "preset-rule-rm-rf-home-deny",
+    },
+  ],
+}
+`;
+
+exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
+{
+  "mcp": {
+    "copyInnerText": ""chrome-devtools": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "chrome-devtools-mcp@latest",
+    "--auto-connect",
+    "--category-extensions",
+    "--no-usage-statistics",
+    "--no-performance-crux"
+  ]
+},
+"context7": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@upstash/context7-mcp@latest"
+  ],
+  "env": {
+    "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+  }
+},
+"filesystem": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-filesystem",
+    "/home/alice"
+  ]
+},
+"firefox-devtools": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@mozilla/firefox-devtools-mcp@latest",
+    "--connect-existing",
+    "--tool-preset",
+    "developer"
+  ]
+},
+"github": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-github"
+  ]
+},
+"memory": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-memory"
+  ],
+  "env": {
+    "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+  }
+},
+"playwright": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@playwright/mcp@latest"
+  ]
+},
+"sequential-thinking": {
+  "type": "stdio",
+  "command": "npx",
+  "args": [
+    "-y",
+    "@modelcontextprotocol/server-sequential-thinking"
+  ]
+}",
+    "copyText": ""mcpServers": {
+  "chrome-devtools": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "chrome-devtools-mcp@latest",
+      "--auto-connect",
+      "--category-extensions",
+      "--no-usage-statistics",
+      "--no-performance-crux"
+    ]
+  },
+  "context7": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@upstash/context7-mcp@latest"
+    ],
+    "env": {
+      "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+    }
+  },
+  "filesystem": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-filesystem",
+      "/home/alice"
+    ]
+  },
+  "firefox-devtools": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@mozilla/firefox-devtools-mcp@latest",
+      "--connect-existing",
+      "--tool-preset",
+      "developer"
+    ]
+  },
+  "github": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-github"
+    ]
+  },
+  "memory": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-memory"
+    ],
+    "env": {
+      "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+    }
+  },
+  "playwright": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@playwright/mcp@latest"
+    ]
+  },
+  "sequential-thinking": {
+    "type": "stdio",
+    "command": "npx",
+    "args": [
+      "-y",
+      "@modelcontextprotocol/server-sequential-thinking"
+    ]
+  }
+}",
+    "preview": "{
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--auto-connect",
+        "--category-extensions",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": "\${CONTEXT7_API_KEY}"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/alice"
+      ]
+    },
+    "firefox-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mozilla/firefox-devtools-mcp@latest",
+        "--connect-existing",
+        "--tool-preset",
+        "developer"
+      ]
+    },
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json"
+      }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "sequential-thinking": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    }
+  }
+}",
+    "scopes": [
+      {
+        "name": "用户级",
+        "note": "对当前用户的所有项目生效。远程 MCP 用 url 表示 SSE、httpUrl 表示 Streamable HTTP，本工具不转换，粘贴后需要自行修改。",
+        "path": "~/.gemini/settings.json",
+      },
+      {
+        "name": "项目级",
+        "note": "只在受信任的工作区中加载。",
+        "path": ".gemini/settings.json",
+      },
+    ],
+    "style": "json",
+  },
+  "notices": [],
+  "permission": null,
+  "skippedRules": [],
+}
+`;
