@@ -35,6 +35,10 @@ jobs:
       - name: Install the dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
+      # 构建对预设的逻辑问题只出警告，由单元测试拦住，直接推送到 main 也不能绕过（ADR 0004）。
+      - name: Run the unit tests
+        run: pnpm test
+
       - name: Build the site
         run: pnpm run site:build
 
