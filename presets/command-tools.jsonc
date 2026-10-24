@@ -1,4 +1,11 @@
 {
+  // 预设命令工具。来源是 Claude Code 与 Antigravity 两份实际配置中命令的并集，并按正确性整理：
+  // - 不收录不是真实命令名的条目：ripgrep 的命令是 rg，tealdeer 的命令是 tldr；
+  // - 不收录指向个人安装位置的写法：~/.local/bin/mise 与 mise 是同一个程序；
+  // - 另外补上高危命令 dd、mkfs、chmod、chown。
+  // 标签按社区通行的用途大致分配，一个命令可以有多个标签。
+  // 标识含有不便放进 ID 的字符时，ID 后缀另取，如 g++ 的 ID 是 preset-command-gpp，./gradlew 的是 preset-command-gradlew。
+  // 新增命令时要同时在 rules.jsonc 中补上它的规则。
   "command_tools": [
     // 版本控制
     {

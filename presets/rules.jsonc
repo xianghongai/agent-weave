@@ -1,5 +1,10 @@
 {
+  // 共享权限规则，所有 Agent 共用。Agent 内置工具的规则放在各 Agent 的文件中。
+  // 各家都是 deny 优先，“整体允许加特定拒绝”的组合有效。
   "rules": [
+    // 整体允许的命令，规则 ID 为 preset-rule-<命令 ID 后缀>-allow。
+    // 不整体允许的命令：rm 整体询问，sudo 整体拒绝；dd、mkfs、chmod、chown 两份实际配置都没有放行，
+    // 不写规则，交给各 Agent 的默认行为（通常是询问）。其余预设命令都整体允许。
     {
       "id": "preset-rule-git-allow",
       "tool": { "type": "command", "id": "preset-command-git" },
@@ -1431,12 +1436,15 @@
       "high_risk": false,
       "high_risk_reason": "",
     },
+    // 整体允许之外的特定询问与拒绝。
+    // 被更宽规则完全覆盖的规则不收录，如已有 sudo 拒绝时不再单列 sudo rm。
+    // 只是前缀相近、并不互相覆盖的规则都保留，如 git clean -f 与 git clean -fd、git push --force 与 git push -f。
     {
       "id": "preset-rule-rm-ask",
       "tool": { "type": "command", "id": "preset-command-rm" },
       "pattern": "",
       "decision": "ask",
-      "description": "",
+      "description": "preset-rule-rm-ask.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1445,7 +1453,7 @@
       "tool": { "type": "command", "id": "preset-command-rm" },
       "pattern": "-rf /",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-rm-rf-root-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1454,7 +1462,7 @@
       "tool": { "type": "command", "id": "preset-command-rm" },
       "pattern": "-rf ~",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-rm-rf-home-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1463,7 +1471,7 @@
       "tool": { "type": "command", "id": "preset-command-sudo" },
       "pattern": "",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-sudo-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1472,7 +1480,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "push --force",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-push-force-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1481,7 +1489,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "push -f",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-push-f-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1490,7 +1498,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "reset --hard",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-reset-hard-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1499,7 +1507,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "clean -fd",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-clean-fd-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1508,7 +1516,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "clean -f",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-clean-f-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1517,7 +1525,7 @@
       "tool": { "type": "command", "id": "preset-command-git" },
       "pattern": "branch -D",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-git-branch-force-delete-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1526,7 +1534,7 @@
       "tool": { "type": "command", "id": "preset-command-docker" },
       "pattern": "system prune -a --volumes",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-docker-system-prune-volumes-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1535,7 +1543,7 @@
       "tool": { "type": "command", "id": "preset-command-docker" },
       "pattern": "run --privileged",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-docker-run-privileged-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
@@ -1544,10 +1552,11 @@
       "tool": { "type": "command", "id": "preset-command-docker" },
       "pattern": "run -v /var/run/docker.sock",
       "decision": "deny",
-      "description": "",
+      "description": "preset-rule-docker-run-socket-deny.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
+    // 允许整个 MCP Server。每个预设 MCP Server 各有一条，不设“全部 MCP”的规则。
     {
       "id": "preset-rule-mcp-chrome-devtools-allow",
       "tool": { "type": "mcp", "id": "preset-mcp-chrome-devtools" },

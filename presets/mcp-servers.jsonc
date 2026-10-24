@@ -1,4 +1,8 @@
 {
+  // 预设 MCP Server。内容是 Claude 风格的 JSON；个人路径写成 {{home}}，密钥写成 ${VAR}，留在本机环境变量里。
+  // 内容中自带的 description 挪到描述字段，描述不进入输出。
+  // 只与某台机器相关的参数不收录，如 Firefox 的安装路径（工具能自动查找）和调试日志文件。
+  // 每个 Server 在 rules.jsonc 中各有一条允许整个 Server 的规则。
   "mcp_servers": [
     {
       "id": "preset-mcp-chrome-devtools",
@@ -78,6 +82,7 @@
       "high_risk": false,
       "high_risk_reason": "",
     },
+    // 存储位置只能通过环境变量 MEMORY_FILE_PATH 指定，Server 自己展开 ~。
     {
       "id": "preset-mcp-memory",
       "key": "memory",

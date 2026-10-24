@@ -225,5 +225,19 @@
   "preset-agent-codex-cli.mcp-scope-user.name": "用户级",
   "preset-agent-codex-cli.mcp-scope-user.note": "对当前用户的所有项目生效。Codex 不展开 ${VAR}，也不把本机环境变量全部传给 Server：引用环境变量的字段需要改用 env_vars = [\"NAME\"]。",
   "preset-agent-codex-cli.mcp-scope-project.name": "项目级",
-  "preset-agent-codex-cli.mcp-scope-project.note": "只在受信任的项目中生效。Codex 不展开 ${VAR}，也不把本机环境变量全部传给 Server：引用环境变量的字段需要改用 env_vars = [\"NAME\"]。"
+  "preset-agent-codex-cli.mcp-scope-project.note": "只在受信任的项目中生效。Codex 不展开 ${VAR}，也不把本机环境变量全部传给 Server：引用环境变量的字段需要改用 env_vars = [\"NAME\"]。",
+  "preset-rule-rm-ask.description": "删除不整体允许，每次都先询问。",
+  "preset-rule-rm-rf-root-deny.description": "递归删除根目录。",
+  "preset-rule-rm-rf-home-deny.description": "递归删除主目录。",
+  "preset-rule-sudo-deny.description": "以超级用户执行任意命令，整体拒绝；sudo rm 等组合已被这条覆盖，不再单列。",
+  "preset-rule-git-push-force-deny.description": "强制推送会覆盖远端历史。",
+  "preset-rule-git-push-f-deny.description": "push --force 的简写，两种写法前缀不同，各写一条。",
+  "preset-rule-git-reset-hard-deny.description": "丢弃未提交的修改，无法恢复。",
+  "preset-rule-git-clean-fd-deny.description": "删除未跟踪的文件和目录。",
+  "preset-rule-git-clean-f-deny.description": "删除未跟踪的文件；与 clean -fd 并不互相覆盖，两条都保留。",
+  "preset-rule-git-branch-force-delete-deny.description": "强制删除分支，未合并的提交会丢失。",
+  "preset-rule-docker-system-prune-volumes-deny.description": "清除全部未使用的镜像和数据卷。",
+  "preset-rule-docker-run-privileged-deny.description": "特权容器可以访问宿主机的全部设备。",
+  "preset-rule-docker-run-socket-deny.description": "挂载 Docker 套接字等于拿到宿主机的控制权。",
+  "preset-rule-antigravity-write-file-src-allow.description": "相对工作区的路径。"
 }

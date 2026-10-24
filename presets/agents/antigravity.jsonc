@@ -1,11 +1,14 @@
 {
   "priority": 50,
   "agents": [
+    // Antigravity：权限写在共享配置的 userSettings.globalPermissionGrants 下，IDE、App、CLI 共用。
+    // 命令工具写成 command(git push)，MCP 工具写成 mcp(server/tool)。
     {
       "id": "preset-agent-antigravity",
       "name": "Antigravity",
       "description": "preset-agent-antigravity.description",
       "built_in_tools": [
+        // 文件路径按目录递归匹配，模式直接填以 / 结尾的目录前缀，如 write_file(src/)，模板不再补 glob。
         {
           "id": "preset-built-in-antigravity-read-file",
           "key": "read_file",
@@ -106,6 +109,7 @@
     },
   ],
   "rules": [
+    // 来自实际配置：读文件、读网页、在网页上执行操作整体允许，写文件只允许下面列出的目录。
     {
       "id": "preset-rule-antigravity-read-file-allow",
       "tool": {
@@ -142,6 +146,8 @@
       "high_risk": false,
       "high_risk_reason": "",
     },
+    // 允许写入的目录。主目录下的写成 {{home}}/，由本机设置展开；
+    // 原配置中 Linux 与 macOS 两套主目录写法合并为同一条规则。
     {
       "id": "preset-rule-antigravity-write-file-downloads-allow",
       "tool": {
@@ -270,7 +276,7 @@
       },
       "pattern": "src/",
       "decision": "allow",
-      "description": "",
+      "description": "preset-rule-antigravity-write-file-src-allow.description",
       "high_risk": false,
       "high_risk_reason": "",
     },
