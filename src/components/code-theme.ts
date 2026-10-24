@@ -1,9 +1,11 @@
 import { json } from '@codemirror/lang-json';
-import { HighlightStyle, StreamLanguage, syntaxHighlighting } from '@codemirror/language';
+import { HighlightStyle, StreamLanguage, foldService, syntaxHighlighting } from '@codemirror/language';
 import { toml } from '@codemirror/legacy-modes/mode/toml';
 import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
+
+import { tomlTableFoldEnd } from '@/lib/toml-fold';
 
 /*
  * CodeMirror 的外观与语言，只读的代码视图和可编辑的输入框共用。
@@ -49,6 +51,22 @@ const editorTheme = EditorView.theme({
   '.cm-lineNumbers .cm-gutterElement': {
     padding: '0 0.5rem 0 0.75rem',
   },
+  // 折叠栏只在只读的代码视图中出现。
+  '.cm-foldGutter .cm-gutterElement': {
+    padding: '0 0.25rem',
+    cursor: 'pointer',
+  },
+  '.cm-foldGutter .cm-gutterElement:hover': {
+    color: 'var(--foreground)',
+  },
+  '.cm-foldPlaceholder': {
+    margin: '0 0.25rem',
+    padding: '0 0.25rem',
+    border: '1px solid var(--border)',
+    borderRadius: '0.25rem',
+    backgroundColor: 'var(--muted)',
+    color: 'var(--muted-foreground)',
+  },
   '.cm-activeLine': {
     backgroundColor: 'color-mix(in oklab, var(--muted) 60%, transparent)',
   },
@@ -79,9 +97,16 @@ const highlightStyle = HighlightStyle.define([
 /** 主题与高亮颜色。 */
 export const codeTheme: Extension = [editorTheme, syntaxHighlighting(highlightStyle)];
 
-const tomlLanguage = StreamLanguage.define(toml);
+/** TOML 的 legacy mode 没有语法树，按表折叠：从表头行末折叠到这个表的最后一个非空行。 */
+const tomlFolding = foldService.of((state, lineStart) => {
+  const line = state.doc.lineAt(lineStart);
+  const end = tomlTableFoldEnd(state.doc.toJSON(), line.number - 1);
+  return end === null ? null : { from: line.to, to: state.doc.line(end + 1).to };
+});
 
-/** 语言支持：JSON 用 Lezer 语法，TOML 用 legacy mode。 */
+const tomlLanguage = [StreamLanguage.define(toml), tomlFolding];
+
+/** 语言支持：JSON 用 Lezer 语法，按对象和数组折叠；TOML 用 legacy mode，按表折叠。 */
 export function codeLanguage(language: CodeLanguage): Extension {
   return language === 'json' ? json() : tomlLanguage;
 }
