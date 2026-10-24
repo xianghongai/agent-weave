@@ -40,7 +40,7 @@ export const CLAUDE_CODE: Agent = {
     scopes: [
       { name: '用户级', path: '~/.claude/settings.json', note: '对当前用户的所有项目生效。' },
       { name: '项目级', path: '.claude/settings.json', note: '提交到仓库，与团队共享。' },
-      { name: '本地级', path: '.claude/settings.local.json', note: '只对自己生效，不提交到仓库。' },
+      { name: '项目本地级', path: '.claude/settings.local.json', note: '只对自己生效，不提交到仓库。' },
     ],
     decision_keys: { allow: 'allow', ask: 'ask', deny: 'deny' },
     command_templates: { with_pattern: 'Bash({command} {pattern} *)', without_pattern: 'Bash({command} *)' },

@@ -75,6 +75,11 @@ describe('预设：内容整理', () => {
     expect(text).toContain('{{home}}');
   });
 
+  it('Claude Code 权限输出的作用域依次为用户级、项目级、项目本地级', () => {
+    const scopes = generate(preset, agentId('Claude Code'), DEVICE)?.permission?.scopes ?? [];
+    expect(scopes.map((scope) => scope.name)).toEqual(['用户级', '项目级', '项目本地级']);
+  });
+
   it('Claude Code 的权限不使用 {{home}}：单个前导 / 在它的路径规则里表示相对路径', () => {
     const permission = generate(preset, agentId('Claude Code'), DEVICE)?.permission;
     expect(permission?.copyText).not.toContain('{{home}}');

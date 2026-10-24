@@ -47,7 +47,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
       <div className="flex items-center gap-2">
         <h3 className="flex-1 text-xs font-medium text-muted-foreground">{t('builtInTools.title')}</h3>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           aria-label={t('builtInTools.addLabel', { agent: agent.name })}
           onClick={() => openEditor(null)}

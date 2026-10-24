@@ -2163,7 +2163,7 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
         "path": ".claude/settings.json",
       },
       {
-        "name": "本地级",
+        "name": "项目本地级",
         "note": "只对自己生效，不提交到仓库。",
         "path": ".claude/settings.local.json",
       },

@@ -351,7 +351,7 @@
     "scopes": "作用域",
     "scopesHint": "只用于提示把输出粘贴到哪个文件，不影响输出内容。",
     "scopeName": "名称",
-    "scopeNamePlaceholder": "如 用户级",
+    "scopeNamePlaceholder": "选择或输入名称",
     "scopePath": "路径",
     "scopePathPlaceholder": "如 ~/.claude/settings.json",
     "scopeNote": "说明",
@@ -366,27 +366,40 @@
       "json": "JSON",
       "toml": "TOML"
     },
-    "mcpStyleHint": "JSON 风格把各 Server 写进属性路径下的对象；TOML 风格为每个 Server 生成一个表。",
-    "mcpPropertyPathHint": "点分的多层路径，如 mcpServers、mcp_servers。",
+    "mcpStyleHint": "- **JSON**：把各 Server 写进属性路径下的对象，如 `mcpServers`。\n- **TOML**：为每个 Server 生成一个表，如 `[mcp_servers.github]`。",
+    "mcpPropertyPathHint": "点分的多层路径，如 `mcpServers`、`mcp_servers`。",
     "propertyPath": "属性路径",
-    "propertyPathHint": "点分的多层路径，如 permissions、userSettings.globalPermissionGrants。",
+    "propertyPathHint": "点分的多层路径，如 `permissions`、`userSettings.globalPermissionGrants`。",
     "decisionKeys": "决策键名",
     "decisionKeysHint": "每个决策在输出中的键名。留空表示该 Agent 不支持这一档，这一档的规则进入跳过的规则。",
     "decisionKeyPlaceholder": "留空表示不支持",
     "decisionKeyUnsupported": "不支持",
     "templateEmpty": "未填写",
     "commandTemplates": "命令工具模板",
-    "commandTemplatesHint": "使用 {command} 和 {pattern}，如 Bash({command} {pattern} *) 与 Bash({command} *)。",
     "mcpTemplates": "MCP 工具模板",
-    "mcpTemplatesHint": "使用 {server} 和 {pattern}，如 mcp__{server}__{pattern} 与 mcp__{server}。",
     "withPattern": "有模式模板",
     "withoutPattern": "无模式模板",
-    "templatesEmptyHint": "模板为空时，需要它的规则进入跳过的规则。",
     "editLabel": "编辑 {{name}}",
     "deleteLabel": "删除 {{name}}",
     "deleteTitle": "删除 Agent {{name}}？",
     "deleteDescription": "它的 {{tools}} 个内置工具，以及指向这些内置工具的 {{rules}} 条权限规则会一并删除。共享的规则不受影响。",
-    "builtInTemplates": "内置工具模板"
+    "builtInTemplates": "内置工具模板",
+    "mcpStyleHelp": "风格说明",
+    "scopeNameOptions": {
+      "user": "用户级",
+      "project": "项目级",
+      "projectLocal": "项目本地级"
+    },
+    "withPatternHelp": "有模式模板说明",
+    "withoutPatternHelp": "无模式模板说明",
+    "templateHelp": {
+      "commandWith": "规则带模式时使用。\n\n- 可用占位符：`{command}`、`{pattern}`。\n- 例如 `Bash({command} {pattern} *)`：`git` 加模式 `push` 得到 `Bash(git push *)`。\n- 为空时，带模式的规则进入跳过的规则。",
+      "commandWithout": "规则省略模式、表示整个工具时使用。\n\n- 可用占位符：`{command}`。\n- 例如 `Bash({command} *)`：`git` 得到 `Bash(git *)`。\n- 为空时，不带模式的规则进入跳过的规则。",
+      "mcpWith": "规则带模式时使用，模式是该 MCP Server 提供的工具名。\n\n- 可用占位符：`{server}`、`{pattern}`。\n- 例如 `mcp__{server}__{pattern}`：`github` 加模式 `create_issue` 得到 `mcp__github__create_issue`。\n- 为空时，带模式的规则进入跳过的规则。",
+      "mcpWithout": "规则省略模式、表示整个 MCP Server 时使用。\n\n- 可用占位符：`{server}`。\n- 例如 `mcp__{server}`：`github` 得到 `mcp__github`。\n- 为空时，不带模式的规则进入跳过的规则。",
+      "builtInWith": "规则带模式时使用。路径模式是以 `/` 结尾的目录前缀，由模板补全 glob。\n\n- 可用占位符：`{pattern}`。\n- 例如 `Read({pattern}**)`：模式 `./src/` 得到 `Read(./src/**)`；又如 `read_file({pattern})`。\n- 为空时，带模式的规则进入跳过的规则。",
+      "builtInWithout": "规则省略模式、表示整个工具时使用，不需要占位符。\n\n- 例如 `Read`、`read_file(*)`。\n- 为空时，不带模式的规则进入跳过的规则。"
+    }
   },
   "builtInTools": {
     "title": "内置工具",
@@ -403,7 +416,6 @@
     "writes": "写入类",
     "writesHint": "会写入文件的工具。允许它写入任意位置、根目录或主目录时产生高危提示。",
     "writesBadge": "写入类",
-    "templatesHint": "使用 {pattern}，如 Read({pattern}**) 与 Read、read_file({pattern}) 与 read_file(*)。路径模式是以 / 结尾的目录前缀，由模板补全 glob。",
     "deleteTitle": "删除 {{agent}} 的内置工具 {{key}}？"
   },
   "tags": {
