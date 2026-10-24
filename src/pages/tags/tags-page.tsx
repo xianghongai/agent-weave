@@ -44,7 +44,6 @@ export default function TagsPage() {
       icon={TagsIcon}
       title={t('pages.tags.title')}
       description={t('pages.tags.description')}
-      help={{ label: t('tags.listHelp'), content: t('tags.listHint') }}
       scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>

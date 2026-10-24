@@ -78,7 +78,7 @@ export function PageScroll({ framed = false, children }: { framed?: boolean; chi
  */
 function FramedScroll({ children }: { children: React.ReactNode }) {
   return (
-    <ScrollArea className="mb-6 overflow-hidden rounded-xl border max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:flex md:min-h-0 md:flex-col md:[&>[data-slot=scroll-area-viewport]]:h-auto md:[&>[data-slot=scroll-area-viewport]]:min-h-0">
+    <ScrollArea className="mb-4 overflow-hidden rounded-xl border max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:flex md:min-h-0 md:flex-col md:[&>[data-slot=scroll-area-viewport]]:h-auto md:[&>[data-slot=scroll-area-viewport]]:min-h-0">
       {children}
     </ScrollArea>
   );

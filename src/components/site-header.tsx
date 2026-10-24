@@ -39,7 +39,7 @@ export function SiteHeader() {
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center">
+        <div className="flex shrink-0 items-center gap-1">
           <SettingsMenu />
           <ThemeToggle />
         </div>

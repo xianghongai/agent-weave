@@ -22,7 +22,7 @@ import { useUiStore } from '@/state/ui-store';
 type OutputTab = 'permission' | 'mcp' | 'notices';
 
 /** 权限和 MCP 两个 Tab 的内容：宽屏下填满剩余高度，只让预览在框内滚动；窄屏下随整页滚动。 */
-const OUTPUT_TAB_CONTENT = 'flex flex-col gap-3 pb-6 text-base md:min-h-0';
+const OUTPUT_TAB_CONTENT = 'flex flex-col gap-3 pb-3 text-base md:min-h-0';
 
 export default function OutputPage() {
   const { t } = useTranslation();
@@ -72,10 +72,7 @@ export default function OutputPage() {
 
             <TabsContent value="permission" className={OUTPUT_TAB_CONTENT}>
               {output.permission ? (
-                <PermissionOutputView
-                  section={output.permission}
-                  lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
-                />
+                <PermissionOutputView section={output.permission} />
               ) : (
                 <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
               )}
@@ -100,7 +97,7 @@ export default function OutputPage() {
 }
 
 /** 权限节：作用域、预览、复制说明。 */
-function PermissionOutputView({ section, lastKey }: { section: PermissionSection; lastKey: string }) {
+function PermissionOutputView({ section }: { section: PermissionSection }) {
   const { t } = useTranslation();
 
   return (
@@ -125,9 +122,6 @@ function PermissionOutputView({ section, lastKey }: { section: PermissionSection
           </>
         }
       />
-      <p className="shrink-0 text-sm text-pretty text-muted-foreground">
-        {t('output.copyHint', { key: `"${lastKey}"` })}
-      </p>
     </>
   );
 }

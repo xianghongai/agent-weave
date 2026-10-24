@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { readTagIdFromHistory } from '@/browser/history-state';
-import { HelpPopover } from '@/components/help-popover';
 import { Note, Page, PageScroll } from '@/components/page';
 import { TagBadges } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
@@ -66,25 +65,18 @@ export default function ToolsPage() {
       description={t('pages.tools.description')}
       scroll="custom"
       actions={
-        <Button onClick={() => openEditor(null)}>
-          <PlusIcon />
-          {t('tools.add')}
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
+
+          <Button onClick={() => openEditor(null)}>
+            <PlusIcon />
+            {t('tools.add')}
+          </Button>
+        </div>
       }
     >
       {/* 标题和筛选栏固定，只有列表滚动。 */}
       <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1">
-            <h2 className="flex items-center gap-2 font-medium">
-              <TerminalIcon className="size-4 text-brand" />
-              {t('tools.commandTools')}
-            </h2>
-            <HelpPopover label={t('tools.commandToolsHelp')} content={t('tools.commandToolsHint')} />
-          </div>
-          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
-        </div>
-
         {allTools.length === 0 ? (
           <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
         ) : tools.length === 0 ? (

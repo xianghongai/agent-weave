@@ -64,21 +64,19 @@ export default function McpPage() {
       icon={PlugIcon}
       title={t('pages.mcp.title')}
       description={t('pages.mcp.description')}
-      help={{ label: t('mcp.serversHelp'), content: t('mcp.serversHint') }}
       scroll="custom"
       actions={
-        <Button onClick={() => openEditor(null)}>
-          <PlusIcon />
-          {t('mcp.add')}
-        </Button>
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
+          <Button onClick={() => openEditor(null)}>
+            <PlusIcon />
+            {t('mcp.add')}
+          </Button>
+        </div>
       }
     >
       {/* 标题和筛选栏固定，只有列表滚动。 */}
       <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
-        <div className="flex shrink-0 justify-end">
-          <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
-        </div>
-
         {allServers.length === 0 ? (
           <Note icon={PlugIcon}>{t('mcp.empty')}</Note>
         ) : servers.length === 0 ? (

@@ -18,7 +18,7 @@ export default defineConfig({
      * 必须位于 React 插件之前，才能在 JSX 转换前注入源码定位信息。
      * 按 Option/Alt + Shift + 鼠标点击 DOM 元素，即可在 IDE 中打开对应的源代码位置。
      */
-    codeInspectorPlugin({ bundler: 'vite' }),
+    codeInspectorPlugin({ bundler: 'vite', hotKeys: ['ctrlKey', 'shiftKey'] }),
     react(),
     tailwindcss(),
     contentSecurityPolicy(),
