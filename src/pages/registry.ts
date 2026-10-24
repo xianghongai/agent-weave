@@ -22,7 +22,8 @@ export interface PageEntry {
 }
 
 /**
- * 顶部导航中的全部页面，按导航顺序排列；第一项也是首页。
+ * 顶部导航中的全部页面，按导航顺序排列。
+ * 首页 `/` 是宣传页，也是默认入口，不出现在导航中，因此不在这里登记，路由直接写在 `src/app.tsx` 中。
  * 新增页面时在 `src/pages/` 下建目录，再在这里登记。
  */
 export const PAGES: readonly PageEntry[] = [
@@ -51,8 +52,16 @@ export function hasToolListPage(type: ToolType): type is ListedToolType {
   return TOOL_LIST_PAGES[type] !== null;
 }
 
+/** 按 id 取登记的页面；`id` 的类型保证页面一定登记过。 */
+export function pageById(id: PageEntry['id']): PageEntry {
+  const page = PAGES.find((entry) => entry.id === id);
+  if (!page) {
+    throw new Error(`Page not registered: ${id}`);
+  }
+  return page;
+}
+
 /** 列出某类工具的页面路径，取自上面登记的页面。 */
 export function toolListPath(type: ListedToolType): string {
-  const id = TOOL_LIST_PAGES[type];
-  return PAGES.find((page) => page.id === id)?.path ?? '/';
+  return pageById(TOOL_LIST_PAGES[type]).path;
 }

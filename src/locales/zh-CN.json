@@ -9,7 +9,30 @@
     "toDark": "切换到深色"
   },
   "footer": {
-    "privacy": "数据只保存在你的浏览器和你自己的 Gist 中，本站不收集任何数据"
+    "privacy": "数据只保存在你的浏览器和你选择的同步位置，本站不收集任何数据",
+    "repository": "GitHub 仓库"
+  },
+  "home": {
+    "headline": {
+      "lead": "一份权限规则，",
+      "tail": "织进每一个 Agent"
+    },
+    "intro": "维护一份与 Agent 无关的权限规则和 MCP Server 清单，生成 Claude Code、Codex CLI、Antigravity…… 各自的配置。全部在浏览器内完成。",
+    "steps": "使用流程",
+    "step": "第 {{index}} 步",
+    "start": "开始编写规则",
+    "rules": {
+      "title": "编写中立规则集",
+      "summary": "为命令工具、MCP 工具和内置工具编写允许、询问、拒绝规则，整理 MCP Server 清单。"
+    },
+    "agents": {
+      "title": "配置 Agent",
+      "summary": "为每个 Agent 指定权限输出和 MCP 输出的格式，以及配置文件所在的作用域。"
+    },
+    "output": {
+      "title": "复制输出",
+      "summary": "查看生成的配置和提示，复制后粘贴到对应作用域的配置文件中。"
+    }
   },
   "pages": {
     "rules": {
@@ -257,6 +280,9 @@
     "skippedRulesHint": "该 Agent 定义表达不了这些规则，它们没有写进输出。",
     "mcp": "MCP",
     "noMcp": "该 Agent 不输出 MCP。",
+    "notices": "重要提示",
+    "hasHighRisk": "（有高危提示）",
+    "noNotices": "没有提示。",
     "mcpCopyHint": "“复制”只复制 {{key}} 这一层的键值对，可以整体替换原属性；“复制内部”只复制各 Server 的键值对，可以追加到已有对象中，同名的 Server 需要自行去重。",
     "mcpTomlCopyHint": "“复制”的内容是若干 TOML 表，可以直接追加到配置文件末尾；文件中已有同名的 Server 表时需要先删除旧表。",
     "tomlFieldSkipped": "TOML 表达不了的字段",
@@ -435,12 +461,10 @@
     "ruleHighRiskHint": "决策为“允许”时产生高危提示，即使所指工具不是高危工具。",
     "highRiskRule": "高危：允许了高危操作",
     "conflictRule": "冲突：同一工具、同一模式还有其他决策",
-    "title": "提示",
-    "hint": "只提醒，不影响输出。可以直接编辑相关的规则。",
-    "highRisk": "允许了高危操作",
-    "highRiskDetail": "所指工具或规则本身被标记为高危，或允许写入类内置工具写入任意位置、根目录或主目录。",
-    "conflict": "决策冲突",
-    "conflictDetail": "同一工具、同一模式出现了不同的决策。各决策照常输出，实际生效哪一个取决于 Agent 自身的优先级。",
+    "highRisk": "高危提示",
+    "highRiskDetail": "这些规则允许了高危操作：所指工具或规则本身被标记为高危，或允许写入类内置工具写入任意位置、根目录或主目录。只提醒，不影响输出。",
+    "conflict": "冲突提示",
+    "conflictDetail": "每组规则的工具和模式相同，决策却不同。各决策照常输出，实际生效哪一个取决于 Agent 自身的优先级。",
     "editRule": "编辑这条规则"
   }
 }
