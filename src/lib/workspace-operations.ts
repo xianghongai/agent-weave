@@ -46,6 +46,7 @@ export type OperationProblem =
   | 'decisionKeyDuplicate'
   | 'contentInvalid'
   | 'notFound'
+  | 'toolEmpty'
   | 'toolMissing';
 
 export type OperationResult = { workspace: Workspace } | { problem: OperationProblem };
@@ -667,7 +668,8 @@ export function findBuiltInTool(workspace: Workspace, id: string): Extract<Resol
 /* 权限规则 */
 
 export interface RuleInput extends HighRiskInput {
-  tool: ToolRef;
+  /** 表单中尚未选择工具时为 `null`。 */
+  tool: ToolRef | null;
   pattern: string;
   decision: Decision;
 }
@@ -677,12 +679,13 @@ export function addRule(
   input: RuleInput,
   ctx: OperationContext = systemContext
 ): OperationResult {
-  if (!resolveTool(workspace, input.tool)) {
-    return { problem: 'toolMissing' };
+  const tool = checkRuleTool(workspace, input.tool);
+  if (typeof tool === 'string') {
+    return { problem: tool };
   }
   const rule: Rule = {
     id: ctx.newId(),
-    tool: { ...input.tool },
+    tool: { ...tool },
     pattern: input.pattern.trim(),
     decision: input.decision,
     high_risk: input.high_risk ?? false,
@@ -699,20 +702,29 @@ export function updateRule(
   if (!workspace.rules.some((rule) => rule.id === id)) {
     return { problem: 'notFound' };
   }
-  if (!resolveTool(workspace, input.tool)) {
-    return { problem: 'toolMissing' };
+  const tool = checkRuleTool(workspace, input.tool);
+  if (typeof tool === 'string') {
+    return { problem: tool };
   }
   return commit(
     workspace,
     (draft) => {
       const rule = byId(draft.rules, id);
-      rule.tool = { ...input.tool };
+      rule.tool = { ...tool };
       rule.pattern = input.pattern.trim();
       rule.decision = input.decision;
       rule.high_risk = input.high_risk ?? rule.high_risk;
     },
     ctx
   );
+}
+
+/** 规则必须指向一个仍然存在的工具。 */
+function checkRuleTool(workspace: Workspace, tool: ToolRef | null): ToolRef | OperationProblem {
+  if (!tool) {
+    return 'toolEmpty';
+  }
+  return resolveTool(workspace, tool) ? tool : 'toolMissing';
 }
 
 export function deleteRule(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {

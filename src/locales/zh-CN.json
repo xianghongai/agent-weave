@@ -172,6 +172,7 @@
       "keyEmpty": "标识不能为空。",
       "keyDuplicate": "已有相同标识的条目，标识不能重复。",
       "notFound": "该条目已不存在，可能已被删除。",
+      "toolEmpty": "请选择工具。",
       "toolMissing": "所选工具已不存在，请重新选择。",
       "nameEmpty": "名称不能为空。",
       "nameDuplicate": "已有同名的 Agent，名称不能重复。",
@@ -262,9 +263,8 @@
     "deleteNoRules": "没有权限规则指向它。"
   },
   "rules": {
+    "add": "新增权限规则",
     "addTitle": "新增权限规则",
-    "addHelp": "新增权限规则说明",
-    "addHint": "添加后保留所选工具，可以在同一工具下连续添加多条规则。",
     "tool": "工具",
     "toolPlaceholder": "输入以筛选工具",
     "toolNoMatch": "没有匹配的工具",
@@ -279,7 +279,6 @@
     "builtInPatternPlaceholder": "如 ./src/，留空表示整个工具",
     "builtInPatternHint": "- 路径填以 `/` 结尾的目录，如 `./src/`，模板会补上 glob。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。\n- 该规则只属于 {{agent}}。",
     "decision": "决策",
-    "listTitle": "规则列表",
     "listHelp": "规则列表说明",
     "listHint": "- 按工具类型（命令工具、MCP 工具、内置工具）、工具标识、模式自动排序。\n- 输出顺序与列表顺序一致。",
     "owner": "归属",

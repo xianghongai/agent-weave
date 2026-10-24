@@ -316,6 +316,13 @@ describe('工作区操作：权限规则', () => {
     ).toEqual({ problem: 'toolMissing' });
   });
 
+  it('尚未选择工具时返回原因码', () => {
+    const input = { tool: null, pattern: '', decision: 'allow' } as const;
+    expect(addRule(withGit, input, context())).toEqual({ problem: 'toolEmpty' });
+    const ws = apply(withGit, (w) => addRule(w, { tool: git, pattern: '', decision: 'allow' }, context()));
+    expect(updateRule(ws, 'new-1', input, context())).toEqual({ problem: 'toolEmpty' });
+  });
+
   it('可以修改规则的模式和决策，规则列表重新排序', () => {
     const local = context();
     const ws = apply(

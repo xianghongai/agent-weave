@@ -26,11 +26,12 @@ interface ToolSelectProps {
   workspace: Workspace;
   value: ToolRef | null;
   onChange: (ref: ToolRef) => void;
+  autoFocus?: boolean;
   className?: string;
 }
 
 /** 选择规则指向的工具：输入文字按标识过滤，内置工具也可以用 Agent 名称搜到。 */
-export function ToolSelect({ id, workspace, value, onChange, className }: ToolSelectProps) {
+export function ToolSelect({ id, workspace, value, onChange, autoFocus, className }: ToolSelectProps) {
   const { t } = useTranslation();
   const options = useMemo(() => toolOptions(workspace), [workspace]);
   const optionByValue = useMemo(() => new Map(options.map((option) => [encodeToolRef(option.ref), option])), [options]);
@@ -56,6 +57,7 @@ export function ToolSelect({ id, workspace, value, onChange, className }: ToolSe
     >
       <ComboboxInput
         id={id}
+        autoFocus={autoFocus}
         aria-label={t('rules.tool')}
         placeholder={t('rules.toolPlaceholder')}
         autoComplete="off"
