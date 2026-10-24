@@ -4,15 +4,15 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Test seam:** `src/lib/generate.ts`（经由预设测试中的生成快照）
 
-- [ ] 每个 Agent 一个文件，两者的优先级都设为 50
-- [ ] Cursor CLI：权限只有 allow 与 deny，询问这一档的决策键留空；命令写作 `Shell(...)`，带子命令的模式表达不了时把对应模板留空，规则列为跳过的规则；MCP 写作 `Mcp(server:*)`；MCP 配置为 Claude 风格 JSON
-- [ ] Gemini CLI：不输出权限，在说明中写明原因（`tools.*` 列表有弃用项，参数只对 Shell 有效，MCP 的放行在另一个路径，主推的 TOML 策略引擎模板表达不了）；MCP 输出写到设置文件的 `mcpServers`
-- [ ] 内置工具按 05 的标准确定
-- [ ] 文字都写成文案键，中文进预设语言文件
-- [ ] 生成快照覆盖 Cursor CLI 的权限输出（含跳过的规则）与两者的 MCP 输出
-- [ ] `docs/agent-formats.md` 补上这两个 Agent 的格式规则和已知的坑
-- [ ] 预设零警告、守卫测试通过
+- [x] 每个 Agent 一个文件，两者的优先级都设为 50
+- [x] Cursor CLI：权限只有 allow 与 deny，询问这一档的决策键留空；命令写作 `Shell(...)`，带子命令的模式表达不了时把对应模板留空，规则列为跳过的规则；MCP 写作 `Mcp(server:*)`；MCP 配置为 Claude 风格 JSON
+- [x] Gemini CLI：不输出权限，在说明中写明原因（`tools.*` 列表有弃用项，参数只对 Shell 有效，MCP 的放行在另一个路径，主推的 TOML 策略引擎模板表达不了）；MCP 输出写到设置文件的 `mcpServers`
+- [x] 内置工具按 05 的标准确定
+- [x] 文字都写成文案键，中文进预设语言文件
+- [x] 生成快照覆盖 Cursor CLI 的权限输出（含跳过的规则）与两者的 MCP 输出
+- [x] `docs/agent-formats.md` 补上这两个 Agent 的格式规则和已知的坑
+- [x] 预设零警告、守卫测试通过

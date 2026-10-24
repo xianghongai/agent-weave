@@ -32,8 +32,14 @@ describe('预设：合成与导入校验', () => {
     expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
   });
 
-  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity 在后', () => {
-    expect(preset.agents.map((agent) => agent.name)).toEqual(['Claude Code', 'Codex CLI', 'Antigravity']);
+  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Cursor CLI、Gemini CLI 在后', () => {
+    expect(preset.agents.map((agent) => agent.name)).toEqual([
+      'Claude Code',
+      'Codex CLI',
+      'Antigravity',
+      'Cursor CLI',
+      'Gemini CLI',
+    ]);
   });
 });
 
@@ -106,10 +112,31 @@ describe('预设：内容整理', () => {
     expect(permission?.copyText).not.toContain('{{home}}');
     expect(permission?.copyText).not.toContain('/home/alice');
   });
+
+  it('Cursor CLI 没有询问这一档：询问规则和带子命令的命令规则都列为跳过的规则', () => {
+    const output = generate(preset, agentId('Cursor CLI'), DEVICE);
+    expect(output?.permission?.decisions.map((decision) => decision.key)).toEqual(['allow', 'deny']);
+    const skipped = new Map(output?.skippedRules.map((skip) => [skip.ruleId, skip.reason]));
+    expect(skipped.get('preset-rule-rm-ask')).toBe('decisionKeyMissing');
+    expect(skipped.get('preset-rule-git-push-force-deny')).toBe('templateMissing');
+    expect(output?.permission?.copyText).toContain('"Shell(git)"');
+    expect(output?.permission?.copyText).toContain('"Mcp(github:*)"');
+  });
+
+  it('Gemini CLI 不输出权限，MCP 写到设置文件的 mcpServers', () => {
+    const output = generate(preset, agentId('Gemini CLI'), DEVICE);
+    expect(output?.permission).toBeNull();
+    expect(output?.skippedRules).toEqual([]);
+    expect(output?.mcp?.scopes.map((scope) => scope.path)).toEqual([
+      '~/.gemini/settings.json',
+      '.gemini/settings.json',
+    ]);
+    expect(output?.mcp?.copyText.startsWith('"mcpServers": {')).toBe(true);
+  });
 });
 
 describe('预设：各 Agent 的生成快照', () => {
-  it.each(['Claude Code', 'Antigravity', 'Codex CLI'])('%s', (name) => {
+  it.each(['Claude Code', 'Antigravity', 'Codex CLI', 'Cursor CLI', 'Gemini CLI'])('%s', (name) => {
     const output = generate(preset, agentId(name), DEVICE);
     expect(output).not.toBeNull();
     expect(output).toMatchSnapshot();
