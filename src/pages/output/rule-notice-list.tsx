@@ -78,8 +78,17 @@ export function RuleNoticeList({ workspace, notices }: { workspace: Workspace; n
   );
 }
 
-/** 一条相关规则：工具、模式、决策，以及打开编辑对话框的按钮。 */
-function RuleLine({ workspace, rule, onEdit }: { workspace: Workspace; rule: Rule; onEdit: () => void }) {
+interface RuleLineProps {
+  workspace: Workspace;
+  rule: Rule;
+  /** 补充说明，显示在规则下方，如规则被跳过的原因；省略时不显示。 */
+  detail?: string;
+  /** 打开编辑对话框；省略时不显示编辑按钮。 */
+  onEdit?: () => void;
+}
+
+/** 提示中的一条规则：工具、模式、决策，可以带补充说明和编辑按钮。 */
+export function RuleLine({ workspace, rule, detail, onEdit }: RuleLineProps) {
   const { t } = useTranslation();
   const tool = resolveTool(workspace, rule.tool);
   if (!tool) {
@@ -88,25 +97,30 @@ function RuleLine({ workspace, rule, onEdit }: { workspace: Workspace; rule: Rul
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-        <code className="font-mono font-medium">{tool.tool.key}</code>
-        <ToolTypeBadge type={tool.type} />
-        {rule.pattern ? (
-          <code className="font-mono break-all">{rule.pattern}</code>
-        ) : (
-          <span className="text-muted-foreground">{t('rules.wholeTool')}</span>
-        )}
-        <span className={cn('font-medium', DECISION_TONE[rule.decision])}>{t(`decisions.${rule.decision}`)}</span>
+      <div className="grid min-w-0 flex-1 gap-1">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+          <code className="font-mono font-medium">{tool.tool.key}</code>
+          <ToolTypeBadge type={tool.type} />
+          {rule.pattern ? (
+            <code className="font-mono break-all">{rule.pattern}</code>
+          ) : (
+            <span className="text-muted-foreground">{t('rules.wholeTool')}</span>
+          )}
+          <span className={cn('font-medium', DECISION_TONE[rule.decision])}>{t(`decisions.${rule.decision}`)}</span>
+        </div>
+        {detail && <p className="text-sm text-muted-foreground">{detail}</p>}
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={t('notices.editRule')}
-        title={t('notices.editRule')}
-        onClick={onEdit}
-      >
-        <PencilIcon />
-      </Button>
+      {onEdit && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('notices.editRule')}
+          title={t('notices.editRule')}
+          onClick={onEdit}
+        >
+          <PencilIcon />
+        </Button>
+      )}
     </div>
   );
 }

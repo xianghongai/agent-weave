@@ -1,18 +1,14 @@
-import { cn } from 'cn';
 import { CircleCheckIcon, CircleSlashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { DECISION_TONE } from '@/components/decision-tone';
 import { Note } from '@/components/page';
 import { skipReasonMessage } from '@/i18n/problems';
 import type { SkippedRule } from '@/lib/generate';
 import type { Notice } from '@/lib/notices';
 import type { Workspace } from '@/lib/workspace';
-import { resolveTool } from '@/lib/workspace-operations';
 import { NoticeSection } from '@/pages/output/notice-section';
 import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
-import { RuleNoticeList } from '@/pages/output/rule-notice-list';
-import { ToolTypeBadge } from '@/pages/rules/rule-fields';
+import { RuleLine, RuleNoticeList } from '@/pages/output/rule-notice-list';
 
 interface NoticesPanelProps {
   workspace: Workspace;
@@ -57,25 +53,12 @@ function SkippedRuleList({ workspace, skippedRules }: { workspace: Workspace; sk
       <ul className="divide-y rounded-xl border">
         {skippedRules.map(({ ruleId, reason }) => {
           const rule = workspace.rules.find((candidate) => candidate.id === ruleId);
-          const tool = rule ? resolveTool(workspace, rule.tool) : null;
-          if (!rule || !tool) {
+          if (!rule) {
             return null;
           }
           return (
-            <li key={ruleId} className="grid gap-1 px-3 py-2">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-                <code className="font-mono font-medium">{tool.tool.key}</code>
-                <ToolTypeBadge type={tool.type} />
-                {rule.pattern ? (
-                  <code className="font-mono break-all">{rule.pattern}</code>
-                ) : (
-                  <span className="text-muted-foreground">{t('rules.wholeTool')}</span>
-                )}
-                <span className={cn('font-medium', DECISION_TONE[rule.decision])}>
-                  {t(`decisions.${rule.decision}`)}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">{skipReasonMessage(t, reason, rule)}</p>
+            <li key={ruleId} className="px-3 py-2">
+              <RuleLine workspace={workspace} rule={rule} detail={skipReasonMessage(t, reason, rule)} />
             </li>
           );
         })}
