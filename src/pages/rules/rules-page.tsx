@@ -4,7 +4,7 @@ import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
-import { Note, Page } from '@/components/page';
+import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -47,12 +47,18 @@ export default function RulesPage() {
   const [editTarget, setEditTarget] = useState<Rule | null>(null);
 
   return (
-    <Page icon={ShieldCheckIcon} title={t('pages.rules.title')} description={t('pages.rules.description')}>
-      <div className="grid gap-8">
+    <Page
+      icon={ShieldCheckIcon}
+      title={t('pages.rules.title')}
+      description={t('pages.rules.description')}
+      scroll="custom"
+    >
+      {/* 新增表单、列表标题和筛选栏固定，只有规则列表滚动。 */}
+      <div className="flex flex-col gap-6 md:min-h-0 md:flex-1">
         <AddRuleForm />
 
-        <section className="grid gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
+        <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
+          <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
             <div className="grid gap-1">
               <h2 className="flex items-center gap-2 font-medium">
                 <ListIcon className="size-4 text-brand" />
@@ -66,53 +72,55 @@ export default function RulesPage() {
             </div>
           </div>
 
-          {allRules.length === 0 ? (
-            <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
-          ) : rules.length === 0 ? (
-            <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
-          ) : (
-            <ul className="divide-y rounded-xl border">
-              {rules.map(({ rule, tool }) => (
-                <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
-                    <code className="font-medium">{tool.tool.key}</code>
-                    <ToolTypeBadge type={tool.type} />
-                    {rule.pattern ? (
-                      <code className="break-all">{rule.pattern}</code>
-                    ) : (
-                      <span className="font-sans text-muted-foreground">{t('rules.wholeTool')}</span>
-                    )}
-                    <OwnerBadge tool={tool} />
-                  </div>
-                  <RuleWarningIcons warning={warnings.get(rule.id)} />
-                  <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
-                    {t(`decisions.${rule.decision}`)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('rules.editLabel')}
-                    title={t('common.edit')}
-                    onClick={() => {
-                      setEditTarget(rule);
-                      setEditOpen(true);
-                    }}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('rules.deleteLabel')}
-                    title={t('common.delete')}
-                    onClick={() => applyOperation((current) => deleteRule(current, rule.id))}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <PageScroll>
+            {allRules.length === 0 ? (
+              <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
+            ) : rules.length === 0 ? (
+              <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
+            ) : (
+              <ul className="divide-y rounded-xl border">
+                {rules.map(({ rule, tool }) => (
+                  <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
+                      <code className="font-medium">{tool.tool.key}</code>
+                      <ToolTypeBadge type={tool.type} />
+                      {rule.pattern ? (
+                        <code className="break-all">{rule.pattern}</code>
+                      ) : (
+                        <span className="font-sans text-muted-foreground">{t('rules.wholeTool')}</span>
+                      )}
+                      <OwnerBadge tool={tool} />
+                    </div>
+                    <RuleWarningIcons warning={warnings.get(rule.id)} />
+                    <span className={cn('w-10 shrink-0 text-sm font-medium', DECISION_TONE[rule.decision])}>
+                      {t(`decisions.${rule.decision}`)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('rules.editLabel')}
+                      title={t('common.edit')}
+                      onClick={() => {
+                        setEditTarget(rule);
+                        setEditOpen(true);
+                      }}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('rules.deleteLabel')}
+                      title={t('common.delete')}
+                      onClick={() => applyOperation((current) => deleteRule(current, rule.id))}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </PageScroll>
         </section>
       </div>
 
@@ -160,7 +168,7 @@ function AddRuleForm() {
   }
 
   return (
-    <section className="grid gap-3 rounded-xl border bg-card p-4">
+    <section className="grid shrink-0 gap-3 rounded-xl border bg-card p-4">
       <div className="grid gap-1">
         <h2 className="flex items-center gap-2 font-medium">
           <PlusIcon className="size-4 text-brand" />

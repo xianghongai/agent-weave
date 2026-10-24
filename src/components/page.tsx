@@ -1,30 +1,64 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 interface PageProps {
   icon: LucideIcon;
   title: string;
-  description: React.ReactNode;
-  /** 页面级操作，显示在标题右侧。 */
+  /** 宽屏下放不下时截断，悬停显示全文，所以只接受纯文本。 */
+  description: string;
+  /** 页面级操作，显示在标题行的最右侧。 */
   actions?: React.ReactNode;
+  /**
+   * 宽屏下内容区的滚动方式。
+   * `all`：标题以下的全部内容一起滚动。
+   * `custom`：内容区是填满剩余高度的纵向 flex 容器，页面自己用 `PageScroll` 包住要滚动的部分，其余部分固定。
+   * 窄屏下两种方式都是整页滚动。
+   */
+  scroll?: 'all' | 'custom';
   children: React.ReactNode;
 }
 
-/** 各页面共用的容器：图标、标题、说明，加上页面内容。 */
-export function Page({ icon: Icon, title, description, actions, children }: PageProps) {
+/**
+ * 各页面共用的容器：一行标题区，加上页面内容。
+ * 宽屏下填满外壳主区域的剩余高度，标题区固定，内容区按 `scroll` 滚动。
+ */
+export function Page({ icon: Icon, title, description, actions, scroll = 'all', children }: PageProps) {
   return (
-    <div className="py-8 sm:py-10">
-      <header className="mb-6 flex flex-wrap items-start gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-          <Icon className="size-5" />
+    <div className="flex flex-col md:min-h-0 md:flex-1">
+      {/* 窄屏下说明换到标题下方；宽屏下图标、标题、说明、操作排成一行。 */}
+      <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 py-4 md:flex-nowrap">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+          <Icon className="size-4" />
         </span>
-        <div className="grid min-w-0 flex-1 gap-1">
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground text-pretty">{description}</p>
-        </div>
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        <h1 className="shrink-0 text-xl font-semibold tracking-tight">{title}</h1>
+        <p
+          title={description}
+          className="order-last basis-full text-sm text-pretty text-muted-foreground md:order-none md:min-w-0 md:flex-1 md:basis-auto md:truncate"
+        >
+          {description}
+        </p>
+        {actions && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
       </header>
-      {children}
+      {scroll === 'all' ? (
+        <PageScroll>{children}</PageScroll>
+      ) : (
+        <div className="flex flex-col md:min-h-0 md:flex-1">{children}</div>
+      )}
     </div>
+  );
+}
+
+/**
+ * 页面内的滚动区：宽屏下填满所在纵向 flex 容器的剩余高度，在 Scroll Area 中滚动；窄屏下随整页滚动。
+ * 宽屏下两侧伸进页面的水平内边距，给滚动条和焦点环留出位置，内容仍与上方对齐。
+ * 窄屏下覆盖 Base UI 写在视口上的 `overflow: scroll`，不形成滚动容器，以免裁掉焦点环或截住触摸滚动。
+ */
+export function PageScroll({ children }: { children: React.ReactNode }) {
+  return (
+    <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:-mx-3 md:min-h-0 md:flex-1">
+      <div className="pb-6 md:px-3">{children}</div>
+    </ScrollArea>
   );
 }
 

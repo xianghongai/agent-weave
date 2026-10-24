@@ -2,7 +2,7 @@ import { PencilIcon, PlusIcon, TagsIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Note, Page } from '@/components/page';
+import { Note, Page, PageScroll } from '@/components/page';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +44,7 @@ export default function TagsPage() {
       icon={TagsIcon}
       title={t('pages.tags.title')}
       description={t('pages.tags.description')}
+      scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>
           <PlusIcon />
@@ -51,48 +52,51 @@ export default function TagsPage() {
         </Button>
       }
     >
-      <section className="grid gap-3">
-        <p className="text-sm text-muted-foreground">{t('tags.listHint')}</p>
+      {/* 标题和说明固定，只有列表滚动。 */}
+      <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
+        <p className="shrink-0 text-sm text-muted-foreground">{t('tags.listHint')}</p>
 
-        {tags.length === 0 ? (
-          <Note icon={TagsIcon}>{t('tags.empty')}</Note>
-        ) : (
-          <ul className="divide-y rounded-xl border">
-            {tags.map((tag) => {
-              const toolCount = countToolsForTag(workspace, tag.id);
-              return (
-                <li key={tag.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                    <span className="font-medium">{tag.name}</span>
-                    <code className="truncate font-mono text-sm text-muted-foreground">{tag.key}</code>
-                  </div>
-                  {toolCount > 0 && <Badge variant="secondary">{t('tags.toolCount', { n: toolCount })}</Badge>}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('tags.editLabel', { key: tag.key })}
-                    title={t('common.edit')}
-                    onClick={() => openEditor(tag)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('tags.deleteLabel', { key: tag.key })}
-                    title={t('common.delete')}
-                    onClick={() => {
-                      setDeleteTarget(tag);
-                      setDeleteOpen(true);
-                    }}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <PageScroll>
+          {tags.length === 0 ? (
+            <Note icon={TagsIcon}>{t('tags.empty')}</Note>
+          ) : (
+            <ul className="divide-y rounded-xl border">
+              {tags.map((tag) => {
+                const toolCount = countToolsForTag(workspace, tag.id);
+                return (
+                  <li key={tag.id} className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <span className="font-medium">{tag.name}</span>
+                      <code className="truncate font-mono text-sm text-muted-foreground">{tag.key}</code>
+                    </div>
+                    {toolCount > 0 && <Badge variant="secondary">{t('tags.toolCount', { n: toolCount })}</Badge>}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('tags.editLabel', { key: tag.key })}
+                      title={t('common.edit')}
+                      onClick={() => openEditor(tag)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('tags.deleteLabel', { key: tag.key })}
+                      title={t('common.delete')}
+                      onClick={() => {
+                        setDeleteTarget(tag);
+                        setDeleteOpen(true);
+                      }}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </PageScroll>
       </section>
 
       <TagDialog open={editOpen} onOpenChange={setEditOpen} tag={editTarget} />

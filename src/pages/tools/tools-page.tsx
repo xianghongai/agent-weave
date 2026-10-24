@@ -2,7 +2,7 @@ import { PencilIcon, PlusIcon, TerminalIcon, Trash2Icon, WrenchIcon } from 'luci
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Note, Page } from '@/components/page';
+import { Note, Page, PageScroll } from '@/components/page';
 import { TagBadges } from '@/components/tag-badges';
 import { ToolFilterBar } from '@/components/tool-filter-bar';
 import {
@@ -61,6 +61,7 @@ export default function ToolsPage() {
       icon={WrenchIcon}
       title={t('pages.tools.title')}
       description={t('pages.tools.description')}
+      scroll="custom"
       actions={
         <Button onClick={() => openEditor(null)}>
           <PlusIcon />
@@ -68,8 +69,9 @@ export default function ToolsPage() {
         </Button>
       }
     >
-      <section className="grid gap-3">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      {/* 标题和筛选栏固定，只有列表滚动。 */}
+      <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
+        <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
           <div className="grid gap-1">
             <h2 className="flex items-center gap-2 font-medium">
               <TerminalIcon className="size-4 text-brand" />
@@ -80,48 +82,50 @@ export default function ToolsPage() {
           <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
         </div>
 
-        {allTools.length === 0 ? (
-          <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
-        ) : tools.length === 0 ? (
-          <Note icon={TerminalIcon}>{t('filters.noMatch')}</Note>
-        ) : (
-          <ul className="divide-y rounded-xl border">
-            {tools.map((tool) => {
-              const ruleCount = countRulesForTool(workspace, { type: 'command', id: tool.id });
-              return (
-                <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="grid min-w-0 flex-1 gap-0.5">
-                    <code className="truncate font-mono text-sm font-medium">{tool.key}</code>
-                    {tool.description && (
-                      <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
-                    )}
-                    <TagBadges tagIds={tool.tag_ids} />
-                  </div>
-                  {tool.high_risk && <HighRiskBadge />}
-                  {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('tools.editLabel', { key: tool.key })}
-                    title={t('common.edit')}
-                    onClick={() => openEditor(tool)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label={t('tools.deleteLabel', { key: tool.key })}
-                    title={t('common.delete')}
-                    onClick={() => confirmDelete(tool)}
-                  >
-                    <Trash2Icon />
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <PageScroll>
+          {allTools.length === 0 ? (
+            <Note icon={TerminalIcon}>{t('tools.empty')}</Note>
+          ) : tools.length === 0 ? (
+            <Note icon={TerminalIcon}>{t('filters.noMatch')}</Note>
+          ) : (
+            <ul className="divide-y rounded-xl border">
+              {tools.map((tool) => {
+                const ruleCount = countRulesForTool(workspace, { type: 'command', id: tool.id });
+                return (
+                  <li key={tool.id} className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="grid min-w-0 flex-1 gap-0.5">
+                      <code className="truncate font-mono text-sm font-medium">{tool.key}</code>
+                      {tool.description && (
+                        <span className="truncate text-sm text-muted-foreground">{tool.description}</span>
+                      )}
+                      <TagBadges tagIds={tool.tag_ids} />
+                    </div>
+                    {tool.high_risk && <HighRiskBadge />}
+                    {ruleCount > 0 && <Badge variant="secondary">{t('tools.ruleCount', { n: ruleCount })}</Badge>}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('tools.editLabel', { key: tool.key })}
+                      title={t('common.edit')}
+                      onClick={() => openEditor(tool)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t('tools.deleteLabel', { key: tool.key })}
+                      title={t('common.delete')}
+                      onClick={() => confirmDelete(tool)}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </PageScroll>
       </section>
 
       <CommandToolDialog open={editOpen} onOpenChange={setEditOpen} tool={editTarget} />
