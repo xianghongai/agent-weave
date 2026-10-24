@@ -1,3 +1,5 @@
+import { type Draft, produce } from 'immer';
+
 import type {
   Agent,
   BuiltInTool,
@@ -20,7 +22,7 @@ import { TOOL_TYPES } from '@/lib/workspace';
 /*
  * 工作区操作：对工作区做的所有修改，以及界面和生成共用的查询。
  * 每个修改接收旧工作区，返回新工作区或原因码，不修改传入的对象，也不抛异常。
- * 每次修改都更新 `updated_at`。
+ * 修改先检查输入，通过后在 Immer 的草稿上写入改动，未改动的部分与旧工作区共用；每次修改都更新 `updated_at`。
  */
 
 /** 修改所需的外部输入：当前时间和新的内部 ID。测试时注入固定值。 */
@@ -48,8 +50,32 @@ export type OperationProblem =
 
 export type OperationResult = { workspace: Workspace } | { problem: OperationProblem };
 
-function commit(workspace: Workspace, changes: Partial<Workspace>, ctx: OperationContext): OperationResult {
-  return { workspace: { ...workspace, ...changes, updated_at: ctx.now() } };
+/** 在旧工作区的草稿上执行 `recipe`，并更新 `updated_at`。 */
+function commit(
+  workspace: Workspace,
+  recipe: (draft: Draft<Workspace>) => void,
+  ctx: OperationContext
+): OperationResult {
+  return {
+    workspace: produce(workspace, (draft) => {
+      recipe(draft);
+      draft.updated_at = ctx.now();
+    }),
+  };
+}
+
+/** 从草稿的列表中删除满足条件的条目。 */
+function removeWhere<T>(list: T[], predicate: (item: T) => boolean): void {
+  for (let index = list.length - 1; index >= 0; index -= 1) {
+    if (predicate(list[index]!)) {
+      list.splice(index, 1);
+    }
+  }
+}
+
+/** 在草稿的列表中按内部 ID 查找条目。调用方已确认条目存在。 */
+function byId<T extends { id: string }>(list: T[], id: string): T {
+  return list.find((item) => item.id === id)!;
 }
 
 /* 标签 */
@@ -82,7 +108,7 @@ export function addTag(workspace: Workspace, input: TagInput, ctx: OperationCont
   if ('problem' in checked) {
     return checked;
   }
-  return commit(workspace, { tags: [...workspace.tags, { id: ctx.newId(), ...checked.fields }] }, ctx);
+  return commit(workspace, (draft) => void draft.tags.push({ id: ctx.newId(), ...checked.fields }), ctx);
 }
 
 /** 重命名标签：标识和名称都可以修改。工具按内部 ID 引用标签，不需要改动。 */
@@ -99,11 +125,7 @@ export function updateTag(
   if ('problem' in checked) {
     return checked;
   }
-  return commit(
-    workspace,
-    { tags: workspace.tags.map((tag) => (tag.id === id ? { id, ...checked.fields } : tag)) },
-    ctx
-  );
+  return commit(workspace, (draft) => void Object.assign(byId(draft.tags, id), checked.fields), ctx);
 }
 
 /** 删除标签。引用它的工具保持不变，残留的标签 ID 由界面显示为带警告符号的“已删除的标签”。 */
@@ -111,7 +133,7 @@ export function deleteTag(workspace: Workspace, id: string, ctx: OperationContex
   if (!workspace.tags.some((tag) => tag.id === id)) {
     return { problem: 'notFound' };
   }
-  return commit(workspace, { tags: workspace.tags.filter((tag) => tag.id !== id) }, ctx);
+  return commit(workspace, (draft) => removeWhere(draft.tags, (tag) => tag.id === id), ctx);
 }
 
 /**
@@ -192,7 +214,7 @@ export function addCommandTool(
     tag_ids: inputTagIds(input, []),
     high_risk: input.high_risk ?? false,
   };
-  return commit(workspace, { command_tools: [...workspace.command_tools, tool] }, ctx);
+  return commit(workspace, (draft) => void draft.command_tools.push(tool), ctx);
 }
 
 export function updateCommandTool(
@@ -209,18 +231,17 @@ export function updateCommandTool(
   if (problem) {
     return { problem };
   }
-  const command_tools = workspace.command_tools.map((tool) =>
-    tool.id === id
-      ? {
-          ...tool,
-          key,
-          description: input.description.trim(),
-          tag_ids: inputTagIds(input, tool.tag_ids),
-          high_risk: input.high_risk ?? tool.high_risk,
-        }
-      : tool
+  return commit(
+    workspace,
+    (draft) => {
+      const tool = byId(draft.command_tools, id);
+      tool.key = key;
+      tool.description = input.description.trim();
+      tool.tag_ids = inputTagIds(input, tool.tag_ids);
+      tool.high_risk = input.high_risk ?? tool.high_risk;
+    },
+    ctx
   );
-  return commit(workspace, { command_tools }, ctx);
 }
 
 function refersTo(rule: Rule, ref: ToolRef): boolean {
@@ -232,14 +253,21 @@ export function countRulesForTool(workspace: Workspace, ref: ToolRef): number {
   return workspace.rules.filter((rule) => refersTo(rule, ref)).length;
 }
 
-/** 删除一个工具：写入去掉该工具后的清单 `changes`，同时删除指向它的规则。 */
+/** 删除一个工具：`remove` 从草稿的清单中删除该工具，同时删除指向它的规则。 */
 function deleteTool(
   workspace: Workspace,
   ref: ToolRef,
-  changes: Partial<Workspace>,
+  remove: (draft: Draft<Workspace>) => void,
   ctx: OperationContext
 ): OperationResult {
-  return commit(workspace, { ...changes, rules: workspace.rules.filter((rule) => !refersTo(rule, ref)) }, ctx);
+  return commit(
+    workspace,
+    (draft) => {
+      remove(draft);
+      removeWhere(draft.rules, (rule) => refersTo(rule, ref));
+    },
+    ctx
+  );
 }
 
 /** 删除命令工具，同时删除指向它的规则。 */
@@ -254,7 +282,7 @@ export function deleteCommandTool(
   return deleteTool(
     workspace,
     { type: 'command', id },
-    { command_tools: workspace.command_tools.filter((tool) => tool.id !== id) },
+    (draft) => removeWhere(draft.command_tools, (tool) => tool.id === id),
     ctx
   );
 }
@@ -312,7 +340,7 @@ export function addMcpServer(
     tag_ids: inputTagIds(input, []),
     high_risk: input.high_risk ?? false,
   };
-  return commit(workspace, { mcp_servers: [...workspace.mcp_servers, server] }, ctx);
+  return commit(workspace, (draft) => void draft.mcp_servers.push(server), ctx);
 }
 
 export function updateMcpServer(
@@ -328,17 +356,16 @@ export function updateMcpServer(
   if ('problem' in checked) {
     return checked;
   }
-  const mcp_servers = workspace.mcp_servers.map((server) =>
-    server.id === id
-      ? {
-          ...server,
-          ...checked.fields,
-          tag_ids: inputTagIds(input, server.tag_ids),
-          high_risk: input.high_risk ?? server.high_risk,
-        }
-      : server
+  return commit(
+    workspace,
+    (draft) => {
+      const server = byId(draft.mcp_servers, id);
+      Object.assign(server, checked.fields);
+      server.tag_ids = inputTagIds(input, server.tag_ids);
+      server.high_risk = input.high_risk ?? server.high_risk;
+    },
+    ctx
   );
-  return commit(workspace, { mcp_servers }, ctx);
 }
 
 /** 删除 MCP Server，同时删除指向它（即同名 MCP 工具）的规则。 */
@@ -353,7 +380,7 @@ export function deleteMcpServer(
   return deleteTool(
     workspace,
     { type: 'mcp', id },
-    { mcp_servers: workspace.mcp_servers.filter((server) => server.id !== id) },
+    (draft) => removeWhere(draft.mcp_servers, (server) => server.id === id),
     ctx
   );
 }
@@ -465,7 +492,7 @@ export function addAgent(
     return checked;
   }
   const agent: Agent = { id: ctx.newId(), ...checked.fields, built_in_tools: [] };
-  return commit(workspace, { agents: [...workspace.agents, agent] }, ctx);
+  return commit(workspace, (draft) => void draft.agents.push(agent), ctx);
 }
 
 export function updateAgent(
@@ -481,8 +508,7 @@ export function updateAgent(
   if ('problem' in checked) {
     return checked;
   }
-  const agents = workspace.agents.map((agent) => (agent.id === id ? { ...agent, ...checked.fields } : agent));
-  return commit(workspace, { agents }, ctx);
+  return commit(workspace, (draft) => void Object.assign(byId(draft.agents, id), checked.fields), ctx);
 }
 
 /** 指向该 Agent 内置工具的规则，删除 Agent 时会一并删除。 */
@@ -504,9 +530,9 @@ export function deleteAgent(workspace: Workspace, id: string, ctx: OperationCont
   }
   return commit(
     workspace,
-    {
-      agents: workspace.agents.filter((candidate) => candidate.id !== id),
-      rules: workspace.rules.filter((rule) => !isAgentRule(agent, rule)),
+    (draft) => {
+      removeWhere(draft.agents, (candidate) => candidate.id === id);
+      removeWhere(draft.rules, (rule) => isAgentRule(agent, rule));
     },
     ctx
   );
@@ -534,11 +560,6 @@ function checkBuiltInToolKey(agent: Agent, key: string, selfId: string | null): 
   return null;
 }
 
-/** 把一个 Agent 的内置工具清单替换为新清单。 */
-function withBuiltInTools(workspace: Workspace, agentId: string, built_in_tools: BuiltInTool[]): Agent[] {
-  return workspace.agents.map((agent) => (agent.id === agentId ? { ...agent, built_in_tools } : agent));
-}
-
 /** 给某个 Agent 新增内置工具。标识只需在该 Agent 内唯一。 */
 export function addBuiltInTool(
   workspace: Workspace,
@@ -564,7 +585,7 @@ export function addBuiltInTool(
     writes: input.writes,
     templates: trimTemplates(input.templates),
   };
-  return commit(workspace, { agents: withBuiltInTools(workspace, agentId, [...agent.built_in_tools, tool]) }, ctx);
+  return commit(workspace, (draft) => void byId(draft.agents, agentId).built_in_tools.push(tool), ctx);
 }
 
 /** 编辑内置工具。所属 Agent 不变，指向它的规则随之输出新的模板。 */
@@ -583,20 +604,19 @@ export function updateBuiltInTool(
   if (problem) {
     return { problem };
   }
-  const built_in_tools = found.agent.built_in_tools.map((tool) =>
-    tool.id === id
-      ? {
-          ...tool,
-          key,
-          description: input.description.trim(),
-          tag_ids: inputTagIds(input, tool.tag_ids),
-          high_risk: input.high_risk ?? tool.high_risk,
-          writes: input.writes,
-          templates: trimTemplates(input.templates),
-        }
-      : tool
+  return commit(
+    workspace,
+    (draft) => {
+      const tool = byId(byId(draft.agents, found.agent.id).built_in_tools, id);
+      tool.key = key;
+      tool.description = input.description.trim();
+      tool.tag_ids = inputTagIds(input, tool.tag_ids);
+      tool.high_risk = input.high_risk ?? tool.high_risk;
+      tool.writes = input.writes;
+      tool.templates = trimTemplates(input.templates);
+    },
+    ctx
   );
-  return commit(workspace, { agents: withBuiltInTools(workspace, found.agent.id, built_in_tools) }, ctx);
 }
 
 /** 删除内置工具，同时删除指向它的规则。受影响的规则数量用 `countRulesForTool` 查询。 */
@@ -612,13 +632,7 @@ export function deleteBuiltInTool(
   return deleteTool(
     workspace,
     { type: 'built_in', id },
-    {
-      agents: withBuiltInTools(
-        workspace,
-        found.agent.id,
-        found.agent.built_in_tools.filter((tool) => tool.id !== id)
-      ),
-    },
+    (draft) => removeWhere(byId(draft.agents, found.agent.id).built_in_tools, (tool) => tool.id === id),
     ctx
   );
 }
@@ -657,7 +671,7 @@ export function addRule(
     decision: input.decision,
     high_risk: input.high_risk ?? false,
   };
-  return commit(workspace, { rules: [...workspace.rules, rule] }, ctx);
+  return commit(workspace, (draft) => void draft.rules.push(rule), ctx);
 }
 
 export function updateRule(
@@ -672,25 +686,24 @@ export function updateRule(
   if (!resolveTool(workspace, input.tool)) {
     return { problem: 'toolMissing' };
   }
-  const rules = workspace.rules.map((rule) =>
-    rule.id === id
-      ? {
-          ...rule,
-          tool: { ...input.tool },
-          pattern: input.pattern.trim(),
-          decision: input.decision,
-          high_risk: input.high_risk ?? rule.high_risk,
-        }
-      : rule
+  return commit(
+    workspace,
+    (draft) => {
+      const rule = byId(draft.rules, id);
+      rule.tool = { ...input.tool };
+      rule.pattern = input.pattern.trim();
+      rule.decision = input.decision;
+      rule.high_risk = input.high_risk ?? rule.high_risk;
+    },
+    ctx
   );
-  return commit(workspace, { rules }, ctx);
 }
 
 export function deleteRule(workspace: Workspace, id: string, ctx: OperationContext = systemContext): OperationResult {
   if (!workspace.rules.some((rule) => rule.id === id)) {
     return { problem: 'notFound' };
   }
-  return commit(workspace, { rules: workspace.rules.filter((rule) => rule.id !== id) }, ctx);
+  return commit(workspace, (draft) => removeWhere(draft.rules, (rule) => rule.id === id), ctx);
 }
 
 /* 查询 */
