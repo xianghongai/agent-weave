@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
-import { HelpPopover } from '@/components/help-popover';
+import { FieldLabelWithHelp } from '@/components/field-label-with-help';
 import { MarkdownFieldDescription } from '@/components/markdown-field-description';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
@@ -268,10 +268,12 @@ function McpFields({ value, onChange, problem }: McpFieldsProps) {
         onChange={(scopes) => onChange({ scopes })}
       />
       <Field>
-        <div className="flex items-center gap-1">
-          <FieldLabel id="agent-mcp-style-label">{t('agents.mcpStyle')}</FieldLabel>
-          <HelpPopover label={t('agents.mcpStyleHelp')} content={t('agents.mcpStyleHint')} />
-        </div>
+        <FieldLabelWithHelp
+          id="agent-mcp-style-label"
+          help={{ label: t('agents.mcpStyleHelp'), content: t('agents.mcpStyleHint') }}
+        >
+          {t('agents.mcpStyle')}
+        </FieldLabelWithHelp>
         {/* 只用 Tab 列表做分段选择，没有对应的面板。 */}
         <Tabs
           value={value.style}

@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
-import { HelpPopover } from '@/components/help-popover';
-import { Field, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
+import { FieldLabelWithHelp } from '@/components/field-label-with-help';
+import { Field, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { TemplatePair } from '@/lib/workspace';
 
@@ -23,10 +23,12 @@ export function TemplatePairFields({ idPrefix, legend, help, value, onChange }: 
       <FieldLegend variant="label">{legend}</FieldLegend>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field>
-          <div className="flex items-center gap-1">
-            <FieldLabel htmlFor={`${idPrefix}-with`}>{t('agents.withPattern')}</FieldLabel>
-            <HelpPopover label={t('agents.withPatternHelp')} content={help.with} />
-          </div>
+          <FieldLabelWithHelp
+            htmlFor={`${idPrefix}-with`}
+            help={{ label: t('agents.withPatternHelp'), content: help.with }}
+          >
+            {t('agents.withPattern')}
+          </FieldLabelWithHelp>
           <Input
             id={`${idPrefix}-with`}
             value={value.with_pattern}
@@ -37,10 +39,12 @@ export function TemplatePairFields({ idPrefix, legend, help, value, onChange }: 
           />
         </Field>
         <Field>
-          <div className="flex items-center gap-1">
-            <FieldLabel htmlFor={`${idPrefix}-without`}>{t('agents.withoutPattern')}</FieldLabel>
-            <HelpPopover label={t('agents.withoutPatternHelp')} content={help.without} />
-          </div>
+          <FieldLabelWithHelp
+            htmlFor={`${idPrefix}-without`}
+            help={{ label: t('agents.withoutPatternHelp'), content: help.without }}
+          >
+            {t('agents.withoutPattern')}
+          </FieldLabelWithHelp>
           <Input
             id={`${idPrefix}-without`}
             value={value.without_pattern}

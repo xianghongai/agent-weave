@@ -4,6 +4,7 @@ import { type FormEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
+import { FieldLabelWithHelp } from '@/components/field-label-with-help';
 import { HelpPopover } from '@/components/help-popover';
 import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,6 @@ import {
 } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { DecisionToggle, ToolSelect, ToolTypeBadge } from '@/pages/rules/rule-fields';
-import { PatternLabel } from '@/pages/rules/pattern-label';
 import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
 import {
   type OwnerFilter,
@@ -196,7 +196,12 @@ function AddRuleForm() {
             {problem && <FieldError>{operationProblemMessage(t, problem)}</FieldError>}
           </Field>
           <Field>
-            <PatternLabel htmlFor="rule-add-pattern" hint={patternTexts.hint} />
+            <FieldLabelWithHelp
+              htmlFor="rule-add-pattern"
+              help={{ label: t('rules.patternHelp'), content: patternTexts.hint }}
+            >
+              {t('rules.pattern')}
+            </FieldLabelWithHelp>
             <Input
               ref={patternRef}
               id="rule-add-pattern"
