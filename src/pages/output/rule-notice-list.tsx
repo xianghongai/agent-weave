@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DECISION_TONE } from '@/components/decision-tone';
-import { HIGH_RISK_TONE } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
 import type { Notice } from '@/lib/notices';
 import type { Rule, Workspace } from '@/lib/workspace';
@@ -37,7 +36,7 @@ export function RuleNoticeList({ workspace, notices }: { workspace: Workspace; n
       {highRisk.length > 0 && (
         <NoticeSection
           icon={ShieldAlertIcon}
-          tone={HIGH_RISK_TONE}
+          tone="highRisk"
           title={t('notices.highRisk')}
           count={highRisk.length}
           hint={t('notices.highRiskDetail')}
@@ -55,7 +54,7 @@ export function RuleNoticeList({ workspace, notices }: { workspace: Workspace; n
       {conflicts.length > 0 && (
         <NoticeSection
           icon={SplitIcon}
-          tone="text-amber-700 dark:text-amber-400"
+          tone="warning"
           title={t('notices.conflict')}
           count={conflicts.length}
           hint={t('notices.conflictDetail')}
