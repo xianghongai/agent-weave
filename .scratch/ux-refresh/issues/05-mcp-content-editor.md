@@ -4,7 +4,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 编辑器提供 JSON 高亮、行号、括号匹配、自动缩进，按 Tab 键缩进
 - [ ] 不做自动补全，也不做实时 JSON 报错；校验仍在提交时进行，规则不变（只检查是不是 JSON 对象），错误显示方式不变

@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Agent 页：Tab 顺序为录入顺序，选中的 Agent 读写全局界面 store，与输出页同步；所选 Agent 被删除后回到第一个
 - [ ] Tab 面板顶部放“编辑”和“删除”；下面是只读摘要：权限输出与 MCP 输出各自的作用域、属性路径、决策键名、模板、MCP 风格，未开启的部分显示“该 Agent 不输出权限/MCP”；最后是现有的内置工具区

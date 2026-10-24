@@ -4,7 +4,7 @@
 
 **Blocked by:** 无
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 用 pnpm 安装 `zustand` 和 `immer`；删除 `src/state/create-store.ts`，`src/state/` 中不再保留自写的 store 实现
 - [ ] 持久化应用 store 包含工作区、本机设置、Gist 设置、主题四个 slice，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键；action 不进入持久化内容

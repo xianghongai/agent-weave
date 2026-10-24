@@ -4,7 +4,7 @@
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 外层 Agent Tabs 用默认样式，选中的 Agent 读写全局界面 store；内层权限/MCP Tabs 用 `line` 样式，选中项是页面局部 `useState`，切换 Agent 时保持不变
 - [ ] 某个 Agent 不输出权限或 MCP 时，对应的 Tab 仍然显示，内容为现有的“该 Agent 不输出权限/MCP”提示
