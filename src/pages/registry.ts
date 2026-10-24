@@ -19,21 +19,59 @@ export interface PageEntry {
   path: string;
   icon: LucideIcon;
   component: LazyExoticComponent<ComponentType>;
+  /** 入口位置：`nav` 在顶部导航中；`settings` 在页眉的设置菜单中，放不常维护的页面。 */
+  entry: 'nav' | 'settings';
 }
 
 /**
- * 顶部导航中的全部页面，按导航顺序排列。
+ * 全部页面，按入口中的顺序排列；路由都会注册，入口位置由 `entry` 决定。
  * 首页 `/` 是宣传页，也是默认入口，不出现在导航中，因此不在这里登记，路由直接写在 `src/app.tsx` 中。
  * 新增页面时在 `src/pages/` 下建目录，再在这里登记。
  */
 export const PAGES: readonly PageEntry[] = [
-  { id: 'rules', path: '/rules', icon: ShieldCheckIcon, component: lazy(() => import('@/pages/rules/rules-page')) },
-  { id: 'tools', path: '/tools', icon: WrenchIcon, component: lazy(() => import('@/pages/tools/tools-page')) },
-  { id: 'mcp', path: '/mcp', icon: PlugIcon, component: lazy(() => import('@/pages/mcp/mcp-page')) },
-  { id: 'agents', path: '/agents', icon: BotIcon, component: lazy(() => import('@/pages/agents/agents-page')) },
-  { id: 'output', path: '/output', icon: FileCodeIcon, component: lazy(() => import('@/pages/output/output-page')) },
-  { id: 'sync', path: '/sync', icon: RefreshCwIcon, component: lazy(() => import('@/pages/sync/sync-page')) },
-  { id: 'tags', path: '/tags', icon: TagsIcon, component: lazy(() => import('@/pages/tags/tags-page')) },
+  {
+    id: 'rules',
+    path: '/rules',
+    icon: ShieldCheckIcon,
+    component: lazy(() => import('@/pages/rules/rules-page')),
+    entry: 'nav',
+  },
+  {
+    id: 'tools',
+    path: '/tools',
+    icon: WrenchIcon,
+    component: lazy(() => import('@/pages/tools/tools-page')),
+    entry: 'nav',
+  },
+  { id: 'mcp', path: '/mcp', icon: PlugIcon, component: lazy(() => import('@/pages/mcp/mcp-page')), entry: 'nav' },
+  {
+    id: 'agents',
+    path: '/agents',
+    icon: BotIcon,
+    component: lazy(() => import('@/pages/agents/agents-page')),
+    entry: 'nav',
+  },
+  {
+    id: 'output',
+    path: '/output',
+    icon: FileCodeIcon,
+    component: lazy(() => import('@/pages/output/output-page')),
+    entry: 'nav',
+  },
+  {
+    id: 'sync',
+    path: '/sync',
+    icon: RefreshCwIcon,
+    component: lazy(() => import('@/pages/sync/sync-page')),
+    entry: 'nav',
+  },
+  {
+    id: 'tags',
+    path: '/tags',
+    icon: TagsIcon,
+    component: lazy(() => import('@/pages/tags/tags-page')),
+    entry: 'settings',
+  },
 ];
 
 /** 列出各类工具的页面；内置工具分散在各 Agent 中，没有对应的列表页。新增工具类型时在这里补上。 */

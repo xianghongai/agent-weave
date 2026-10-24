@@ -7,6 +7,8 @@ import { SettingsMenu } from '@/components/settings-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PAGES } from '@/pages/registry';
 
+const NAV_PAGES = PAGES.filter((page) => page.entry === 'nav');
+
 export function SiteHeader() {
   const { t } = useTranslation();
   const [location] = useLocation();
@@ -17,9 +19,9 @@ export function SiteHeader() {
         <Link href="/" aria-label={t('header.home')} className="shrink-0 rounded-md">
           <Brand />
         </Link>
-        {/* 七个入口在窄屏下只显示图标，仍放不下时横向滚动，不挤压设置菜单和主题切换。 */}
+        {/* 导航入口在窄屏下只显示图标，仍放不下时横向滚动，不挤压设置菜单和主题切换。 */}
         <nav aria-label={t('header.pages')} className="ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto">
-          {PAGES.map(({ id, path, icon: Icon }) => {
+          {NAV_PAGES.map(({ id, path, icon: Icon }) => {
             const active = location === path;
             const title = t(`pages.${id}.title`);
             return (
