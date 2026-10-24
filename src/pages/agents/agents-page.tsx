@@ -2,6 +2,7 @@ import { BotIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AgentTabs } from '@/components/agent-tabs';
 import { Note, Page, PageScroll } from '@/components/page';
 import {
   AlertDialog,
@@ -14,7 +15,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Agent } from '@/lib/workspace';
 import { countRulesForAgent, deleteAgent, findSelectedAgent } from '@/lib/workspace-operations';
 import { AgentDialog } from '@/pages/agents/agent-dialog';
@@ -71,49 +71,35 @@ export default function AgentsPage() {
       {!agent ? (
         <Note icon={BotIcon}>{t('agents.empty')}</Note>
       ) : (
-        // Tab 按录入顺序排列，与输出页一致；选中的 Agent 与输出页共用。
-        <Tabs
-          value={agent.id}
-          onValueChange={(value: string) => selectAgent(value)}
-          className="gap-4 md:min-h-0 md:flex-1"
-        >
-          <TabsList className="max-w-full shrink-0 justify-start overflow-x-auto overflow-y-hidden">
-            {workspace.agents.map((candidate) => (
-              <TabsTrigger key={candidate.id} value={candidate.id} className="flex-none">
-                {candidate.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <TabsContent value={agent.id} className="flex flex-col md:min-h-0">
-            <PageScroll>
-              <div className="grid gap-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-0 flex-1 text-muted-foreground">{agent.description}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label={t('agents.editLabel', { name: agent.name })}
-                    onClick={() => openEditor(agent)}
-                  >
-                    <PencilIcon />
-                    {t('common.edit')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label={t('agents.deleteLabel', { name: agent.name })}
-                    onClick={() => confirmDelete(agent)}
-                  >
-                    <Trash2Icon />
-                    {t('common.delete')}
-                  </Button>
-                </div>
-                <AgentSummary agent={agent} />
-                <BuiltInToolsSection agent={agent} />
+        <AgentTabs agents={workspace.agents} agent={agent} className="gap-4">
+          <PageScroll>
+            <div className="grid gap-6">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="min-w-0 flex-1 text-muted-foreground">{agent.description}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={t('agents.editLabel', { name: agent.name })}
+                  onClick={() => openEditor(agent)}
+                >
+                  <PencilIcon />
+                  {t('common.edit')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={t('agents.deleteLabel', { name: agent.name })}
+                  onClick={() => confirmDelete(agent)}
+                >
+                  <Trash2Icon />
+                  {t('common.delete')}
+                </Button>
               </div>
-            </PageScroll>
-          </TabsContent>
-        </Tabs>
+              <AgentSummary agent={agent} />
+              <BuiltInToolsSection agent={agent} />
+            </div>
+          </PageScroll>
+        </AgentTabs>
       )}
 
       <AgentDialog open={editOpen} onOpenChange={setEditOpen} agent={editTarget} onAdded={selectAddedAgent} />

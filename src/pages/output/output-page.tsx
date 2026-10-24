@@ -3,6 +3,7 @@ import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, Shie
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AgentTabs } from '@/components/agent-tabs';
 import { CodeView } from '@/components/code-view';
 import { CopyButton } from '@/components/copy-button';
 import { DECISION_TONE } from '@/components/decision-tone';
@@ -13,7 +14,7 @@ import { skipReasonMessage } from '@/i18n/problems';
 import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
 import type { Notice } from '@/lib/notices';
 import type { Scope, Workspace } from '@/lib/workspace';
-import { resolveTool } from '@/lib/workspace-operations';
+import { findSelectedAgent, resolveTool } from '@/lib/workspace-operations';
 import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
 import { RuleNoticeList } from '@/pages/output/rule-notice-list';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
@@ -21,19 +22,17 @@ import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
 /** 内层 Tab：权限输出或 MCP 输出。 */
-type OutputSection = 'permission' | 'mcp';
+type OutputTab = 'permission' | 'mcp';
 
 export default function OutputPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const device = useAppStore((state) => state.deviceSettings);
   const selectedId = useUiStore((state) => state.selectedAgentId);
-  const selectAgent = useUiStore((state) => state.selectAgent);
   // 页面局部状态：切换 Agent 时保持不变，离开页面后重置。
-  const [section, setSection] = useState<OutputSection>('permission');
+  const [tab, setTab] = useState<OutputTab>('permission');
 
-  // 所选 Agent 不存在（首次打开或已被删除）时，回到第一个 Agent。
-  const agent = workspace.agents.find((candidate) => candidate.id === selectedId) ?? workspace.agents[0];
+  const agent = findSelectedAgent(workspace, selectedId);
   const output = agent ? generate(workspace, agent.id, device) : null;
 
   return (
@@ -47,70 +46,52 @@ export default function OutputPage() {
         <Note icon={InfoIcon}>{t('output.noAgents')}</Note>
       ) : (
         // 宽屏下 Agent Tabs 和权限/MCP Tab 标题固定，下面的 Tab 内容加上提示一起滚动。
-        <Tabs
-          value={agent.id}
-          onValueChange={(value: string) => selectAgent(value)}
-          className="gap-3 md:min-h-0 md:flex-1"
-        >
-          <TabsList className="max-w-full shrink-0 overflow-x-auto overflow-y-hidden">
-            {workspace.agents.map((candidate) => (
-              <TabsTrigger key={candidate.id} value={candidate.id}>
-                {candidate.name}
+        <AgentTabs agents={workspace.agents} agent={agent} className="gap-3" contentClassName="text-base">
+          <Tabs value={tab} onValueChange={(value: OutputTab) => setTab(value)} className="gap-3 md:min-h-0 md:flex-1">
+            <TabsList variant="line" className="shrink-0">
+              <TabsTrigger value="permission">
+                <ShieldCheckIcon />
+                {t('output.permission')}
               </TabsTrigger>
-            ))}
-          </TabsList>
+              <TabsTrigger value="mcp">
+                <PlugIcon />
+                {t('output.mcp')}
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value={agent.id} className="flex flex-col text-base md:min-h-0">
-            <Tabs
-              value={section}
-              onValueChange={(value: OutputSection) => setSection(value)}
-              className="gap-3 md:min-h-0 md:flex-1"
-            >
-              <TabsList variant="line" className="shrink-0">
-                <TabsTrigger value="permission">
-                  <ShieldCheckIcon />
-                  {t('output.permission')}
-                </TabsTrigger>
-                <TabsTrigger value="mcp">
-                  <PlugIcon />
-                  {t('output.mcp')}
-                </TabsTrigger>
-              </TabsList>
+            <PageScroll>
+              <div className="grid gap-6">
+                <TabsContent value="permission" className="text-base">
+                  {output.permission ? (
+                    <PermissionOutputView
+                      section={output.permission}
+                      lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
+                      workspace={workspace}
+                      skippedRules={output.skippedRules}
+                    />
+                  ) : (
+                    <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
+                  )}
+                </TabsContent>
+                <TabsContent value="mcp" className="text-base">
+                  {output.mcp ? (
+                    <McpOutputView
+                      section={output.mcp}
+                      lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
+                      workspace={workspace}
+                      notices={output.notices}
+                    />
+                  ) : (
+                    <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
+                  )}
+                </TabsContent>
 
-              <PageScroll>
-                <div className="grid gap-6">
-                  <TabsContent value="permission" className="text-base">
-                    {output.permission ? (
-                      <PermissionOutputView
-                        section={output.permission}
-                        lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
-                        workspace={workspace}
-                        skippedRules={output.skippedRules}
-                      />
-                    ) : (
-                      <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
-                    )}
-                  </TabsContent>
-                  <TabsContent value="mcp" className="text-base">
-                    {output.mcp ? (
-                      <McpOutputView
-                        section={output.mcp}
-                        lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
-                        workspace={workspace}
-                        notices={output.notices}
-                      />
-                    ) : (
-                      <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
-                    )}
-                  </TabsContent>
-
-                  <RuleNoticeList workspace={workspace} notices={output.notices} />
-                  <PlaceholderNotice notices={output.notices} />
-                </div>
-              </PageScroll>
-            </Tabs>
-          </TabsContent>
-        </Tabs>
+                <RuleNoticeList workspace={workspace} notices={output.notices} />
+                <PlaceholderNotice notices={output.notices} />
+              </div>
+            </PageScroll>
+          </Tabs>
+        </AgentTabs>
       )}
     </Page>
   );
