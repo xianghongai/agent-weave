@@ -1,6 +1,6 @@
 import { RefreshCwIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
+import { Separator } from '@/components/ui/separator';
 import { Page } from '@/components/page';
 import { GistSection } from '@/pages/sync/gist-section';
 import { WorkspaceFileSection } from '@/pages/sync/workspace-file-section';
@@ -13,6 +13,7 @@ export default function SyncPage() {
     <Page icon={RefreshCwIcon} title={t('pages.sync.title')} description={t('pages.sync.description')}>
       <div className="grid gap-10">
         <WorkspaceFileSection />
+        <Separator />
         <GistSection />
       </div>
     </Page>

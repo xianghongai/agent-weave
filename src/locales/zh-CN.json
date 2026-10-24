@@ -343,7 +343,7 @@
     "title": "导入与导出",
     "hint": "把整个工作区保存为 JSON 文件，用于备份或分享给同事；也可以用这样的文件替换当前工作区。",
     "export": "导出",
-    "exportHint": "导出文件不含 Gist Token、Gist ID 和本机设置，可以放心分享。",
+    "exportHint": "导出文件不含 Gist Token、Gist ID 和本机设置。",
     "import": "导入",
     "importFailed": "无法导入 {{file}}",
     "readFailed": "无法读取所选文件。",
