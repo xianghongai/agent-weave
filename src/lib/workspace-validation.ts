@@ -41,7 +41,19 @@ export type WorkspaceProblem =
   | 'duplicateKey'
   | 'danglingReference';
 
-export type WorkspaceParseResult = { workspace: Workspace } | { problem: WorkspaceProblem };
+/**
+ * 校验不通过的原因。`entryId` 是出问题的条目的内部 ID，供界面提示和构建警告定位：
+ * - `duplicateId`：重复的那个 ID；
+ * - `duplicateKey`：标识或名称与前面的条目重复的那个条目；
+ * - `danglingReference`：指向不存在的工具的那条规则。
+ * 结构错误和版本问题无法定位到条目，不带 `entryId`。
+ */
+export interface WorkspaceFailure {
+  problem: WorkspaceProblem;
+  entryId?: string;
+}
+
+export type WorkspaceParseResult = { workspace: Workspace } | WorkspaceFailure;
 
 /**
  * 校验一份已经解析成 JavaScript 值的工作区。不抛异常。
@@ -71,36 +83,57 @@ export function parseWorkspace(
     }
     throw error;
   }
-  const problem = checkIntegrity(decoded);
-  return problem ? { problem } : { workspace: decoded };
+  return checkIntegrity(decoded) ?? { workspace: decoded };
 }
 
 /* 唯一性与引用检查：在结构合法的工作区上进行。 */
 
-function hasDuplicates(values: string[]): boolean {
-  return new Set(values).size !== values.length;
+/** 第二次出现的条目，即与前面的条目取值重复的那个；没有重复时为 `undefined`。 */
+function findDuplicate<T>(items: readonly T[], value: (item: T) => string): T | undefined {
+  const seen = new Set<string>();
+  return items.find((item) => {
+    const v = value(item);
+    if (seen.has(v)) {
+      return true;
+    }
+    seen.add(v);
+    return false;
+  });
 }
 
-function checkIntegrity(ws: Workspace): WorkspaceProblem | null {
+function checkIntegrity(ws: Workspace): WorkspaceFailure | null {
   const builtInTools = ws.agents.flatMap((agent) => agent.built_in_tools);
-  const ids = [ws.tags, ws.command_tools, ws.mcp_servers, ws.agents, builtInTools, ws.rules];
-  if (ids.some((items) => hasDuplicates(items.map((item) => item.id)))) {
-    return 'duplicateId';
+  const idGroups: { id: string }[][] = [ws.tags, ws.command_tools, ws.mcp_servers, ws.agents, builtInTools, ws.rules];
+  for (const items of idGroups) {
+    const duplicate = findDuplicate(items, (item) => item.id);
+    if (duplicate) {
+      return { problem: 'duplicateId', entryId: duplicate.id };
+    }
   }
-  const keys = [ws.tags, ws.command_tools, ws.mcp_servers, ...ws.agents.map((agent) => agent.built_in_tools)];
-  if (
-    keys.some((items) => hasDuplicates(items.map((item) => item.key))) ||
-    hasDuplicates(ws.agents.map((agent) => agent.name))
-  ) {
-    return 'duplicateKey';
+  const keyGroups: { id: string; key: string }[][] = [
+    ws.tags,
+    ws.command_tools,
+    ws.mcp_servers,
+    ...ws.agents.map((agent) => agent.built_in_tools),
+  ];
+  for (const items of keyGroups) {
+    const duplicate = findDuplicate(items, (item) => item.key);
+    if (duplicate) {
+      return { problem: 'duplicateKey', entryId: duplicate.id };
+    }
+  }
+  const sameName = findDuplicate(ws.agents, (agent) => agent.name);
+  if (sameName) {
+    return { problem: 'duplicateKey', entryId: sameName.id };
   }
   const toolIds: Record<ToolType, Set<string>> = {
     command: new Set(ws.command_tools.map((tool) => tool.id)),
     mcp: new Set(ws.mcp_servers.map((server) => server.id)),
     built_in: new Set(builtInTools.map((tool) => tool.id)),
   };
-  if (ws.rules.some((rule) => !toolIds[rule.tool.type].has(rule.tool.id))) {
-    return 'danglingReference';
+  const dangling = ws.rules.find((rule) => !toolIds[rule.tool.type].has(rule.tool.id));
+  if (dangling) {
+    return { problem: 'danglingReference', entryId: dangling.id };
   }
   return null;
 }

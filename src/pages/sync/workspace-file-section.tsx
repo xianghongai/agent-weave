@@ -56,7 +56,7 @@ export function WorkspaceFileSection() {
     const result = importWorkspace(text);
     if ('problem' in result) {
       toast.error(t('workspaceFile.importFailed', { file: file.name }), {
-        description: importProblemMessage(t, result.problem),
+        description: importProblemMessage(t, result),
       });
       return;
     }
