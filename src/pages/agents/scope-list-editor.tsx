@@ -2,6 +2,7 @@ import { PlusIcon, XIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from '@/components/ui/combobox';
 import { FieldDescription, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { Scope } from '@/lib/workspace';
@@ -35,14 +36,11 @@ export function ScopeListEditor({ idPrefix, legend, scopes, onChange }: ScopeLis
         <ul className="grid gap-3">
           {scopes.map((scope, index) => (
             // 作用域没有 ID，只在末尾新增或按位置删除，用下标作为键即可。
-            <li key={index} className="grid gap-2 rounded-lg border p-2.5 sm:grid-cols-[8rem_1fr_auto]">
-              <Input
+            <li key={index} className="grid gap-2 rounded-lg border p-2.5 sm:grid-cols-[10rem_1fr_auto]">
+              <ScopeNameInput
                 id={`${idPrefix}-name-${index}`}
-                aria-label={t('agents.scopeName')}
                 value={scope.name}
-                autoComplete="off"
-                placeholder={t('agents.scopeNamePlaceholder')}
-                onChange={(event) => update(index, { name: event.target.value })}
+                onChange={(name) => update(index, { name })}
               />
               <Input
                 id={`${idPrefix}-path-${index}`}
@@ -89,3 +87,48 @@ export function ScopeListEditor({ idPrefix, legend, scopes, onChange }: ScopeLis
 }
 
 const EMPTY_SCOPE: Scope = { name: '', path: '', note: '' };
+
+const SCOPE_NAME_OPTIONS = ['user', 'project', 'projectLocal'] as const;
+
+interface ScopeNameInputProps {
+  id: string;
+  value: string;
+  onChange: (name: string) => void;
+}
+
+/**
+ * 作用域名称：可以从候选中选择，也可以输入任意名称，不做校验。
+ * 选中的值与输入框文字始终同为 `value`，这样关闭下拉时 Base UI 不会把自由输入的文字改回已选项。
+ */
+function ScopeNameInput({ id, value, onChange }: ScopeNameInputProps) {
+  const { t } = useTranslation();
+  const options = SCOPE_NAME_OPTIONS.map((option) => t(`agents.scopeNameOptions.${option}`));
+
+  return (
+    <Combobox
+      items={options}
+      value={value}
+      onValueChange={(next) => onChange(next ?? '')}
+      inputValue={value}
+      onInputValueChange={onChange}
+    >
+      <ComboboxInput
+        id={id}
+        aria-label={t('agents.scopeName')}
+        autoComplete="off"
+        placeholder={t('agents.scopeNamePlaceholder')}
+        className="w-full"
+      />
+      {/* 输入的名称没有匹配的候选时不显示空的下拉框。 */}
+      <ComboboxContent className="data-empty:hidden">
+        <ComboboxList>
+          {(option: string) => (
+            <ComboboxItem key={option} value={option}>
+              {option}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}

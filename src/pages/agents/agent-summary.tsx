@@ -12,12 +12,12 @@ import {
   type TemplatePair,
 } from '@/lib/workspace';
 
-/** Agent 定义的只读摘要：权限输出与 MCP 输出各一节，宽屏下并排。 */
+/** Agent 定义的只读摘要：权限输出与 MCP 输出各一节，上下排列。 */
 export function AgentSummary({ agent }: { agent: Agent }) {
   const { t } = useTranslation();
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid gap-4">
       <SummarySection id={`agent-${agent.id}-permission`} icon={ShieldCheckIcon} title={t('agents.permissionSection')}>
         {agent.permission_output ? (
           <PermissionSummary output={agent.permission_output} />
@@ -111,9 +111,9 @@ function McpSummary({ output }: { output: McpOutput }) {
   );
 }
 
-/** 标签与值两列；窄屏下标签在上、值在下。 */
+/** 标签与值两列，标签列定宽，上下两节的值对齐；窄屏下标签在上、值在下。 */
 function SummaryList({ children }: { children: React.ReactNode }) {
-  return <dl className="grid gap-x-4 gap-y-2.5 sm:grid-cols-[auto_1fr]">{children}</dl>;
+  return <dl className="grid gap-x-4 gap-y-2.5 sm:grid-cols-[7rem_1fr]">{children}</dl>;
 }
 
 function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {

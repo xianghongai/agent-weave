@@ -118,7 +118,7 @@ function BuiltInToolForm({ agent, tool, onDone }: { agent: Agent; tool: BuiltInT
         <TemplatePairFields
           idPrefix="built-in-tool-templates"
           legend={t('agents.builtInTemplates')}
-          hint={t('builtInTools.templatesHint')}
+          help={{ with: t('agents.templateHelp.builtInWith'), without: t('agents.templateHelp.builtInWithout') }}
           value={templates}
           onChange={setTemplates}
         />

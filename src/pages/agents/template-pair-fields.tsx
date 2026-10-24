@@ -1,31 +1,32 @@
 import { useTranslation } from 'react-i18next';
 
-import { Field, FieldDescription, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
+import { HelpPopover } from '@/components/help-popover';
+import { Field, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import type { TemplatePair } from '@/lib/workspace';
 
 interface TemplatePairFieldsProps {
   idPrefix: string;
   legend: string;
-  hint: string;
+  /** 两个模板各自的说明，按 Markdown 渲染在字段名旁的问号气泡中。 */
+  help: { with: string; without: string };
   value: TemplatePair;
   onChange: (value: TemplatePair) => void;
 }
 
 /** 一对输出模板：有模式与无模式。命令工具、MCP 工具和内置工具的模板都用它编辑。 */
-export function TemplatePairFields({ idPrefix, legend, hint, value, onChange }: TemplatePairFieldsProps) {
+export function TemplatePairFields({ idPrefix, legend, help, value, onChange }: TemplatePairFieldsProps) {
   const { t } = useTranslation();
 
   return (
     <FieldSet className="gap-3">
       <FieldLegend variant="label">{legend}</FieldLegend>
-      <FieldDescription>
-        {hint}
-        {t('agents.templatesEmptyHint')}
-      </FieldDescription>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field>
-          <FieldLabel htmlFor={`${idPrefix}-with`}>{t('agents.withPattern')}</FieldLabel>
+          <div className="flex items-center gap-1">
+            <FieldLabel htmlFor={`${idPrefix}-with`}>{t('agents.withPattern')}</FieldLabel>
+            <HelpPopover label={t('agents.withPatternHelp')} content={help.with} />
+          </div>
           <Input
             id={`${idPrefix}-with`}
             value={value.with_pattern}
@@ -36,7 +37,10 @@ export function TemplatePairFields({ idPrefix, legend, hint, value, onChange }: 
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor={`${idPrefix}-without`}>{t('agents.withoutPattern')}</FieldLabel>
+          <div className="flex items-center gap-1">
+            <FieldLabel htmlFor={`${idPrefix}-without`}>{t('agents.withoutPattern')}</FieldLabel>
+            <HelpPopover label={t('agents.withoutPatternHelp')} content={help.without} />
+          </div>
           <Input
             id={`${idPrefix}-without`}
             value={value.without_pattern}

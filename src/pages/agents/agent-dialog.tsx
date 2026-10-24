@@ -1,7 +1,10 @@
+import { InfoIcon, type LucideIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { FormDialog } from '@/components/form-dialog';
+import { HelpPopover } from '@/components/help-popover';
+import { Markdown } from '@/components/markdown';
 import { Button } from '@/components/ui/button';
 import { DialogFooter } from '@/components/ui/dialog';
 import {
@@ -17,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemHeader, ItemTitle } from '@/components/ui/item';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOperationForm } from '@/hooks/use-operation-form';
 import { operationProblemMessage } from '@/i18n/problems';
 import {
@@ -122,7 +125,7 @@ function AgentForm({ agent, onClose, onAdded }: AgentFormProps) {
       {/* 两侧伸进对话框的内边距，给滚动条和焦点环留出位置，内容仍与标题对齐。 */}
       <ScrollArea className="-mx-4 flex min-h-0 flex-col">
         <div className="grid gap-4 px-4 py-1">
-          <DialogSection id="agent-section-basic" title={t('agents.basicSection')}>
+          <DialogSection id="agent-section-basic" icon={InfoIcon} title={t('agents.basicSection')}>
             <FieldGroup className="sm:grid sm:grid-cols-2">
               <Field data-invalid={nameProblem ? true : undefined}>
                 <FieldLabel htmlFor="agent-name">{t('agents.name')}</FieldLabel>
@@ -155,6 +158,7 @@ function AgentForm({ agent, onClose, onAdded }: AgentFormProps) {
 
           <DialogSection
             id="agent-section-permission"
+            icon={ShieldCheckIcon}
             title={t('agents.permissionSection')}
             hint={t('agents.permissionOutputHint')}
             toggle={{
@@ -175,6 +179,7 @@ function AgentForm({ agent, onClose, onAdded }: AgentFormProps) {
 
           <DialogSection
             id="agent-section-mcp"
+            icon={PlugIcon}
             title={t('agents.mcpSection')}
             hint={t('agents.mcpOutputHint')}
             toggle={{
@@ -209,6 +214,8 @@ function AgentForm({ agent, onClose, onAdded }: AgentFormProps) {
 
 interface DialogSectionProps {
   id: string;
+  /** 标题前的图标；权限输出与 MCP 输出的图标与输出页的 Tab 一致。 */
+  icon: LucideIcon;
   title: string;
   hint?: string;
   /** 节标题旁的开关，用于整节开启或关闭的输出。 */
@@ -217,12 +224,13 @@ interface DialogSectionProps {
 }
 
 /** 对话框中的一节：标题行（可带说明和开关），下面是这一节的字段。 */
-function DialogSection({ id, title, hint, toggle, children }: DialogSectionProps) {
+function DialogSection({ id, icon: Icon, title, hint, toggle, children }: DialogSectionProps) {
   return (
     <Item variant="outline" className="gap-4 p-4" render={<section aria-labelledby={`${id}-title`} />}>
       <ItemHeader className="items-start">
         <ItemContent>
           <ItemTitle id={`${id}-title`} className="text-base">
+            <Icon className="size-4 text-brand" />
             {title}
           </ItemTitle>
           {hint && <ItemDescription>{hint}</ItemDescription>}
@@ -260,26 +268,29 @@ function McpFields({ value, onChange, problem }: McpFieldsProps) {
         onChange={(scopes) => onChange({ scopes })}
       />
       <Field>
-        <FieldLabel>{t('agents.mcpStyle')}</FieldLabel>
-        <ToggleGroup
-          variant="outline"
-          value={[value.style]}
+        <div className="flex items-center gap-1">
+          <FieldLabel id="agent-mcp-style-label">{t('agents.mcpStyle')}</FieldLabel>
+          <HelpPopover label={t('agents.mcpStyleHelp')} content={t('agents.mcpStyleHint')} />
+        </div>
+        {/* 只用 Tab 列表做分段选择，没有对应的面板。 */}
+        <Tabs
+          value={value.style}
           onValueChange={(next) => {
-            // 单选；再次点击当前项会得到空数组，此时保持原风格。
-            const style = MCP_STYLES.find((candidate) => next.includes(candidate));
+            // 受控且只接受已知风格；Base UI 自动回退时给出的 `null` 不覆盖已有的选择。
+            const style = MCP_STYLES.find((candidate) => candidate === next);
             if (style) {
               onChange({ style });
             }
           }}
-          aria-label={t('agents.mcpStyle')}
         >
-          {MCP_STYLES.map((style) => (
-            <ToggleGroupItem key={style} value={style}>
-              {t(`agents.mcpStyles.${style}`)}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-        <FieldDescription>{t('agents.mcpStyleHint')}</FieldDescription>
+          <TabsList aria-labelledby="agent-mcp-style-label">
+            {MCP_STYLES.map((style) => (
+              <TabsTrigger key={style} value={style} className="px-3">
+                {t(`agents.mcpStyles.${style}`)}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </Field>
       <Field data-invalid={pathProblem ? true : undefined}>
         <FieldLabel htmlFor="agent-mcp-path">{t('agents.propertyPath')}</FieldLabel>
@@ -295,7 +306,10 @@ function McpFields({ value, onChange, problem }: McpFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'mcpPropertyPathInvalid')}</FieldError>
         ) : (
-          <FieldDescription>{t('agents.mcpPropertyPathHint')}</FieldDescription>
+          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
+          <div className="text-sm leading-normal text-muted-foreground">
+            <Markdown>{t('agents.mcpPropertyPathHint')}</Markdown>
+          </div>
         )}
       </Field>
     </FieldGroup>
@@ -336,7 +350,10 @@ function PermissionFields({ value, onChange, problem }: PermissionFieldsProps) {
         {pathProblem ? (
           <FieldError>{operationProblemMessage(t, 'propertyPathInvalid')}</FieldError>
         ) : (
-          <FieldDescription>{t('agents.propertyPathHint')}</FieldDescription>
+          // 说明含代码，用 Markdown 渲染；FieldDescription 是段落，放不下 Markdown 输出的块级元素。
+          <div className="text-sm leading-normal text-muted-foreground">
+            <Markdown>{t('agents.propertyPathHint')}</Markdown>
+          </div>
         )}
       </Field>
 
@@ -368,14 +385,14 @@ function PermissionFields({ value, onChange, problem }: PermissionFieldsProps) {
       <TemplatePairFields
         idPrefix="agent-command-template"
         legend={t('agents.commandTemplates')}
-        hint={t('agents.commandTemplatesHint')}
+        help={{ with: t('agents.templateHelp.commandWith'), without: t('agents.templateHelp.commandWithout') }}
         value={value.command_templates}
         onChange={(command_templates) => onChange({ command_templates })}
       />
       <TemplatePairFields
         idPrefix="agent-mcp-template"
         legend={t('agents.mcpTemplates')}
-        hint={t('agents.mcpTemplatesHint')}
+        help={{ with: t('agents.templateHelp.mcpWith'), without: t('agents.templateHelp.mcpWithout') }}
         value={value.mcp_templates}
         onChange={(mcp_templates) => onChange({ mcp_templates })}
       />
