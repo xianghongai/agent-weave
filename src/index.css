@@ -71,6 +71,12 @@
   --border: oklch(0.905 0.005 260);
   --input: oklch(0.89 0.005 260);
   --ring: oklch(0.52 0.1 180);
+  /* 代码高亮：键名用品牌色，字符串、字面量各用一个色相，注释和标点弱化。 */
+  --syntax-property: var(--brand);
+  --syntax-string: oklch(0.52 0.13 55);
+  --syntax-literal: oklch(0.5 0.16 300);
+  --syntax-comment: var(--muted-foreground);
+  --syntax-punctuation: var(--muted-foreground);
 }
 
 .dark {
@@ -94,6 +100,8 @@
   --border: oklch(1 0 0 / 9%);
   --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.82 0.1 180);
+  --syntax-string: oklch(0.82 0.11 70);
+  --syntax-literal: oklch(0.78 0.12 300);
 }
 
 /* 页眉、主体、页脚共用的水平框架：窄屏全宽留边距，宽屏占 80%。 */
