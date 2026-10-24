@@ -1,28 +1,28 @@
 import { cn } from 'cn';
-import { CircleSlashIcon, FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, ShieldCheckIcon } from 'lucide-react';
+import { FileCodeIcon, FolderOpenIcon, InfoIcon, PlugIcon, ShieldCheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AgentTabs } from '@/components/agent-tabs';
+import { type CodeLanguage } from '@/components/code-theme';
 import { CodeView } from '@/components/code-view';
 import { CopyButton } from '@/components/copy-button';
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
-import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { skipReasonMessage } from '@/i18n/problems';
-import { type McpSection, type PermissionSection, type SkippedRule, generate } from '@/lib/generate';
-import type { Notice } from '@/lib/notices';
-import type { Scope, Workspace } from '@/lib/workspace';
-import { findSelectedAgent, resolveTool } from '@/lib/workspace-operations';
-import { PlaceholderNotice } from '@/pages/output/placeholder-notice';
-import { RuleNoticeList } from '@/pages/output/rule-notice-list';
-import { ToolTypeBadge } from '@/pages/rules/rule-fields';
+import { type McpSection, type PermissionSection, generate } from '@/lib/generate';
+import type { Scope } from '@/lib/workspace';
+import { findSelectedAgent } from '@/lib/workspace-operations';
+import { NoticesPanel } from '@/pages/output/notices-panel';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
-/** 内层 Tab：权限输出或 MCP 输出。 */
-type OutputTab = 'permission' | 'mcp';
+/** 内层 Tab：权限输出、MCP 输出或重要提示。 */
+type OutputTab = 'permission' | 'mcp' | 'notices';
+
+/** 权限和 MCP 两个 Tab 的内容：宽屏下填满剩余高度，只让预览在框内滚动；窄屏下随整页滚动。 */
+const OUTPUT_TAB_CONTENT = 'flex flex-col gap-3 pb-6 text-base md:min-h-0';
 
 export default function OutputPage() {
   const { t } = useTranslation();
@@ -34,6 +34,7 @@ export default function OutputPage() {
 
   const agent = findSelectedAgent(workspace, selectedId);
   const output = agent ? generate(workspace, agent.id, device) : null;
+  const hasHighRisk = output?.notices.some((notice) => notice.type === 'highRisk') ?? false;
 
   return (
     <Page
@@ -45,7 +46,7 @@ export default function OutputPage() {
       {!agent || !output ? (
         <Note icon={InfoIcon}>{t('output.noAgents')}</Note>
       ) : (
-        // 宽屏下 Agent Tabs 和权限/MCP Tab 标题固定，下面的 Tab 内容加上提示一起滚动。
+        // 宽屏下 Agent Tabs 和内层 Tab 标题固定，权限和 MCP 的预览在框内滚动，重要提示整体滚动。
         <AgentTabs agents={workspace.agents} agent={agent} className="gap-3" contentClassName="text-base">
           <Tabs value={tab} onValueChange={(value: OutputTab) => setTab(value)} className="gap-3 md:min-h-0 md:flex-1">
             <TabsList variant="line" className="shrink-0">
@@ -57,39 +58,40 @@ export default function OutputPage() {
                 <PlugIcon />
                 {t('output.mcp')}
               </TabsTrigger>
+              <TabsTrigger value="notices">
+                <TriangleAlertIcon />
+                {t('output.notices')}
+                {hasHighRisk && (
+                  <>
+                    <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
+                    <span className="sr-only">{t('output.hasHighRisk')}</span>
+                  </>
+                )}
+              </TabsTrigger>
             </TabsList>
 
-            <PageScroll>
-              <div className="grid gap-6">
-                <TabsContent value="permission" className="text-base">
-                  {output.permission ? (
-                    <PermissionOutputView
-                      section={output.permission}
-                      lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
-                      workspace={workspace}
-                      skippedRules={output.skippedRules}
-                    />
-                  ) : (
-                    <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
-                  )}
-                </TabsContent>
-                <TabsContent value="mcp" className="text-base">
-                  {output.mcp ? (
-                    <McpOutputView
-                      section={output.mcp}
-                      lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''}
-                      workspace={workspace}
-                      notices={output.notices}
-                    />
-                  ) : (
-                    <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
-                  )}
-                </TabsContent>
-
-                <RuleNoticeList workspace={workspace} notices={output.notices} />
-                <PlaceholderNotice notices={output.notices} />
-              </div>
-            </PageScroll>
+            <TabsContent value="permission" className={OUTPUT_TAB_CONTENT}>
+              {output.permission ? (
+                <PermissionOutputView
+                  section={output.permission}
+                  lastKey={agent.permission_output?.property_path.split('.').at(-1) ?? ''}
+                />
+              ) : (
+                <Note icon={InfoIcon}>{t('output.noPermission')}</Note>
+              )}
+            </TabsContent>
+            <TabsContent value="mcp" className={OUTPUT_TAB_CONTENT}>
+              {output.mcp ? (
+                <McpOutputView section={output.mcp} lastKey={agent.mcp_output?.property_path.split('.').at(-1) ?? ''} />
+              ) : (
+                <Note icon={InfoIcon}>{t('output.noMcp')}</Note>
+              )}
+            </TabsContent>
+            <TabsContent value="notices" className="flex flex-col text-base md:min-h-0">
+              <PageScroll>
+                <NoticesPanel workspace={workspace} notices={output.notices} skippedRules={output.skippedRules} />
+              </PageScroll>
+            </TabsContent>
           </Tabs>
         </AgentTabs>
       )}
@@ -97,174 +99,85 @@ export default function OutputPage() {
   );
 }
 
-/** 跳过的规则：该 Agent 定义表达不了的规则，附带原因。没有时不显示。 */
-function SkippedRuleList({ workspace, skippedRules }: { workspace: Workspace; skippedRules: SkippedRule[] }) {
+/** 权限节：作用域、预览、复制说明。 */
+function PermissionOutputView({ section, lastKey }: { section: PermissionSection; lastKey: string }) {
   const { t } = useTranslation();
-  if (skippedRules.length === 0) {
-    return null;
-  }
 
   return (
-    <section className="grid gap-3">
-      <div className="grid gap-1">
-        <h2 className="flex items-center gap-2 font-medium">
-          <CircleSlashIcon className="size-4 text-brand" />
-          {t('output.skippedRules')}
-          <Badge variant="secondary">{skippedRules.length}</Badge>
-        </h2>
-        <p className="text-sm text-muted-foreground">{t('output.skippedRulesHint')}</p>
-      </div>
-      <ul className="divide-y rounded-xl border">
-        {skippedRules.map(({ ruleId, reason }) => {
-          const rule = workspace.rules.find((candidate) => candidate.id === ruleId);
-          const tool = rule ? resolveTool(workspace, rule.tool) : null;
-          if (!rule || !tool) {
-            return null;
-          }
-          return (
-            <li key={ruleId} className="grid gap-1 px-3 py-2">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-                <code className="font-mono font-medium">{tool.tool.key}</code>
-                <ToolTypeBadge type={tool.type} />
-                {rule.pattern ? (
-                  <code className="font-mono break-all">{rule.pattern}</code>
-                ) : (
-                  <span className="text-muted-foreground">{t('rules.wholeTool')}</span>
-                )}
-                <span className={cn('font-medium', DECISION_TONE[rule.decision])}>
-                  {t(`decisions.${rule.decision}`)}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">{skipReasonMessage(t, reason, rule)}</p>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+    <>
+      <ScopeList scopes={section.scopes} />
+      <Preview
+        value={section.preview}
+        language="json"
+        actions={
+          <>
+            {section.decisions.map((decision) => (
+              <CopyButton
+                key={decision.decision}
+                text={decision.copyInnerText}
+                disabled={decision.entries.length === 0}
+                label={`${t('copy.copyInner')} · ${decision.key}`}
+                className={cn(DECISION_TONE[decision.decision])}
+                title={t('output.entryCount', { n: decision.entries.length })}
+              />
+            ))}
+            <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
+          </>
+        }
+      />
+      <p className="shrink-0 text-sm text-pretty text-muted-foreground">
+        {t('output.copyHint', { key: `"${lastKey}"` })}
+      </p>
+    </>
   );
 }
 
-/** 权限节：作用域、预览、复制说明、跳过的规则。 */
-function PermissionOutputView({
-  section,
-  lastKey,
-  workspace,
-  skippedRules,
-}: {
-  section: PermissionSection;
-  lastKey: string;
-  workspace: Workspace;
-  skippedRules: SkippedRule[];
-}) {
+/** MCP 节：作用域、预览、复制说明。“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。 */
+function McpOutputView({ section, lastKey }: { section: McpSection; lastKey: string }) {
   const { t } = useTranslation();
 
   return (
-    <div className="grid gap-3">
+    <>
       <ScopeList scopes={section.scopes} />
-
-      <div className="overflow-hidden rounded-xl border">
-        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-3 py-2">
-          <span className="mr-auto text-sm font-medium">{t('output.preview')}</span>
-          {section.decisions.map((decision) => (
-            <CopyButton
-              key={decision.decision}
-              text={decision.copyInnerText}
-              disabled={decision.entries.length === 0}
-              label={`${t('copy.copyInner')} · ${decision.key}`}
-              className={cn(DECISION_TONE[decision.decision])}
-              title={t('output.entryCount', { n: decision.entries.length })}
-            />
-          ))}
-          <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
-        </div>
-        <CodeView value={section.preview} language="json" label={t('output.preview')} className="text-xs sm:text-sm" />
-      </div>
-
-      <p className="text-sm text-muted-foreground text-pretty">{t('output.copyHint', { key: `"${lastKey}"` })}</p>
-
-      <SkippedRuleList workspace={workspace} skippedRules={skippedRules} />
-    </div>
-  );
-}
-
-/** MCP 节：作用域、预览、复制说明、TOML 跳过的字段。“复制”整段覆盖；JSON 风格另有“复制内部”，只复制各 Server 的键值对。TOML 风格附带跳过的字段。 */
-function McpOutputView({
-  section,
-  lastKey,
-  workspace,
-  notices,
-}: {
-  section: McpSection;
-  lastKey: string;
-  workspace: Workspace;
-  notices: Notice[];
-}) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="grid gap-3">
-      <ScopeList scopes={section.scopes} />
-
-      <div className="overflow-hidden rounded-xl border">
-        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/50 px-3 py-2">
-          <span className="mr-auto text-sm font-medium">{t('output.preview')}</span>
-          {section.copyInnerText !== null && (
-            <CopyButton
-              text={section.copyInnerText}
-              disabled={section.copyInnerText === ''}
-              label={t('copy.copyInner')}
-            />
-          )}
-          <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
-        </div>
-        <CodeView
-          value={section.preview}
-          language={section.style}
-          label={t('output.preview')}
-          className="text-xs sm:text-sm"
-        />
-      </div>
-
-      <p className="text-sm text-muted-foreground text-pretty">
+      <Preview
+        value={section.preview}
+        language={section.style}
+        actions={
+          <>
+            {section.copyInnerText !== null && (
+              <CopyButton
+                text={section.copyInnerText}
+                disabled={section.copyInnerText === ''}
+                label={t('copy.copyInner')}
+              />
+            )}
+            <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />
+          </>
+        }
+      />
+      <p className="shrink-0 text-sm text-pretty text-muted-foreground">
         {section.style === 'json' ? t('output.mcpCopyHint', { key: `"${lastKey}"` }) : t('output.mcpTomlCopyHint')}
       </p>
-
-      <TomlSkippedFieldList workspace={workspace} notices={notices} />
-    </div>
+    </>
   );
 }
 
-/** TOML 表达不了而被跳过的字段，按 Server 标识与字段路径列出。没有时不显示。 */
-function TomlSkippedFieldList({ workspace, notices }: { workspace: Workspace; notices: Notice[] }) {
+/**
+ * 预览框：标题栏放复制按钮，下面是只读代码视图。
+ * 宽屏下框填满剩余高度，代码在框内滚动，标题栏固定；窄屏下框随内容展开，随整页滚动。
+ */
+function Preview({ value, language, actions }: { value: string; language: CodeLanguage; actions: React.ReactNode }) {
   const { t } = useTranslation();
-  const fields = notices.flatMap((notice) => {
-    if (notice.type !== 'tomlFieldSkipped') {
-      return [];
-    }
-    const server = workspace.mcp_servers.find((candidate) => candidate.id === notice.serverId);
-    return server ? [{ id: `${notice.serverId}:${notice.field}`, server: server.key, field: notice.field }] : [];
-  });
-  if (fields.length === 0) {
-    return null;
-  }
 
   return (
-    <div className="grid gap-2 rounded-xl border p-3 text-sm">
-      <span className="flex items-center gap-2 font-medium">
-        <CircleSlashIcon className="size-4 text-brand" />
-        {t('output.tomlFieldSkipped')}
-        <Badge variant="secondary">{fields.length}</Badge>
-      </span>
-      <p className="text-muted-foreground">{t('output.tomlFieldSkippedHint')}</p>
-      <ul className="grid gap-1">
-        {fields.map(({ id, server, field }) => (
-          <li key={id}>
-            <code className="font-mono break-all">
-              {server} · {field}
-            </code>
-          </li>
-        ))}
-      </ul>
+    <div className="flex flex-col overflow-hidden rounded-xl border md:min-h-0 md:flex-1">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/50 px-3 py-2">
+        <span className="mr-auto text-sm font-medium">{t('output.preview')}</span>
+        {actions}
+      </div>
+      <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:min-h-0 md:flex-1">
+        <CodeView value={value} language={language} label={t('output.preview')} className="text-xs sm:text-sm" />
+      </ScrollArea>
     </div>
   );
 }
@@ -277,7 +190,7 @@ function ScopeList({ scopes }: { scopes: Scope[] }) {
   }
 
   return (
-    <div className="grid gap-2 rounded-xl bg-muted p-3 text-sm">
+    <div className="grid shrink-0 gap-2 rounded-xl bg-muted p-3 text-sm">
       <span className="flex items-center gap-2 font-medium">
         <FolderOpenIcon className="size-4 text-brand" />
         {t('output.scopes')}
