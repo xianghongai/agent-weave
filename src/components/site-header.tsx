@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'wouter';
 
 import { Brand } from '@/components/brand';
+import { SettingsMenu } from '@/components/settings-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { PAGES } from '@/pages/registry';
 
@@ -16,7 +17,7 @@ export function SiteHeader() {
         <Link href="/" aria-label={t('header.home')} className="shrink-0 rounded-md">
           <Brand />
         </Link>
-        {/* 七个入口在窄屏下只显示图标，仍放不下时横向滚动，不挤压主题切换。 */}
+        {/* 七个入口在窄屏下只显示图标，仍放不下时横向滚动，不挤压设置菜单和主题切换。 */}
         <nav aria-label={t('header.pages')} className="ml-auto flex min-w-0 items-center gap-0.5 overflow-x-auto">
           {PAGES.map(({ id, path, icon: Icon }) => {
             const active = location === path;
@@ -38,7 +39,10 @@ export function SiteHeader() {
             );
           })}
         </nav>
-        <ThemeToggle />
+        <div className="flex shrink-0 items-center">
+          <SettingsMenu />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

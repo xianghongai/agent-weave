@@ -1,4 +1,4 @@
-import { CopyPlusIcon, PackageIcon, RotateCcwIcon, TriangleAlertIcon } from 'lucide-react';
+import { CopyPlusIcon, RotateCcwIcon, TriangleAlertIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -15,11 +15,42 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { type MergeSkip, mergePresets, resetToPresets } from '@/lib/preset-operations';
 import { useAppStore } from '@/state/app-store';
+import { useUiStore } from '@/state/ui-store';
 
-/** 同步页中的“预设”一节：合并预设与重置为预设。 */
-export function PresetSection() {
+/**
+ * 预设对话框：合并预设与重置为预设，挂在应用外壳上，由 `ui-store` 的 `openDialog` 控制开关。
+ * 没有输入框，不是表单弹窗：点空白处或按 Esc 都可以关闭；宽度与窄的表单弹窗一致。
+ */
+export function PresetsDialog() {
+  const { t } = useTranslation();
+  const open = useUiStore((state) => state.openDialog === 'presets');
+  const closeDialog = useUiStore((state) => state.closeDialog);
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          closeDialog();
+        }
+      }}
+    >
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-y-auto sm:max-w-lg">
+        <DialogHeader className="shrink-0">
+          <DialogTitle>{t('presets.title')}</DialogTitle>
+          <DialogDescription>{t('presets.hint')}</DialogDescription>
+        </DialogHeader>
+        {/* 弹窗关闭后连同内容一起卸载，再次打开时不再显示上一次的跳过报告。 */}
+        <PresetActions />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PresetActions() {
   const { t } = useTranslation();
   const replaceWorkspace = useAppStore((state) => state.replaceWorkspace);
   const [skipped, setSkipped] = useState<MergeSkip[]>([]);
@@ -57,15 +88,7 @@ export function PresetSection() {
   }
 
   return (
-    <section className="grid gap-3">
-      <div className="grid gap-1">
-        <h2 className="flex items-center gap-2 font-medium">
-          <PackageIcon className="size-4 text-brand" />
-          {t('presets.title')}
-        </h2>
-        <p className="text-sm text-muted-foreground">{t('presets.hint')}</p>
-      </div>
-
+    <div className="grid gap-3">
       <ul className="divide-y rounded-xl border">
         <li className="flex flex-wrap items-center gap-3 px-3 py-2.5">
           <p className="min-w-0 flex-1 text-sm text-muted-foreground">{t('presets.mergeHint')}</p>
@@ -114,6 +137,6 @@ export function PresetSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </div>
   );
 }

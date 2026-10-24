@@ -5,7 +5,7 @@ import type { RestoreFallback, StorageProblem } from '@/lib/persistence';
 import { devtoolsInDev } from '@/state/devtools';
 
 /*
- * 非持久化的全局界面状态：多个页面或组件共用、刷新后重置的状态。
+ * 非持久化的全局界面状态：多个页面或组件共用、刷新后重置的状态，如存储状态、当前选中的 Agent、当前打开的全局对话框。
  * 不挂 `persist`：这里的修改不会触发本地存储写入，记录写入错误也不会再次引起写入。
  * 只在一个页面内使用的状态（Tab、筛选条件、表单）用组件自己的 `useState`。
  */
@@ -28,7 +28,18 @@ export interface AgentSelectionSlice {
   selectAgent: (id: string) => void;
 }
 
-export type UiState = StorageSlice & AgentSelectionSlice;
+/** 挂在应用外壳上、可以从多个地方打开的对话框。 */
+export type GlobalDialog = 'deviceSettings' | 'presets';
+
+/** 当前打开的全局对话框：页眉的设置菜单和输出页的提示都能打开同一个对话框。 */
+export interface GlobalDialogSlice {
+  /** 同一时间只打开一个；为 `null` 时都不打开。 */
+  openDialog: GlobalDialog | null;
+  showDialog: (dialog: GlobalDialog) => void;
+  closeDialog: () => void;
+}
+
+export type UiState = StorageSlice & AgentSelectionSlice & GlobalDialogSlice;
 
 type UiSliceCreator<Slice> = StateCreator<UiState, [['zustand/devtools', never], ['zustand/immer', never]], [], Slice>;
 
@@ -84,11 +95,32 @@ const createAgentSelectionSlice: UiSliceCreator<AgentSelectionSlice> = (set) => 
     ),
 });
 
+const createGlobalDialogSlice: UiSliceCreator<GlobalDialogSlice> = (set) => ({
+  openDialog: null,
+  showDialog: (dialog) =>
+    set(
+      (state) => {
+        state.openDialog = dialog;
+      },
+      undefined,
+      'globalDialog/showDialog'
+    ),
+  closeDialog: () =>
+    set(
+      (state) => {
+        state.openDialog = null;
+      },
+      undefined,
+      'globalDialog/closeDialog'
+    ),
+});
+
 export const useUiStore = create<UiState>()(
   devtoolsInDev(
     immer((...args) => ({
       ...createStorageSlice(...args),
       ...createAgentSelectionSlice(...args),
+      ...createGlobalDialogSlice(...args),
     })),
     { name: 'agent-weave/ui' }
   )

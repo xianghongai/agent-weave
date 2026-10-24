@@ -13,7 +13,7 @@ import { useUiStore } from '@/state/ui-store';
  */
 export function StorageBanner() {
   const { t } = useTranslation();
-  // 本机设置和 Gist 设置的回退提示显示在同步页各自的一节中，这里只提示工作区。
+  // 本机设置的回退提示显示在本机设置对话框中，Gist 设置的显示在同步页，这里只提示工作区。
   const { fallback, unsaved, dismissFallback } = useUiStore(
     useShallow((state) => ({
       fallback: state.fallback?.workspace ?? null,
