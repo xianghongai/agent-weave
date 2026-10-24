@@ -118,7 +118,7 @@ function SummaryList({ children }: { children: React.ReactNode }) {
 
 function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-0.5 sm:col-span-2 sm:grid-cols-subgrid">
+    <div className="grid gap-x-4 gap-y-0.5 sm:col-span-2 sm:grid-cols-subgrid">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>

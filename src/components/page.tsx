@@ -60,8 +60,8 @@ export function PageScroll({ framed = false, children }: { framed?: boolean; chi
     return <FramedScroll>{children}</FramedScroll>;
   }
   return (
-    <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:-mx-3 md:min-h-0 md:flex-1">
-      <div className="pb-6 md:px-3">{children}</div>
+    <ScrollArea className="max-md:[&>[data-slot=scroll-area-viewport]]:overflow-visible! md:-mx-3 md:mb-6 md:min-h-0 md:flex-1">
+      <div className="pb-6 md:px-3 md:pb-1">{children}</div>
     </ScrollArea>
   );
 }

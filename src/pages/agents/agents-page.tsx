@@ -77,7 +77,7 @@ export default function AgentsPage() {
           onValueChange={(value: string) => selectAgent(value)}
           className="gap-4 md:min-h-0 md:flex-1"
         >
-          <TabsList className="max-w-full shrink-0 justify-start overflow-x-auto">
+          <TabsList className="max-w-full shrink-0 justify-start overflow-x-auto overflow-y-hidden">
             {workspace.agents.map((candidate) => (
               <TabsTrigger key={candidate.id} value={candidate.id} className="flex-none">
                 {candidate.name}
