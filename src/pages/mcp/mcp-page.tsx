@@ -66,9 +66,9 @@ export default function McpPage() {
       description={t('pages.mcp.description')}
       scroll="custom"
       actions={
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
           <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
-          <Button onClick={() => openEditor(null)}>
+          <Button className="ml-auto" onClick={() => openEditor(null)}>
             <PlusIcon />
             {t('mcp.add')}
           </Button>

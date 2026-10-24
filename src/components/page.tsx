@@ -29,7 +29,7 @@ interface PageProps {
 export function Page({ icon: Icon, title, description, help, actions, scroll = 'all', children }: PageProps) {
   return (
     <div className="flex flex-col md:min-h-0 md:flex-1">
-      {/* 窄屏下说明换到标题下方；宽屏下图标、标题、问号、说明、操作排成一行。 */}
+      {/* 窄屏下说明和操作依次换到标题下方；宽屏下图标、标题、问号、说明、操作排成一行。 */}
       <header className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 py-4 md:flex-nowrap">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
           <Icon className="size-4" />
@@ -40,11 +40,16 @@ export function Page({ icon: Icon, title, description, help, actions, scroll = '
         </div>
         <p
           title={description}
-          className="order-last basis-full text-sm text-pretty text-muted-foreground md:order-none md:min-w-0 md:flex-1 md:basis-auto md:truncate"
+          className="order-last basis-full text-sm text-pretty text-muted-foreground md:order-none md:min-w-0 md:flex-1 md:basis-0 md:truncate"
         >
           {description}
         </p>
-        {actions && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
+        {/* 操作区放不下时换行：窄屏下排在说明之后独占一行，宽屏下先挤掉说明的宽度再换行。 */}
+        {actions && (
+          <div className="order-last flex basis-full flex-wrap items-center gap-2 md:order-none md:ml-auto md:basis-auto">
+            {actions}
+          </div>
+        )}
       </header>
       {scroll === 'all' ? (
         <PageScroll>{children}</PageScroll>
