@@ -39,6 +39,29 @@
 - **Codex 不展开 `${VAR}`**，也不会把本机环境变量全部传给 Server；需要环境变量的字段要改用 `env_vars = ["NAME"]`。预设按约定不改写内容，只在作用域说明中提示。
 - 预设 MCP 内容中的 `type = "stdio"` 不是 Codex 的字段，预计会被忽略，但没有在真实的 Codex 上验证过。
 
+## Cursor CLI
+
+- 只覆盖 CLI：权限位于 `~/.cursor/cli-config.json`（全局）和 `.cursor/cli.json`（项目）的 `permissions.allow`、`deny`，拒绝优先。项目文件只接受 `permissions`，其他键被忽略。IDE 的 `permissions.json`（`terminalAllowlist`、`mcpAllowlist`）是另一套键，两边不互通。
+- **没有询问这一档**，`ask` 的决策键留空，询问规则（如 `rm` 整体询问）列为跳过的规则。未命中允许列表的命令在交互式会话中询问，无头模式下静默拒绝。
+- 权限写法只有五类：`Shell(commandBase)`、`Read(pathOrGlob)`、`Write(pathOrGlob)`、`WebFetch(domainOrPattern)`、`Mcp(server:tool)`。`Grep`、`Task`、`WebSearch` 没有独立写法；没有独立的 `Edit`，编辑走 `Write`。
+- `Shell(git)` 只匹配命令的第一个词，允许所有子命令，也不匹配 `/bin/rm` 或 `sh -c 'rm …'`。官方另有 `command:args` 写法，但只给出 `Shell(curl:*)` 一个例子，参数 glob 能否表达 `git push --force` 这样的子命令前缀没有说明。拒绝规则写错会静默放行，所以带模式的命令模板留空，这类规则列为跳过的规则。代价是整体允许 `git` 后，`git push --force` 等拒绝规则在 Cursor 中不生效。
+- 路径 glob 支持 `**`、`*`、`?`。相对路径只限当前工作区，绝对路径可以访问工作区之外，因此 `{{home}}` 展开后的绝对路径可以直接用；不带模式的 `Read(**)`、`Write(**)` 也只覆盖当前工作区。
+- MCP 规则写作 `Mcp(<server>:*)` 或 `Mcp(<server>:<tool>)`，Server 名来自 `mcp.json`。
+- MCP 配置是 Claude 风格 JSON，根键 `mcpServers`，全局在 `~/.cursor/mcp.json`，项目在 `.cursor/mcp.json`，两者合并、同名以项目为准，CLI 与 IDE 共用。STDIO 的 `type: "stdio"` 是官方写法；远程 Server 只写 `url`。**环境变量写作 `${env:NAME}`**，官方没有说明 `${VAR}` 是否可用，本工具不转换，在作用域说明中提示。
+
+## Gemini CLI
+
+- 不输出权限，原因见 `docs/adr/0001-agent-definition-as-data.md`：
+  - 设置文件的 `tools.allowed`、`tools.confirmationRequired` 仍可用，但 `tools.exclude` 已弃用，顶层的 `coreTools`、`excludeTools`、`autoAccept` 已移除。
+  - `toolName(args)` 的括号参数只对 `run_shell_command` 有效，其他工具的参数被忽略、等同于整体放行，路径与域名规则会被悄悄放宽。
+  - MCP 的放行在另一个路径：`mcp.allowed`、`mcp.excluded` 控制整个 Server，`mcpServers.<name>.trust` 让 Server 的所有工具免确认。
+  - 官方主推的策略引擎是 `~/.gemini/policies/*.toml` 中的 `[[rule]]` 数组，每条规则要写 `toolName`、`decision`、`priority` 等多个字段，`priority` 缺失会让整个文件被跳过，模板表达不了。工作区策略目录官方标注为当前禁用。
+- 因为不输出权限，预设不收录它的内置工具。
+- MCP 配置写在设置文件的 `mcpServers` 下，用户级 `~/.gemini/settings.json`，项目级 `.gemini/settings.json`（只在受信任的工作区中加载）。设置文件还有其他键，粘贴的是 `mcpServers` 这一个键值对。
+- 传输方式由字段决定：`command` 是 STDIO，`url` 是 SSE，`httpUrl` 是 Streamable HTTP。官方没有记载 `type` 字段，预设内容中的 `type: "stdio"` 预计被忽略，没有在真实的 Gemini CLI 上验证过。
+- `env` 中支持 `$VAR` 和 `${VAR}`，未定义时展开为空字符串；密钥类的本机环境变量不会自动传给 Server，要在 `env` 中列出。
+- Server 名不要含下划线：MCP 工具的完整名是 `mcp_<server>_<tool>`，策略按下划线切分，含下划线会让规则静默失效。预设的 Server 标识都用连字符。
+
 ## 其他 Agent 的 MCP 风格
 
 需要新增 Agent 定义时参考：
