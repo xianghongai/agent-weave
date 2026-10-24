@@ -61,7 +61,9 @@ mise exec -- pnpm format:check && mise exec -- pnpm lint && mise exec -- pnpm ch
 
 pre-commit hook（`package.json` 的 `simple-git-hooks`，`pnpm install` 时安装）在提交时运行 `format:check` 和 `lint`。CI（`.github/workflows/ci.yml`）在推送和 Pull Request 时运行全部校验；推送到 `main` 后，`.github/workflows/pages.yml` 构建并部署到 GitHub Pages。
 
-涉及界面的改动需在浏览器中实际验证，并确认运行时只向 `api.github.com` 发出请求。5173 端口和用户的浏览器留给用户：子代理用 `mise exec -- pnpm dev --port <空闲端口>` 启动开发服务器，用 `chrome-devtools-isolated` MCP（无头、临时配置）打开页面截图自查。
+实现子代理跑 `check-types`、`test` 和 `build`，格式与 lint 由 pre-commit 负责；合并进集成分支后跑上面一整条命令一次。
+
+涉及界面的改动需在浏览器中实际验证，并确认运行时只向 `api.github.com` 发出请求。起停开发服务器、读取页面的步骤见 `docs/agents/browser-check.md`。
 
 ## Agent skills
 
