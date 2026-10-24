@@ -13,11 +13,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Tag } from '@/lib/workspace';
 import { compareText, countToolsForTag, deleteTag } from '@/lib/workspace-operations';
 import { TagDialog } from '@/pages/tags/tag-dialog';
+import { ToolCountBadges } from '@/pages/tags/tool-count-badges';
 import { useAppStore } from '@/state/app-store';
 
 export default function TagsPage() {
@@ -37,7 +37,9 @@ export default function TagsPage() {
     setEditOpen(true);
   }
 
-  const deleteToolCount = deleteTarget ? countToolsForTag(workspace, deleteTarget.id) : 0;
+  const deleteToolCount = deleteTarget
+    ? Object.values(countToolsForTag(workspace, deleteTarget.id)).reduce((sum, n) => sum + n, 0)
+    : 0;
 
   return (
     <Page
@@ -62,14 +64,14 @@ export default function TagsPage() {
           ) : (
             <ul className="divide-y rounded-xl border">
               {tags.map((tag) => {
-                const toolCount = countToolsForTag(workspace, tag.id);
+                const toolCounts = countToolsForTag(workspace, tag.id);
                 return (
                   <li key={tag.id} className="flex items-center gap-3 px-3 py-2.5">
                     <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
                       <span className="font-medium">{tag.name}</span>
                       <code className="truncate font-mono text-sm text-muted-foreground">{tag.key}</code>
                     </div>
-                    {toolCount > 0 && <Badge variant="secondary">{t('tags.toolCount', { n: toolCount })}</Badge>}
+                    <ToolCountBadges tagId={tag.id} counts={toolCounts} />
                     <Button
                       variant="ghost"
                       size="icon"

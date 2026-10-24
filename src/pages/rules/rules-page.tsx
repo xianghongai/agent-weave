@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { operationProblemMessage } from '@/i18n/problems';
 import type { Decision, Rule, ToolRef } from '@/lib/workspace';
@@ -22,6 +22,7 @@ import {
 } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { DecisionToggle, ToolSelect, ToolTypeBadge } from '@/pages/rules/rule-fields';
+import { PatternLabel } from '@/pages/rules/pattern-label';
 import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
 import {
   type OwnerFilter,
@@ -194,7 +195,7 @@ function AddRuleForm() {
             {problem && <FieldError>{operationProblemMessage(t, problem)}</FieldError>}
           </Field>
           <Field>
-            <FieldLabel htmlFor="rule-add-pattern">{t('rules.pattern')}</FieldLabel>
+            <PatternLabel htmlFor="rule-add-pattern" hint={patternTexts.hint} />
             <Input
               ref={patternRef}
               id="rule-add-pattern"
@@ -205,7 +206,6 @@ function AddRuleForm() {
               className="font-mono"
               onChange={(event) => setPattern(event.target.value)}
             />
-            <FieldDescription>{patternTexts.hint}</FieldDescription>
           </Field>
           <Field>
             <FieldLabel>{t('rules.decision')}</FieldLabel>

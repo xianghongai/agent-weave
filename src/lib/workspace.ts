@@ -143,8 +143,10 @@ export const OPERATING_SYSTEMS = ['linux', 'macos', 'windows'] as const;
 export type OperatingSystem = (typeof OPERATING_SYSTEMS)[number];
 
 export interface DeviceSettings {
+  /** 输出时展开占位符所用的操作系统，`null` 表示还没有选择。 */
   os: OperatingSystem | null;
-  user_name: string;
+  /** 每种操作系统各记一个用户名，切换系统时不必改写。 */
+  user_names: Record<OperatingSystem, string>;
 }
 
-export const EMPTY_DEVICE_SETTINGS: DeviceSettings = { os: null, user_name: '' };
+export const EMPTY_DEVICE_SETTINGS: DeviceSettings = { os: null, user_names: { linux: '', macos: '', windows: '' } };

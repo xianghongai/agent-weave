@@ -10,6 +10,7 @@ import {
   type DeviceSettings,
   EMPTY_DEVICE_SETTINGS,
   type McpServer,
+  type OperatingSystem,
   type Rule,
   type TemplatePair,
   type Workspace,
@@ -675,7 +676,12 @@ describe('生成：内置工具', () => {
 });
 
 describe('生成：路径占位符', () => {
-  const linux: DeviceSettings = { os: 'linux', user_name: 'alice' };
+  /** 选中 `os`，且只有这个系统填了用户名的本机设置。 */
+  const on = (os: OperatingSystem, userName: string): DeviceSettings => ({
+    os,
+    user_names: { ...EMPTY_DEVICE_SETTINGS.user_names, [os]: userName },
+  });
+  const linux = on('linux', 'alice');
 
   it('Linux 上 {{home}} 展开为 /home/<用户名>，规则模式中的占位符随之展开', () => {
     const ws = workspace(['ls'], [rule('ls', '{{home}}/projects', 'allow')]);
@@ -685,9 +691,9 @@ describe('生成：路径占位符', () => {
   });
 
   it.each([
-    ['macOS', { os: 'macos', user_name: 'alice' }, 'Bash(ls /Users/alice/projects/alice *)'],
-    ['Windows', { os: 'windows', user_name: 'alice' }, 'Bash(ls C:\\Users\\alice/projects/alice *)'],
-    ['用户名前后的空白不计入', { os: 'linux', user_name: ' alice ' }, 'Bash(ls /home/alice/projects/alice *)'],
+    ['macOS', on('macos', 'alice'), 'Bash(ls /Users/alice/projects/alice *)'],
+    ['Windows', on('windows', 'alice'), 'Bash(ls C:\\Users\\alice/projects/alice *)'],
+    ['用户名前后的空白不计入', on('linux', ' alice '), 'Bash(ls /home/alice/projects/alice *)'],
   ] satisfies [string, DeviceSettings, string][])(
     '%s：{{home}} 按操作系统展开，{{user}} 展开为用户名',
     (_, device, expected) => {
@@ -697,9 +703,19 @@ describe('生成：路径占位符', () => {
   );
 
   it.each([
+    ['linux', 'Bash(ls /home/alice/projects/alice *)'],
+    ['macos', 'Bash(ls /Users/bob/projects/bob *)'],
+    ['windows', 'Bash(ls C:\\Users\\carol/projects/carol *)'],
+  ] satisfies [OperatingSystem, string][])('各系统各存一个用户名，选中 %s 时只用它的用户名', (os, expected) => {
+    const device: DeviceSettings = { os, user_names: { linux: 'alice', macos: 'bob', windows: 'carol' } };
+    const ws = workspace(['ls'], [rule('ls', '{{home}}/projects/{{user}}', 'allow')]);
+    expect(generate(ws, claude.id, device)?.permission?.decisions[0]?.entries).toEqual([expected]);
+  });
+
+  it.each([
     ['没有本机设置', EMPTY_DEVICE_SETTINGS],
-    ['没有选择操作系统', { os: null, user_name: 'alice' }],
-    ['用户名为空白', { os: 'macos', user_name: '  ' }],
+    ['没有选择操作系统', { os: null, user_names: { linux: 'alice', macos: 'alice', windows: 'alice' } }],
+    ['所选系统的用户名为空白', { os: 'macos', user_names: { linux: 'alice', macos: '  ', windows: 'alice' } }],
   ] satisfies [string, DeviceSettings][])('%s时占位符原样保留，每条相关规则产生一条提示', (_, device) => {
     const home = rule('ls', '{{home}}/projects/{{user}}', 'allow');
     const plain = rule('ls', '/tmp', 'allow');
@@ -747,7 +763,7 @@ describe('生成：路径占位符', () => {
     const ws = withServers(workspace([], [], mcpAgent), [plain, filesystem]);
 
     it('展开嵌套在对象和数组中的所有字符串值，数字、null 和 ${VAR} 原样保留', () => {
-      const output = generate(ws, claude.id, { os: 'windows', user_name: 'alice' });
+      const output = generate(ws, claude.id, on('windows', 'alice'));
       expect(output?.mcp?.copyInnerText?.split(',\n"plain"')[0]).toBe(
         [
           '"filesystem": {',
@@ -787,7 +803,7 @@ describe('生成：路径占位符', () => {
     it('TOML 风格同样展开；不完整时占位符提示排在 TOML 字段跳过提示之前', () => {
       const tomlAgent: Agent = { ...claude, mcp_output: { style: 'toml', property_path: 'mcp_servers', scopes: [] } };
       const toml = { ...ws, agents: [tomlAgent] };
-      const expanded = generate(toml, claude.id, { os: 'macos', user_name: 'alice' });
+      const expanded = generate(toml, claude.id, on('macos', 'alice'));
       expect(expanded?.mcp?.copyText).toContain('"/Users/alice/notes"');
       expect(expanded?.mcp?.copyText).toContain('OWNER = "alice"');
       expect(generate(toml, claude.id, EMPTY_DEVICE_SETTINGS)?.notices).toEqual([

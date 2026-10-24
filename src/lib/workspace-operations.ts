@@ -149,18 +149,21 @@ function inputTagIds(input: TagIdsInput, current: string[]): string[] {
   return input.tag_ids ? [...new Set(input.tag_ids)] : current;
 }
 
-/** 全部工具（命令工具、MCP Server、各 Agent 的内置工具），用于按标签统计。 */
-function allTools(workspace: Workspace): { tag_ids: string[] }[] {
-  return [
-    ...workspace.command_tools,
-    ...workspace.mcp_servers,
-    ...workspace.agents.flatMap((agent) => agent.built_in_tools),
-  ];
-}
+/** 按工具种类分别统计的数量。MCP 工具按 MCP Server 计数。 */
+export type ToolCounts = Record<ToolType, number>;
 
-/** 引用某个标签的工具数量。删除标签前，界面用它在确认框中提示。 */
-export function countToolsForTag(workspace: Workspace, tagId: string): number {
-  return allTools(workspace).filter((tool) => tool.tag_ids.includes(tagId)).length;
+/**
+ * 引用某个标签的工具数量，按种类分别统计；内置工具合计全部 Agent 的。
+ * 标签列表用它显示各类徽标，删除标签前用合计在确认框中提示。
+ */
+export function countToolsForTag(workspace: Workspace, tagId: string): ToolCounts {
+  const count = (tools: readonly { tag_ids: string[] }[]) =>
+    tools.filter((tool) => tool.tag_ids.includes(tagId)).length;
+  return {
+    command: count(workspace.command_tools),
+    mcp: count(workspace.mcp_servers),
+    built_in: count(workspace.agents.flatMap((agent) => agent.built_in_tools)),
+  };
 }
 
 /** 工具上的一个标签引用。标签已被删除时 `tag` 为 `null`，界面显示为“已删除的标签”。 */
@@ -774,6 +777,11 @@ export interface ToolFilter {
 }
 
 export const NO_TOOL_FILTER: ToolFilter = { name: '', tagId: null };
+
+/** 按标签筛选的初始条件，用于从标签页跳转到工具列表。标签为 `null` 或已被删除时不筛选。 */
+export function toolFilterForTag(workspace: Workspace, tagId: string | null): ToolFilter {
+  return workspace.tags.some((tag) => tag.id === tagId) ? { ...NO_TOOL_FILTER, tagId } : NO_TOOL_FILTER;
+}
 
 /** 名称关键字去掉首尾空白后不区分大小写地匹配标识或描述；标签条件与它同时生效。 */
 export function matchesToolFilter(
