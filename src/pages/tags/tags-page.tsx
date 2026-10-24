@@ -56,11 +56,11 @@ export default function TagsPage() {
       <section className="flex flex-col gap-3 md:min-h-0 md:flex-1">
         <p className="shrink-0 text-sm text-muted-foreground">{t('tags.listHint')}</p>
 
-        <PageScroll>
-          {tags.length === 0 ? (
-            <Note icon={TagsIcon}>{t('tags.empty')}</Note>
-          ) : (
-            <ul className="divide-y rounded-xl border">
+        {tags.length === 0 ? (
+          <Note icon={TagsIcon}>{t('tags.empty')}</Note>
+        ) : (
+          <PageScroll framed>
+            <ul className="divide-y">
               {tags.map((tag) => {
                 const toolCount = countToolsForTag(workspace, tag.id);
                 return (
@@ -95,8 +95,8 @@ export default function TagsPage() {
                 );
               })}
             </ul>
-          )}
-        </PageScroll>
+          </PageScroll>
+        )}
       </section>
 
       <TagDialog open={editOpen} onOpenChange={setEditOpen} tag={editTarget} />

@@ -77,13 +77,13 @@ export default function McpPage() {
           <ToolFilterBar workspace={workspace} value={filter} onChange={setFilter} />
         </div>
 
-        <PageScroll>
-          {allServers.length === 0 ? (
-            <Note icon={PlugIcon}>{t('mcp.empty')}</Note>
-          ) : servers.length === 0 ? (
-            <Note icon={PlugIcon}>{t('filters.noMatch')}</Note>
-          ) : (
-            <ul className="divide-y rounded-xl border">
+        {allServers.length === 0 ? (
+          <Note icon={PlugIcon}>{t('mcp.empty')}</Note>
+        ) : servers.length === 0 ? (
+          <Note icon={PlugIcon}>{t('filters.noMatch')}</Note>
+        ) : (
+          <PageScroll framed>
+            <ul className="divide-y">
               {servers.map((server) => {
                 const ruleCount = countRulesForTool(workspace, { type: 'mcp', id: server.id });
                 return (
@@ -122,8 +122,8 @@ export default function McpPage() {
                 );
               })}
             </ul>
-          )}
-        </PageScroll>
+          </PageScroll>
+        )}
       </section>
 
       <McpServerDialog open={editOpen} onOpenChange={setEditOpen} server={editTarget} />

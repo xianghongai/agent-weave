@@ -72,13 +72,13 @@ export default function RulesPage() {
             </div>
           </div>
 
-          <PageScroll>
-            {allRules.length === 0 ? (
-              <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
-            ) : rules.length === 0 ? (
-              <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
-            ) : (
-              <ul className="divide-y rounded-xl border">
+          {allRules.length === 0 ? (
+            <Note icon={ShieldCheckIcon}>{t('rules.empty')}</Note>
+          ) : rules.length === 0 ? (
+            <Note icon={ShieldCheckIcon}>{t('rules.noMatch')}</Note>
+          ) : (
+            <PageScroll framed>
+              <ul className="divide-y">
                 {rules.map(({ rule, tool }) => (
                   <li key={rule.id} className="flex items-center gap-3 px-3 py-2">
                     <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 font-mono text-sm">
@@ -119,8 +119,8 @@ export default function RulesPage() {
                   </li>
                 ))}
               </ul>
-            )}
-          </PageScroll>
+            </PageScroll>
+          )}
         </section>
       </div>
 
