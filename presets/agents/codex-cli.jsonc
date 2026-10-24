@@ -1,0 +1,28 @@
+{
+  "priority": 100,
+  "agents": [
+    {
+      "id": "preset-agent-codex-cli",
+      "name": "Codex CLI",
+      "description": "preset-agent-codex-cli.description",
+      "built_in_tools": [],
+      "permission_output": null,
+      "mcp_output": {
+        "style": "toml",
+        "property_path": "mcp_servers",
+        "scopes": [
+          {
+            "name": "preset-agent-codex-cli.mcp-scope-user.name",
+            "path": "~/.codex/config.toml",
+            "note": "preset-agent-codex-cli.mcp-scope-user.note",
+          },
+          {
+            "name": "preset-agent-codex-cli.mcp-scope-project.name",
+            "path": ".codex/config.toml",
+            "note": "preset-agent-codex-cli.mcp-scope-project.note",
+          },
+        ],
+      },
+    },
+  ],
+}

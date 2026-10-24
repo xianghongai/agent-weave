@@ -1,0 +1,139 @@
+{
+  "priority": 100,
+  "agents": [
+    {
+      "id": "preset-agent-claude-code",
+      "name": "Claude Code",
+      "description": "preset-agent-claude-code.description",
+      "built_in_tools": [
+        {
+          "id": "preset-built-in-claude-code-read",
+          "key": "Read",
+          "description": "preset-built-in-claude-code-read.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Read({pattern}**)",
+            "without_pattern": "Read",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-edit",
+          "key": "Edit",
+          "description": "preset-built-in-claude-code-edit.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": true,
+          "templates": {
+            "with_pattern": "Edit({pattern}**)",
+            "without_pattern": "Edit",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-webfetch",
+          "key": "WebFetch",
+          "description": "preset-built-in-claude-code-webfetch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "WebFetch(domain:{pattern})",
+            "without_pattern": "WebFetch",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-websearch",
+          "key": "WebSearch",
+          "description": "preset-built-in-claude-code-websearch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "",
+            "without_pattern": "WebSearch",
+          },
+        },
+      ],
+      "permission_output": {
+        "property_path": "permissions",
+        "scopes": [
+          {
+            "name": "preset-agent-claude-code.permission-scope-user.name",
+            "path": "~/.claude/settings.json",
+            "note": "preset-agent-claude-code.permission-scope-user.note",
+          },
+          {
+            "name": "preset-agent-claude-code.permission-scope-project.name",
+            "path": ".claude/settings.json",
+            "note": "preset-agent-claude-code.permission-scope-project.note",
+          },
+          {
+            "name": "preset-agent-claude-code.permission-scope-project-local.name",
+            "path": ".claude/settings.local.json",
+            "note": "preset-agent-claude-code.permission-scope-project-local.note",
+          },
+        ],
+        "decision_keys": {
+          "allow": "allow",
+          "ask": "ask",
+          "deny": "deny",
+        },
+        "command_templates": {
+          "with_pattern": "Bash({command} {pattern} *)",
+          "without_pattern": "Bash({command} *)",
+        },
+        "mcp_templates": {
+          "with_pattern": "mcp__{server}__{pattern}",
+          "without_pattern": "mcp__{server}",
+        },
+      },
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-claude-code.mcp-scope-project.name",
+            "path": ".mcp.json",
+            "note": "preset-agent-claude-code.mcp-scope-project.note",
+          },
+          {
+            "name": "preset-agent-claude-code.mcp-scope-user.name",
+            "path": "~/.claude.json",
+            "note": "preset-agent-claude-code.mcp-scope-user.note",
+          },
+        ],
+      },
+    },
+  ],
+  "rules": [
+    {
+      "id": "preset-rule-claude-code-webfetch-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-claude-code-webfetch",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-claude-code-websearch-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-claude-code-websearch",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+  ],
+}

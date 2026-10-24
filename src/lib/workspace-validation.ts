@@ -17,8 +17,8 @@ import {
   type ToolType,
   type TemplatePair,
   type Workspace,
-} from '@/lib/workspace';
-import { WORKSPACE_MIGRATIONS, type WorkspaceMigration, migrateWorkspace } from '@/lib/workspace-migrations';
+} from './workspace';
+import { WORKSPACE_MIGRATIONS, type WorkspaceMigration, migrateWorkspace } from './workspace-migrations';
 
 /*
  * 工作区的校验：把来源不可信的数据（本地存储、导入文件、Gist）转成工作区。

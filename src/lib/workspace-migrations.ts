@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION } from '@/lib/workspace';
+import { SCHEMA_VERSION } from './workspace';
 
 /*
  * 工作区的版本迁移：把旧版本的工作区逐级升到当前版本，再交给校验。

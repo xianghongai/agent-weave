@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
+import { readPresetFiles } from '../build/presets';
 import { generate } from '@/lib/generate';
+import { composePresets } from '@/lib/preset-composition';
 import { createPresetWorkspace } from '@/lib/presets';
 import type { DeviceSettings } from '@/lib/workspace';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 
 /*
- * 预设复用已有接缝：导入校验与生成。
+ * 预设内容：读取 `presets/` 下的实际文件交给合成函数，再复用已有接缝：导入校验与生成。
+ * 构建只对逻辑问题出警告，这里的失败才是拦住坏预设的关口（ADR 0004）。
  * 快照使用固定的本机设置，`{{home}}` 展开为 `/home/alice`，结果不随运行环境变化。
  */
 
@@ -17,9 +20,20 @@ function agentId(name: string): string {
   return preset.agents.find((agent) => agent.name === name)?.id ?? '';
 }
 
-describe('预设：导入校验', () => {
+describe('预设：合成与导入校验', () => {
+  it('实际的预设文件合成时没有语法错误和警告', () => {
+    const { files, locale } = readPresetFiles();
+    const result = composePresets(files, locale);
+    expect(result).not.toHaveProperty('syntaxErrors');
+    expect('warnings' in result && result.warnings).toEqual([]);
+  });
+
   it('预设工作区导出后再导入，通过校验且内容不变', () => {
     expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
+  });
+
+  it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity 在后', () => {
+    expect(preset.agents.map((agent) => agent.name)).toEqual(['Claude Code', 'Codex CLI', 'Antigravity']);
   });
 });
 
@@ -39,6 +53,13 @@ describe('预设：内容整理', () => {
       );
       expect(allowWhole, server.key).toHaveLength(1);
     }
+  });
+
+  it('新增命令工具时要补规则：没有规则的命令只能是交给 Agent 默认行为的 dd、mkfs、chmod、chown', () => {
+    const EXEMPT = new Set(['dd', 'mkfs', 'chmod', 'chown']);
+    const ruled = new Set(preset.rules.filter((rule) => rule.tool.type === 'command').map((rule) => rule.tool.id));
+    const withoutRules = preset.command_tools.filter((tool) => !ruled.has(tool.id) && !EXEMPT.has(tool.key));
+    expect(withoutRules.map((tool) => tool.key)).toEqual([]);
   });
 
   it('MCP 内容不带 description，说明写在 Server 的描述字段', () => {
