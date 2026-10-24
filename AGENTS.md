@@ -20,7 +20,7 @@
   - `ui-store.ts`：非持久化全局界面 store，包含存储状态（回退原因 `fallback`、无法保存的原因 `unsaved`）、多个页面共用的当前选中 Agent，以及当前打开的全局对话框 `openDialog`（本机设置、预设）。
   - `devtools.ts`：只在开发环境接入 Redux DevTools，生产构建不包含它。
   - `theme.ts`：订阅应用 store，把主题同步到 `<html>` 的 `dark` class 上。
-  - 只在一个页面内使用的状态（Tab、筛选条件、表单）用 `useState`，不进 store；跨页面的一次性意图（如带着标签筛选跳到工具页）通过 `history.state` 传递，不进 store，也不放进 URL 查询参数。
+  - 只在一个页面内使用的状态（Tab、表单）用 `useState`，不进 store。列表页的筛选条件放在 URL 查询串中，从其他页面带着条件跳过来也是同样的查询串，与查询串互转的纯函数在 `src/lib/filter-query.ts`，理由见 `docs/adr/0003-react-router-filter-query.md`。
 - `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
 - `src/components/`：站点外壳（页眉、页脚、主题切换、设置菜单，以及挂在外壳上的本机设置和预设对话框）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单对话框、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
 - `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。
@@ -35,7 +35,7 @@
 
 - Node 和 pnpm 的版本由 `mise.toml` 与 `package.json` 的 `packageManager` 锁定，命令通过 `mise exec --` 运行。
 - Vite、React、Tailwind CSS v4、shadcn/ui（Base UI），格式化与 lint 使用 oxfmt 和 oxlint。
-- 路由使用 wouter 的 hash 路由：GitHub Pages 没有服务端重写，路径放在 `#` 之后才能直接打开和刷新。`vite.config.ts` 的 `base` 为 `./`，同一份构建产物可以部署在任意子路径下。
+- 路由使用 React Router 的 `HashRouter`：GitHub Pages 没有服务端重写，路径和查询串放在 `#` 之后才能直接打开和刷新。`vite.config.ts` 的 `base` 为 `./`，同一份构建产物可以部署在任意子路径下。
 - 设计令牌在 `src/index.css` 中用 `@theme` 声明，不使用 `tailwind.config.js`。品牌色为 `brand`。
 - 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/state/theme.ts` 负责切换。
 - class 合并使用 `import { cn } from 'cn'`，不使用 clsx 与 tailwind-merge。

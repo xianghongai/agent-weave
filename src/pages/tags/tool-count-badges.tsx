@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'wouter';
+import { Link } from 'react-router';
 
-import type { TagFilterState } from '@/browser/history-state';
 import { Badge } from '@/components/ui/badge';
+import { toolFilterToQuery } from '@/lib/filter-query';
 import { TOOL_TYPES } from '@/lib/workspace';
-import type { ToolCounts } from '@/lib/workspace-operations';
+import { NO_TOOL_FILTER, type ToolCounts } from '@/lib/workspace-operations';
 import { hasToolListPage, toolListPath } from '@/pages/registry';
 
 interface ToolCountBadgesProps {
@@ -15,7 +15,7 @@ interface ToolCountBadgesProps {
 /** 标签列表中按种类显示的工具数，数量为 0 的不显示；有列表页的种类可以点击，跳到对应页面并按该标签筛选。 */
 export function ToolCountBadges({ tagId, counts }: ToolCountBadgesProps) {
   const { t } = useTranslation();
-  const state: TagFilterState = { tagId };
+  const search = toolFilterToQuery({ ...NO_TOOL_FILTER, tagId }).toString();
   const types = TOOL_TYPES.filter((type) => counts[type] > 0);
   if (types.length === 0) {
     return null;
@@ -31,7 +31,7 @@ export function ToolCountBadges({ tagId, counts }: ToolCountBadgesProps) {
             key={type}
             variant="secondary"
             title={t(`tags.showTools.${type}`)}
-            render={<Link href={toolListPath(type)} state={state} />}
+            render={<Link to={{ pathname: toolListPath(type), search }} />}
           >
             {label}
           </Badge>

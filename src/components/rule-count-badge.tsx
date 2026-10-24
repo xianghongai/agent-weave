@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'wouter';
+import { Link } from 'react-router';
 
-import type { ToolRuleFilterState } from '@/browser/history-state';
 import { Badge } from '@/components/ui/badge';
+import { ruleFilterToQuery } from '@/lib/filter-query';
 import type { ToolRef } from '@/lib/workspace';
-import { countRulesForTool } from '@/lib/workspace-operations';
+import { NO_RULE_FILTER, countRulesForTool } from '@/lib/workspace-operations';
 import { pageById } from '@/pages/registry';
 import { useAppStore } from '@/state/app-store';
 
@@ -15,13 +15,13 @@ export function RuleCountBadge({ tool }: { tool: ToolRef }) {
   if (count === 0) {
     return null;
   }
-  const state: ToolRuleFilterState = { tool };
+  const search = ruleFilterToQuery({ ...NO_RULE_FILTER, tool }).toString();
 
   return (
     <Badge
       variant="secondary"
       title={t('rules.showForTool')}
-      render={<Link href={pageById('rules').path} state={state} />}
+      render={<Link to={{ pathname: pageById('rules').path, search }} />}
     >
       {t('rules.count', { n: count })}
     </Badge>

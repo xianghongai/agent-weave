@@ -826,11 +826,6 @@ export interface ToolFilter {
 
 export const NO_TOOL_FILTER: ToolFilter = { name: '', tagId: null };
 
-/** 按标签筛选的初始条件，用于从标签页跳转到工具列表。标签为 `null` 或已被删除时不筛选。 */
-export function toolFilterForTag(workspace: Workspace, tagId: string | null): ToolFilter {
-  return workspace.tags.some((tag) => tag.id === tagId) ? { ...NO_TOOL_FILTER, tagId } : NO_TOOL_FILTER;
-}
-
 /** 名称关键字去掉首尾空白后不区分大小写地匹配标识或描述；标签条件与它同时生效。 */
 export function matchesToolFilter(
   tool: { key: string; description: string; tag_ids: string[] },
@@ -843,7 +838,21 @@ export function matchesToolFilter(
   return keyword === '' || tool.key.toLowerCase().includes(keyword) || tool.description.toLowerCase().includes(keyword);
 }
 
-/** 规则列表的筛选条件，取值 `null` 表示不限。归属筛选由界面另行组合。 */
+/**
+ * 规则的归属：指向内置工具的规则只属于该内置工具所在的 Agent（`agent:<ID>`），其余规则所有 Agent 共享（`shared`）。
+ * Agent 加上前缀，避免与 `shared` 混淆。
+ */
+export type RuleOwner = 'shared' | `agent:${string}`;
+
+export function agentOwner(agentId: string): RuleOwner {
+  return `agent:${agentId}`;
+}
+
+export function ruleOwner(tool: ResolvedTool): RuleOwner {
+  return tool.type === 'built_in' ? agentOwner(tool.agent.id) : 'shared';
+}
+
+/** 规则列表的筛选条件，取值 `null` 表示不限。 */
 export interface RuleFilter {
   /** 规则所指工具带有这个标签。 */
   tagId: string | null;
@@ -851,14 +860,11 @@ export interface RuleFilter {
   toolType: ToolType | null;
   /** 规则指向这个工具。 */
   tool: ToolRef | null;
+  /** 规则归属于这个 Agent，或是共享规则。 */
+  owner: RuleOwner | null;
 }
 
-export const NO_RULE_FILTER: RuleFilter = { tagId: null, decision: null, toolType: null, tool: null };
-
-/** 按工具筛选规则的初始条件，用于从工具列表跳转到规则页。工具为 `null` 或已被删除时不筛选。 */
-export function ruleFilterForTool(workspace: Workspace, tool: ToolRef | null): RuleFilter {
-  return tool && resolveTool(workspace, tool) ? { ...NO_RULE_FILTER, tool } : NO_RULE_FILTER;
-}
+export const NO_RULE_FILTER: RuleFilter = { tagId: null, decision: null, toolType: null, tool: null, owner: null };
 
 /** 规则是否同时满足全部筛选条件。 */
 export function matchesRuleFilter({ rule, tool }: RuleListItem, filter: RuleFilter): boolean {
@@ -866,6 +872,7 @@ export function matchesRuleFilter({ rule, tool }: RuleListItem, filter: RuleFilt
     (filter.tool === null || refersTo(rule, filter.tool)) &&
     (filter.tagId === null || tool.tool.tag_ids.includes(filter.tagId)) &&
     (filter.decision === null || rule.decision === filter.decision) &&
-    (filter.toolType === null || tool.type === filter.toolType)
+    (filter.toolType === null || tool.type === filter.toolType) &&
+    (filter.owner === null || ruleOwner(tool) === filter.owner)
   );
 }

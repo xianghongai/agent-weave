@@ -3,23 +3,18 @@ import { PencilIcon, PlusIcon, ShieldCheckIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { readToolRefFromHistory } from '@/browser/history-state';
 import { DECISION_TONE } from '@/components/decision-tone';
 import { Note, Page, PageScroll } from '@/components/page';
 import { Button } from '@/components/ui/button';
+import { useFilterQuery } from '@/hooks/use-filter-query';
+import { ruleFilterFromQuery, ruleFilterToQuery } from '@/lib/filter-query';
 import { toolOptions } from '@/lib/tool-options';
 import type { Rule } from '@/lib/workspace';
-import {
-  type RuleFilter,
-  deleteRule,
-  listRules,
-  matchesRuleFilter,
-  ruleFilterForTool,
-} from '@/lib/workspace-operations';
+import { deleteRule, listRules, matchesRuleFilter } from '@/lib/workspace-operations';
 import { RuleDialog } from '@/pages/rules/rule-dialog';
 import { ToolTypeBadge } from '@/pages/rules/rule-fields';
 import { RuleFilterBar } from '@/pages/rules/rule-filter-bar';
-import { type OwnerFilter, OwnerBadge, OwnerFilterSelect, matchesOwner } from '@/pages/rules/rule-owner';
+import { OwnerBadge } from '@/pages/rules/rule-owner';
 import { RuleWarningIcons, ruleWarnings } from '@/pages/rules/rule-warnings';
 import { useAppStore } from '@/state/app-store';
 
@@ -27,11 +22,9 @@ export default function RulesPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
-  const [owner, setOwner] = useState<OwnerFilter>('all');
-  // 从工具列表点击规则数跳转过来时，history.state 带着要筛选的工具。
-  const [filter, setFilter] = useState<RuleFilter>(() => ruleFilterForTool(workspace, readToolRefFromHistory()));
+  const [filter, setFilter] = useFilterQuery(ruleFilterFromQuery, ruleFilterToQuery);
   const allRules = listRules(workspace);
-  const rules = allRules.filter((item) => matchesOwner(item.tool, owner) && matchesRuleFilter(item, filter));
+  const rules = allRules.filter((item) => matchesRuleFilter(item, filter));
   const warnings = ruleWarnings(allRules);
 
   const hasTools = toolOptions(workspace).length > 0;
@@ -56,7 +49,6 @@ export default function RulesPage() {
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <RuleFilterBar workspace={workspace} value={filter} onChange={setFilter} />
-            <OwnerFilterSelect workspace={workspace} value={owner} onChange={setOwner} />
           </div>
           <Button disabled={!hasTools} className="ml-auto" onClick={() => openEditor(null)}>
             <PlusIcon />

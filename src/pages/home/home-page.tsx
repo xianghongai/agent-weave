@@ -1,7 +1,7 @@
 import { ArrowRightIcon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'wouter';
+import { Link } from 'react-router';
 
 import { buttonVariants } from '@/components/ui/button';
 import { pageById } from '@/pages/registry';
@@ -45,7 +45,7 @@ export default function HomePage() {
             return (
               <motion.li key={id} {...fadeIn(index + 2)}>
                 <Link
-                  href={path}
+                  to={path}
                   className="group flex h-full flex-col gap-4 rounded-xl bg-card p-5 ring-1 ring-foreground/10 transition-[box-shadow,background-color] hover:ring-brand/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <span className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
@@ -66,7 +66,7 @@ export default function HomePage() {
 
         <motion.div {...fadeIn(FEATURES.length + 2)} className="mt-10">
           {/* 跳转用链接而不是按钮，渲染出的元素保留链接语义。 */}
-          <Link href={rules.path} className={buttonVariants({ size: 'lg', className: 'h-10 px-4' })}>
+          <Link to={rules.path} className={buttonVariants({ size: 'lg', className: 'h-10 px-4' })}>
             {t('home.start')}
             <ArrowRightIcon data-icon="inline-end" />
           </Link>

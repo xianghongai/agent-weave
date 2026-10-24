@@ -2,7 +2,6 @@ import { PencilIcon, PlusIcon, TerminalIcon, Trash2Icon, WrenchIcon } from 'luci
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { readTagIdFromHistory } from '@/browser/history-state';
 import { Note, Page, PageScroll } from '@/components/page';
 import { RuleCountBadge } from '@/components/rule-count-badge';
 import { KeyWithTags } from '@/components/tag-badges';
@@ -19,15 +18,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { HighRiskBadge } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
+import { useFilterQuery } from '@/hooks/use-filter-query';
 import type { CommandTool } from '@/lib/workspace';
-import {
-  type ToolFilter,
-  compareText,
-  countRulesForTool,
-  deleteCommandTool,
-  matchesToolFilter,
-  toolFilterForTag,
-} from '@/lib/workspace-operations';
+import { toolFilterFromQuery, toolFilterToQuery } from '@/lib/filter-query';
+import { compareText, countRulesForTool, deleteCommandTool, matchesToolFilter } from '@/lib/workspace-operations';
 import { CommandToolDialog } from '@/pages/tools/command-tool-dialog';
 import { useAppStore } from '@/state/app-store';
 
@@ -35,8 +29,7 @@ export default function ToolsPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
-  // 从标签页跳转过来时，history.state 带着要筛选的标签。
-  const [filter, setFilter] = useState<ToolFilter>(() => toolFilterForTag(workspace, readTagIdFromHistory()));
+  const [filter, setFilter] = useFilterQuery(toolFilterFromQuery, toolFilterToQuery);
   const allTools = workspace.command_tools.toSorted((a, b) => compareText(a.key, b.key));
   const tools = allTools.filter((tool) => matchesToolFilter(tool, filter));
 

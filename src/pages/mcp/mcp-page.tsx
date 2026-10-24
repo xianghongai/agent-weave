@@ -2,7 +2,6 @@ import { PencilIcon, PlugIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { readTagIdFromHistory } from '@/browser/history-state';
 import { Note, Page, PageScroll } from '@/components/page';
 import { RuleCountBadge } from '@/components/rule-count-badge';
 import { KeyWithTags } from '@/components/tag-badges';
@@ -19,15 +18,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { HighRiskBadge } from '@/components/high-risk';
 import { Button } from '@/components/ui/button';
+import { useFilterQuery } from '@/hooks/use-filter-query';
 import type { McpServer } from '@/lib/workspace';
-import {
-  type ToolFilter,
-  compareText,
-  countRulesForTool,
-  deleteMcpServer,
-  matchesToolFilter,
-  toolFilterForTag,
-} from '@/lib/workspace-operations';
+import { toolFilterFromQuery, toolFilterToQuery } from '@/lib/filter-query';
+import { compareText, countRulesForTool, deleteMcpServer, matchesToolFilter } from '@/lib/workspace-operations';
 import { McpServerDialog } from '@/pages/mcp/mcp-server-dialog';
 import { useAppStore } from '@/state/app-store';
 
@@ -35,8 +29,7 @@ export default function McpPage() {
   const { t } = useTranslation();
   const workspace = useAppStore((state) => state.workspace);
   const applyOperation = useAppStore((state) => state.applyOperation);
-  // 从标签页跳转过来时，history.state 带着要筛选的标签。
-  const [filter, setFilter] = useState<ToolFilter>(() => toolFilterForTag(workspace, readTagIdFromHistory()));
+  const [filter, setFilter] = useFilterQuery(toolFilterFromQuery, toolFilterToQuery);
   // 与输出中的顺序一致，按标识排序。
   const allServers = workspace.mcp_servers.toSorted((a, b) => compareText(a.key, b.key));
   const servers = allServers.filter((server) => matchesToolFilter(server, filter));

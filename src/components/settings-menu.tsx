@@ -1,7 +1,7 @@
 import { cn } from 'cn';
 import { LaptopIcon, PackageIcon, SettingsIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useLocation } from 'wouter';
+import { useLocation, useNavigate } from 'react-router';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,9 +25,10 @@ const SETTINGS_PAGES = PAGES.filter((page) => page.entry === 'settings');
 export function SettingsMenu() {
   const { t } = useTranslation();
   const showDialog = useUiStore((state) => state.showDialog);
-  const [location, navigate] = useLocation();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
   const label = t('header.settings');
-  const onSettingsPage = SETTINGS_PAGES.some((page) => page.path === location);
+  const onSettingsPage = SETTINGS_PAGES.some((page) => page.path === pathname);
 
   return (
     <DropdownMenu>

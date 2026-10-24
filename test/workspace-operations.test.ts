@@ -7,7 +7,6 @@ import {
   type AgentInput,
   type BuiltInToolInput,
   NO_RULE_FILTER,
-  NO_TOOL_FILTER,
   type OperationContext,
   type RuleFilter,
   type ToolFilter,
@@ -29,7 +28,6 @@ import {
   findSelectedAgent,
   listRules,
   matchesRuleFilter,
-  ruleFilterForTool,
   matchesToolFilter,
   newMcpOutput,
   newPermissionOutput,
@@ -40,7 +38,6 @@ import {
   updateCommandTool,
   updateMcpServer,
   updateRule,
-  toolFilterForTag,
   updateTag,
 } from '@/lib/workspace-operations';
 import { parseWorkspace } from '@/lib/workspace-validation';
@@ -859,25 +856,16 @@ describe('查询：筛选', () => {
     expect(tools({ name: '传输', tagId: null })).toEqual(['curl']);
   });
 
-  it('从标签页跳转带来的标签作为初始筛选；标签不存在或没有带标签时不筛选', () => {
-    expect(toolFilterForTag(ws, 'new-2')).toEqual({ name: '', tagId: 'new-2' });
-    expect(toolFilterForTag(ws, 'deleted')).toEqual(NO_TOOL_FILTER);
-    expect(toolFilterForTag(ws, null)).toEqual(NO_TOOL_FILTER);
-  });
-
   it('规则按所指工具筛选，同名的命令工具与 MCP 工具不混淆', () => {
     expect(rules({ tool: { type: 'command', id: 'new-3' } })).toEqual(['git push', 'git status']);
     expect(rules({ tool: { type: 'mcp', id: 'new-5' } })).toEqual(['context7']);
     expect(rules({ tool: { type: 'command', id: 'new-5' } })).toEqual([]);
   });
 
-  it('从工具列表跳转带来的工具作为规则的初始筛选；工具不存在或没有带工具时不筛选', () => {
-    expect(ruleFilterForTool(ws, { type: 'built_in', id: 'read' })).toEqual({
-      ...NO_RULE_FILTER,
-      tool: { type: 'built_in', id: 'read' },
-    });
-    expect(ruleFilterForTool(ws, { type: 'command', id: 'deleted' })).toEqual(NO_RULE_FILTER);
-    expect(ruleFilterForTool(ws, null)).toEqual(NO_RULE_FILTER);
+  it('规则按归属筛选：内置工具的规则属于所在的 Agent，其余规则共享', () => {
+    expect(rules({ owner: 'agent:agent-claude' })).toEqual(['Read ./']);
+    expect(rules({ owner: 'shared' })).toEqual(['curl', 'git push', 'git status', 'context7']);
+    expect(rules({ owner: 'agent:other' })).toEqual([]);
   });
 
   it('工具按标签筛选，与名称同时生效', () => {

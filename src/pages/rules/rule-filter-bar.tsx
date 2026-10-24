@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FilterSelect } from '@/components/filter-select';
 import { useTagFilterOptions } from '@/components/tool-filter-bar';
 import { DECISIONS, TOOL_TYPES, type Workspace } from '@/lib/workspace';
-import type { RuleFilter } from '@/lib/workspace-operations';
+import { type RuleFilter, agentOwner } from '@/lib/workspace-operations';
 import { ToolSelect } from '@/pages/rules/rule-fields';
 
 interface RuleFilterBarProps {
@@ -12,7 +12,7 @@ interface RuleFilterBarProps {
   onChange: (value: RuleFilter) => void;
 }
 
-/** 规则列表的筛选：所指工具（可输入过滤）、工具的标签、决策、工具类型。归属筛选由规则页另行放在旁边，全部条件同时生效。 */
+/** 规则列表的筛选：所指工具（可输入过滤）、工具的标签、决策、工具类型、归属，全部条件同时生效。 */
 export function RuleFilterBar({ workspace, value, onChange }: RuleFilterBarProps) {
   const { t } = useTranslation();
   const tagOptions = useTagFilterOptions(workspace);
@@ -52,6 +52,17 @@ export function RuleFilterBar({ workspace, value, onChange }: RuleFilterBarProps
         ]}
         value={value.toolType}
         onChange={(toolType) => onChange({ ...value, toolType })}
+      />
+      <FilterSelect
+        label={t('rules.owner')}
+        className="w-40"
+        options={[
+          { value: null, label: t('rules.ownerAll') },
+          { value: 'shared', label: t('rules.ownerShared') },
+          ...workspace.agents.map((agent) => ({ value: agentOwner(agent.id), label: agent.name })),
+        ]}
+        value={value.owner}
+        onChange={(owner) => onChange({ ...value, owner })}
       />
     </>
   );
