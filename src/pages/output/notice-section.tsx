@@ -2,6 +2,7 @@ import { cn } from 'cn';
 import type { LucideIcon } from 'lucide-react';
 
 import { HIGH_RISK_TONE } from '@/components/high-risk';
+import { Markdown } from '@/components/markdown';
 import { Badge } from '@/components/ui/badge';
 
 /** 提示的性质：高危、需要留意，或只是说明。 */
@@ -21,6 +22,7 @@ interface NoticeSectionProps {
   title: string;
   /** 条目数，显示在标题旁；省略时不显示。 */
   count?: number;
+  /** 说明，按 Markdown 渲染。 */
   hint: string;
   children?: React.ReactNode;
 }
@@ -36,7 +38,7 @@ export function NoticeSection({ icon: Icon, tone = 'neutral', title, count, hint
           {title}
           {count !== undefined && <Badge variant="secondary">{count}</Badge>}
         </h2>
-        <p className="text-sm text-pretty text-muted-foreground">{hint}</p>
+        <Markdown className="text-sm text-pretty text-muted-foreground">{hint}</Markdown>
       </div>
       {children}
     </section>
