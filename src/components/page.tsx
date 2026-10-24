@@ -114,7 +114,7 @@ export function Note({
       }
     >
       <Icon className="mt-0.5 size-4 shrink-0 text-brand" />
-      <div className="grid gap-1 text-pretty">{children}</div>
+      <div className="grid min-w-0 flex-1 gap-1 text-pretty">{children}</div>
     </div>
   );
 }
