@@ -128,7 +128,20 @@
     "gistIdPlaceholder": "留空，第一次推送时自动创建",
     "gistIdHint": "在另一台设备上填写同一个 ID 或 Gist 网址，就可以拉取。",
     "gistIdInvalid": "无法识别 Gist ID，请填写 ID 本身或 Gist 页面的网址。",
-    "openGist": "在 GitHub 上查看",
+    "openGist": "打开 Gist",
+    "auth": "认证配置",
+    "authTitle": "Gist 认证配置",
+    "status": {
+      "token": {
+        "configured": "已配置 Token",
+        "missing": "未配置 Token，推送前需要填写"
+      },
+      "gist": {
+        "linked": "已关联 Gist",
+        "missing": "未关联 Gist，第一次推送时自动创建",
+        "invalid": "Gist ID 无效，请在认证配置中修改"
+      }
+    },
     "push": "推送",
     "pull": "拉取",
     "working": "正在连接 GitHub…",
