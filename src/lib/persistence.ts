@@ -40,14 +40,22 @@ export type StorageProblem = 'readFailed' | 'writeFailed';
 export type PersistenceProblem = StorageProblem | ImportProblem;
 
 /**
- * 读取时数据无效、已回退到默认值的部分：
- * - `workspace`：工作区无效的原因，此时已回退到预设；
- * - `deviceSettings`、`gistSettings`：为 `true` 时该设置无效，已回退到空的设置。
+ * 本机设置或 Gist 设置回退的原因：
+ * - `parseFailed`：保存的内容不是合法的 JSON，整份状态都读不出来；
+ * - `invalidStructure`：该设置缺失，或某个属性的类型、取值不对。
  */
+export type SettingsProblem = 'parseFailed' | 'invalidStructure';
+
+/** 读取时已回退到默认值的部分，各自给出原因码；没有回退的部分为 `null`。工作区回退到预设，设置回退到空的设置。 */
 export interface RestoreFallback {
   workspace: ImportProblem | null;
-  deviceSettings: boolean;
-  gistSettings: boolean;
+  deviceSettings: SettingsProblem | null;
+  gistSettings: SettingsProblem | null;
+}
+
+/** 保存的内容无法解析为 JSON 时的回退：每一部分都使用了默认值。数据仍在本地存储中，直到下一次修改覆盖它。 */
+export function parseFailedFallback(): RestoreFallback {
+  return { workspace: 'parseFailed', deviceSettings: 'parseFailed', gistSettings: 'parseFailed' };
 }
 
 /**
@@ -71,8 +79,8 @@ export function restorePersistedState(persisted: unknown): {
 
   const fallback: RestoreFallback = {
     workspace: 'problem' in workspaceResult ? workspaceResult.problem : null,
-    deviceSettings: deviceSettings === null,
-    gistSettings: gistSettings === null,
+    deviceSettings: deviceSettings === null ? 'invalidStructure' : null,
+    gistSettings: gistSettings === null ? 'invalidStructure' : null,
   };
   return {
     state: {

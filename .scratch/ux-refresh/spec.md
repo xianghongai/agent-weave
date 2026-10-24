@@ -47,7 +47,7 @@ Status: ready-for-agent
 - `src/lib/workspace-operations.ts` 中的工作区操作内部改用 Immer 的 `produce`，对外签名和原因码不变。
 - `persist` 不设 `version`、不写 `migrate`：
   - 读取校验放在 `merge` 中，调用 lib 现有的校验函数。数据无效时回退到预设或空设置，并把回退原因写进界面 store。
-  - 读取失败和 JSON 解析失败在 `onRehydrateStorage` 的 error 回调中处理，对应 `readFailed`。
+  - 读取失败和 JSON 解析失败在 `onRehydrateStorage` 的 error 回调中处理。读取失败对应 `readFailed`；JSON 解析失败时工作区、本机设置、Gist 设置都已回退到默认值，每一部分的回退原因都记为 `parseFailed`。
   - 写入失败通过包装 `createJSONStorage` 构造的 `storage` 来捕获，把 `writeFailed` 写进界面 store，写入成功后清空。
 - 主题改为持久化。CSP 禁止内联脚本，选了浅色的用户打开页面时会先看到一下深色，这一点可以接受。
 - 跨页面传递的一次性意图（比如从标签页跳到工具页时带上标签筛选）通过 `history.state` 传递，不进 store，也不放进 URL 查询参数。wouter 的 hash 路由会把查询参数写进 `#` 前面的查询串，之后切换页面时也不会清掉。

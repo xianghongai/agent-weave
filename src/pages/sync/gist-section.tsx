@@ -58,7 +58,7 @@ export function GistSection() {
   const setGistSettings = useAppStore((state) => state.setGistSettings);
   const replaceWorkspace = useAppStore((state) => state.replaceWorkspace);
   const workspace = useAppStore((state) => state.workspace);
-  const settingsInvalid = useUiStore((state) => state.fallback?.gistSettings ?? false);
+  const settingsInvalid = useUiStore((state) => Boolean(state.fallback?.gistSettings));
   const [busy, setBusy] = useState(false);
   // 对话框关闭时保留待确认的内容，避免退场动画期间内容跳变。
   const [confirmOpen, setConfirmOpen] = useState(false);

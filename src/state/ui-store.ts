@@ -49,13 +49,8 @@ const createStorageSlice: UiSliceCreator<StorageSlice> = (set, get) => ({
     }
     set(
       (state) => {
-        if (!state.fallback) {
-          return;
-        }
-        if (part === 'workspace') {
-          state.fallback.workspace = null;
-        } else {
-          state.fallback[part] = false;
+        if (state.fallback) {
+          state.fallback[part] = null;
         }
       },
       undefined,

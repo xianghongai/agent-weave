@@ -8,6 +8,7 @@ import {
   STORAGE_KEY,
   type Theme,
   defaultPersistedState,
+  parseFailedFallback,
   restorePersistedState,
 } from '@/lib/persistence';
 import type { DeviceSettings, Workspace } from '@/lib/workspace';
@@ -186,9 +187,9 @@ export const useAppStore = create<AppState>()(
           if (error === undefined) {
             return;
           }
-          // 内容无法解析时数据还在，下一次修改会覆盖它，与工作区无效同样提示；其余是存储本身读不了。
+          // 内容无法解析时每一部分都用了默认值，各自提示；数据还在，下一次修改会覆盖它。其余是存储本身读不了。
           if (error instanceof SyntaxError) {
-            useUiStore.getState().setFallback({ workspace: 'parseFailed', deviceSettings: false, gistSettings: false });
+            useUiStore.getState().setFallback(parseFailedFallback());
           } else {
             useUiStore.getState().setUnsaved('readFailed');
           }

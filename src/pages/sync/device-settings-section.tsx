@@ -21,7 +21,7 @@ export function DeviceSettingsSection() {
   const { t } = useTranslation();
   const settings = useAppStore((state) => state.deviceSettings);
   const setDeviceSettings = useAppStore((state) => state.setDeviceSettings);
-  const settingsInvalid = useUiStore((state) => state.fallback?.deviceSettings ?? false);
+  const settingsInvalid = useUiStore((state) => Boolean(state.fallback?.deviceSettings));
   const tokens = { home: PLACEHOLDERS[0], user: PLACEHOLDERS[1] };
 
   return (

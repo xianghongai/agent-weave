@@ -33,6 +33,7 @@ import {
   newMcpOutput,
   newPermissionOutput,
   resolveTags,
+  totalToolCount,
   updateAgent,
   updateBuiltInTool,
   updateCommandTool,
@@ -721,6 +722,11 @@ describe('工作区操作：标签', () => {
     expect(countToolsForTag(ws, 'vcs')).toEqual({ command: 2, mcp: 1, built_in: 2 });
     expect(countToolsForTag(ws, 'net')).toEqual({ command: 2, mcp: 0, built_in: 0 });
     expect(countToolsForTag(ws, 'none')).toEqual({ command: 0, mcp: 0, built_in: 0 });
+  });
+
+  it('合计引用某个标签的各类工具，供删除标签前提示', () => {
+    expect(totalToolCount({ command: 2, mcp: 1, built_in: 2 })).toBe(5);
+    expect(totalToolCount({ command: 0, mcp: 0, built_in: 0 })).toBe(0);
   });
 
   it('删除标签时不修改引用它的工具，残留的标签 ID 成为悬空引用', () => {

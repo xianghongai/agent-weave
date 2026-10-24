@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type PersistedState, restorePersistedState } from '@/lib/persistence';
+import { type PersistedState, parseFailedFallback, restorePersistedState } from '@/lib/persistence';
 import { createPresetWorkspace } from '@/lib/presets';
 import { parseWorkspace } from '@/lib/workspace-validation';
 
@@ -45,14 +45,14 @@ describe('持久化：恢复上次保存的状态', () => {
   ])('工作区结构无效（%s）时只回退工作区到预设，设置照常恢复', (_, workspace) => {
     expect(restorePersistedState({ ...saved(), workspace })).toEqual({
       state: { ...saved(), workspace: createPresetWorkspace() },
-      fallback: { workspace: 'invalidStructure', deviceSettings: false, gistSettings: false },
+      fallback: { workspace: 'invalidStructure', deviceSettings: null, gistSettings: null },
     });
   });
 
   it('工作区来自更新的版本时回退到预设，并给出原因码', () => {
     expect(restorePersistedState({ ...saved(), workspace: corruptValue(['schema_version'], 2) })).toEqual({
       state: { ...saved(), workspace: createPresetWorkspace() },
-      fallback: { workspace: 'newerVersion', deviceSettings: false, gistSettings: false },
+      fallback: { workspace: 'newerVersion', deviceSettings: null, gistSettings: null },
     });
   });
 
@@ -67,7 +67,7 @@ describe('持久化：恢复上次保存的状态', () => {
   ])('本机设置无效（%s）时回退到空的本机设置，其余照常恢复', (_, deviceSettings) => {
     expect(restorePersistedState({ ...saved(), deviceSettings })).toEqual({
       state: { ...saved(), deviceSettings: { os: null, user_names: { linux: '', macos: '', windows: '' } } },
-      fallback: { workspace: null, deviceSettings: true, gistSettings: false },
+      fallback: { workspace: null, deviceSettings: 'invalidStructure', gistSettings: null },
     });
   });
 
@@ -77,7 +77,7 @@ describe('持久化：恢复上次保存的状态', () => {
   ])('Gist 设置无效（%s）时回退到空的 Gist 设置，其余照常恢复', (_, gistSettings) => {
     expect(restorePersistedState({ ...saved(), gistSettings })).toEqual({
       state: { ...saved(), gistSettings: { token: '', gist_id: '' } },
-      fallback: { workspace: null, deviceSettings: false, gistSettings: true },
+      fallback: { workspace: null, deviceSettings: null, gistSettings: 'invalidStructure' },
     });
   });
 
@@ -112,7 +112,15 @@ describe('持久化：恢复上次保存的状态', () => {
   it('整体不是对象时，每一部分都回退', () => {
     expect(restorePersistedState('hello')).toEqual({
       state: restorePersistedState(undefined).state,
-      fallback: { workspace: 'invalidStructure', deviceSettings: true, gistSettings: true },
+      fallback: { workspace: 'invalidStructure', deviceSettings: 'invalidStructure', gistSettings: 'invalidStructure' },
+    });
+  });
+
+  it('保存的内容无法解析时，每一部分都已回退，都以 parseFailed 提示', () => {
+    expect(parseFailedFallback()).toEqual({
+      workspace: 'parseFailed',
+      deviceSettings: 'parseFailed',
+      gistSettings: 'parseFailed',
     });
   });
 });

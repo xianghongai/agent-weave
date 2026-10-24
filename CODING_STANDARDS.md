@@ -5,7 +5,7 @@
 ## 工作区与生成
 
 - **修改 `Workspace` 结构**时，同步 `src/lib/workspace-validation.ts` 的结构校验与 `checkIntegrity`；已发布的结构变化要升 `SCHEMA_VERSION`，并在 `src/lib/workspace-migrations.ts` 追加迁移。
-- **按工具类型分支**的逻辑集中在 `resolveTool`（`src/lib/workspace-operations.ts`）、`templatesFor`（`src/lib/generate.ts`）和规则页的 `rule-owner.tsx`。新增工具类型时扩展这几处，其他位置通过 `resolveTool` 的结果判断，不另写一套分支。
+- **按工具类型分支**的逻辑集中在 `resolveTool`（`src/lib/workspace-operations.ts`）、`templatesFor`（`src/lib/generate.ts`）、规则页的 `rule-owner.tsx`，以及 `src/pages/registry.ts` 中工具类型到列表页的对应关系。新增工具类型时扩展这几处，其他位置通过 `resolveTool` 的结果判断，不另写一套分支。
 - **提示**的类型定义在 `src/lib/notices.ts`。生成结果中的提示按规则提示、规则的占位符提示、MCP 提示的顺序拼接，新增的提示追加到对应位置，保留已有提示。
 - **预设**的内部 ID 固定且全局唯一，命名沿用 `preset-<类别>-<标识>`；预设内容只放通用的工具和路径形式，个人信息（用户名、主机名、个人绝对路径）留在本地素材里。各 Agent 的格式规则见 `docs/agent-formats.md`。
 

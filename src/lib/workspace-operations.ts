@@ -154,7 +154,7 @@ export type ToolCounts = Record<ToolType, number>;
 
 /**
  * 引用某个标签的工具数量，按种类分别统计；内置工具合计全部 Agent 的。
- * 标签列表用它显示各类徽标，删除标签前用合计在确认框中提示。
+ * 标签列表用它显示各类徽标，删除标签前用 `totalToolCount` 合计。
  */
 export function countToolsForTag(workspace: Workspace, tagId: string): ToolCounts {
   const count = (tools: readonly { tag_ids: string[] }[]) =>
@@ -164,6 +164,11 @@ export function countToolsForTag(workspace: Workspace, tagId: string): ToolCount
     mcp: count(workspace.mcp_servers),
     built_in: count(workspace.agents.flatMap((agent) => agent.built_in_tools)),
   };
+}
+
+/** 各类工具数量的合计。删除标签前用它在确认框中提示有多少工具引用了该标签。 */
+export function totalToolCount(counts: ToolCounts): number {
+  return Object.values(counts).reduce((sum, n) => sum + n, 0);
 }
 
 /** 工具上的一个标签引用。标签已被删除时 `tag` 为 `null`，界面显示为“已删除的标签”。 */

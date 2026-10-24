@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import type { Tag } from '@/lib/workspace';
-import { compareText, countToolsForTag, deleteTag } from '@/lib/workspace-operations';
+import { compareText, countToolsForTag, deleteTag, totalToolCount } from '@/lib/workspace-operations';
 import { TagDialog } from '@/pages/tags/tag-dialog';
 import { ToolCountBadges } from '@/pages/tags/tool-count-badges';
 import { useAppStore } from '@/state/app-store';
@@ -37,9 +37,7 @@ export default function TagsPage() {
     setEditOpen(true);
   }
 
-  const deleteToolCount = deleteTarget
-    ? Object.values(countToolsForTag(workspace, deleteTarget.id)).reduce((sum, n) => sum + n, 0)
-    : 0;
+  const deleteToolCount = deleteTarget ? totalToolCount(countToolsForTag(workspace, deleteTarget.id)) : 0;
 
   return (
     <Page

@@ -11,7 +11,7 @@ Zustand 官方推荐单一 store，大型应用再按 slices 拆分。但 `persi
 - **页面局部状态**：页面内的 Tab、筛选条件、表单，用 `useState`。
 - **跨页面的一次性意图**，比如从标签页带着标签筛选跳到工具页，通过 `history.state` 传递。wouter 的 hash 路由会把 URL 查询参数写进 `#` 前面的查询串，之后切换页面时不会清掉，所以不用查询参数。
 
-“单一 store”作为“避免多个 store 互相依赖”的原则仍然成立，两个 store 之间只有一个方向的依赖：应用 store 的持久化把读写错误写进界面 store。
+“单一 store”作为“避免多个 store 互相依赖”的原则仍然成立，两个 store 之间只有一个方向的依赖：应用 store 更新界面 store 中的存储状态，界面 store 不读写应用 store。具体是持久化把读写错误和启动时的回退原因写进界面 store，设置被重新填写时清除对应的回退提示。
 
 ## Considered Options
 
