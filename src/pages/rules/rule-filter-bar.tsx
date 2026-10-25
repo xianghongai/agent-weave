@@ -36,7 +36,6 @@ export function RuleFilterBar({ workspace, value, onChange }: RuleFilterBarProps
       />
       <FilterSelect
         label={t('filters.decision')}
-        className="w-28"
         placeholder={t('filters.decisionAll')}
         options={DECISIONS.map((decision) => ({ value: decision, label: t(`decisions.${decision}`) }))}
         value={value.decision}
