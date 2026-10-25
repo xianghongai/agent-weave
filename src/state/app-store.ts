@@ -2,7 +2,7 @@ import { create, type StateCreator } from 'zustand';
 import { createJSONStorage, type PersistStorage, persist, type StateStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import { browserLanguages } from '@/browser/browser-languages';
+import { interfaceLanguage } from '@/browser/browser-languages';
 import type { GistSettings } from '@/lib/gist';
 import type { Language } from '@/lib/language';
 import {
@@ -66,7 +66,7 @@ type AppSliceCreator<Slice> = StateCreator<
   Slice
 >;
 
-const initial = defaultPersistedState(browserLanguages());
+const initial = defaultPersistedState(interfaceLanguage(null));
 
 const createWorkspaceSlice: AppSliceCreator<WorkspaceSlice> = (set, get) => ({
   workspace: initial.workspace,
@@ -201,7 +201,7 @@ export const useAppStore = create<AppState>()(
         }),
         // 不设 `version`、不写 `migrate`：工作区的结构版本由 `restorePersistedState` 中的工作区校验与迁移负责。
         merge: (persisted, current) => {
-          const { state, fallback } = restorePersistedState(persisted, browserLanguages());
+          const { state, fallback } = restorePersistedState(persisted, interfaceLanguage);
           useUiStore.getState().setFallback(fallback);
           return { ...current, ...state };
         },

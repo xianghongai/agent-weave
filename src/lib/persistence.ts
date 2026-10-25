@@ -1,5 +1,5 @@
 import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
-import { type Language, isLanguage, resolveLanguage } from '@/lib/language';
+import { type Language, isLanguage } from '@/lib/language';
 import { createPresetWorkspace } from '@/lib/presets';
 import { type DeviceSettings, EMPTY_DEVICE_SETTINGS, OPERATING_SYSTEMS, type Workspace } from '@/lib/workspace';
 import type { ImportFailure, ImportProblem } from '@/lib/workspace-file';
@@ -68,17 +68,18 @@ export function parseFailedFallback(): RestoreFallback {
  * 校验从本地存储读到的应用状态，总是返回一份可用的状态。
  * 没有本地数据（首次访问）时返回默认值且不提示；某一部分无效时只回退这一部分，其余照常恢复。
  * 主题、界面语言无效时静默回退到默认主题、跟随浏览器。
- * `preferred` 是浏览器的语言偏好，与保存的界面语言一起决定回退时预设的语言，与界面语言一致。
+ * `interfaceLanguage` 由界面层传入，按手动选择（`null` 表示跟随浏览器）给出界面语言，
+ * 回退时的预设用这种语言，与 i18n 初始化时用的是同一个函数，两边的语言一致。
  */
 export function restorePersistedState(
   persisted: unknown,
-  preferred: readonly string[]
+  interfaceLanguage: (chosen: Language | null) => Language
 ): {
   state: PersistedState;
   fallback: RestoreFallback | null;
 } {
   if (persisted === undefined || persisted === null) {
-    return { state: defaultPersistedState(preferred), fallback: null };
+    return { state: defaultPersistedState(interfaceLanguage(null)), fallback: null };
   }
   const value = isRecord(persisted) ? persisted : {};
 
@@ -96,9 +97,7 @@ export function restorePersistedState(
   return {
     state: {
       workspace:
-        'workspace' in workspaceResult
-          ? workspaceResult.workspace
-          : createPresetWorkspace(resolveLanguage(language, preferred)),
+        'workspace' in workspaceResult ? workspaceResult.workspace : createPresetWorkspace(interfaceLanguage(language)),
       deviceSettings: deviceSettings ?? EMPTY_DEVICE_SETTINGS,
       gistSettings: gistSettings ?? EMPTY_GIST_SETTINGS,
       theme,
@@ -108,10 +107,10 @@ export function restorePersistedState(
   };
 }
 
-/** 首次访问时的应用状态：浏览器语言偏好对应的预设工作区、空的设置、默认主题，界面语言跟随浏览器。 */
-export function defaultPersistedState(preferred: readonly string[]): PersistedState {
+/** 首次访问时的应用状态：`language`（跟随浏览器时的界面语言）的预设工作区、空的设置、默认主题，界面语言跟随浏览器。 */
+export function defaultPersistedState(language: Language): PersistedState {
   return {
-    workspace: createPresetWorkspace(resolveLanguage(null, preferred)),
+    workspace: createPresetWorkspace(language),
     deviceSettings: EMPTY_DEVICE_SETTINGS,
     gistSettings: EMPTY_GIST_SETTINGS,
     theme: DEFAULT_THEME,

@@ -1,8 +1,8 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import { browserLanguages } from '@/browser/browser-languages';
-import { LANGUAGES, type Language, SOURCE_LANGUAGE, isLanguage, matchLanguage, resolveLanguage } from '@/lib/language';
+import { interfaceLanguage } from '@/browser/browser-languages';
+import { DEFAULT_LANGUAGE, LANGUAGES, type Language, isLanguage, matchLanguage } from '@/lib/language';
 import { useAppStore } from '@/state/app-store';
 
 /** 各语言的结构略有不同（英文多出复数形式），键是否一致由 `pnpm test` 检查。 */
@@ -33,10 +33,10 @@ function applyToDocument(language: Language): void {
 
 /**
  * 在首次渲染前初始化 i18n。应用 store 在模块加载时就已从本地存储恢复，
- * 这里读其中手动选择的语言，没有时跟随浏览器，与初始化预设用的语言一致。
+ * 这里读其中手动选择的语言，与恢复时决定预设语言用同一个 `interfaceLanguage()`，两边一致。
  */
 export async function setupI18n(): Promise<void> {
-  const language = resolveLanguage(useAppStore.getState().language, browserLanguages());
+  const language = interfaceLanguage(useAppStore.getState().language);
   const { default: messages } = await LOADERS[language]();
   await i18next.use(initReactI18next).init({
     lng: language,
@@ -52,7 +52,10 @@ export async function setupI18n(): Promise<void> {
   applyToDocument(language);
 }
 
-/** 加载并切换到另一种界面语言，把选择保存在本机。选的和浏览器语言相同时也照存，之后不再跟随浏览器。 */
+/**
+ * 加载并切换到另一种界面语言，把选择保存在本机。选的和浏览器语言相同时也照存，之后不再跟随浏览器。
+ * 语言包加载失败（如尚未预缓存时离线）时抛出，界面保持原来的语言，由调用方提示。
+ */
 export async function switchLanguage(language: Language): Promise<void> {
   await ensureLoaded(language);
   await i18next.changeLanguage(language);
@@ -60,8 +63,12 @@ export async function switchLanguage(language: Language): Promise<void> {
   useAppStore.getState().setLanguage(language);
 }
 
-/** 当前显示的界面语言，供 `Intl` 格式化、语言菜单和按语言取预设使用。 */
+/** 把 i18next 的语言标签对应到界面语言。正常情况下就是初始化或切换时给的语言，对不上时用兜底语言。 */
+export function toLanguage(tag: string): Language {
+  return isLanguage(tag) ? tag : (matchLanguage(tag) ?? DEFAULT_LANGUAGE);
+}
+
+/** 当前显示的界面语言，供 `Intl` 格式化和按语言取预设使用。组件中用 `useTranslation()` 的 `i18n.language`，语言切换后才会重新渲染。 */
 export function currentLanguage(): Language {
-  const language = i18next.language;
-  return isLanguage(language) ? language : (matchLanguage(language) ?? SOURCE_LANGUAGE);
+  return toLanguage(i18next.language);
 }
