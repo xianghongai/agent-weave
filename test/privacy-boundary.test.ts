@@ -8,7 +8,7 @@ import { exportWorkspace } from '@/lib/workspace-file';
 import { edited } from './fixtures/workspace';
 
 /*
- * 本地存储只有一个键，工作区与 Gist 设置、本机设置、主题存放在一起。
+ * 本地存储只有一个键，工作区与 Gist 设置、本机设置、主题、界面语言存放在一起。
  * 导出文件和 Gist 推送只能带走工作区：即使传入的对象上混进了其他状态，也不能写出。
  */
 
@@ -23,6 +23,7 @@ const state: PersistedState = {
   deviceSettings: { os: 'windows', user_names: { linux: '', macos: '', windows: SECRET.userName } },
   gistSettings: { token: SECRET.token, gist_id: SECRET.gistId },
   theme: 'light',
+  language: 'zh-CN',
 };
 
 /** 混进了全部本机状态的工作区，模拟调用方传错对象。 */
@@ -30,7 +31,7 @@ const leaky = { ...state.workspace, ...state, ...state.deviceSettings, ...state.
 
 /** 写出的内容里不应出现的东西：本机状态的取值和属性名。 */
 function expectOnlyWorkspace(text: string) {
-  for (const value of [...Object.values(SECRET), 'windows', 'light']) {
+  for (const value of [...Object.values(SECRET), 'windows', 'light', 'zh-CN']) {
     expect(text).not.toContain(value);
   }
   expect(Object.keys(JSON.parse(text)).toSorted()).toEqual(Object.keys(edited()).toSorted());

@@ -2,10 +2,14 @@ import { ShieldIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { GitHubIcon } from '@/components/github-icon';
+import { LanguageMenu } from '@/components/language-menu';
 
 const REPOSITORY_URL = 'https://github.com/xianghongai/agent-weave';
 
-/** 紧凑的单行页脚，用顶部边框和底色与内容区分开，与页眉呼应。文案放不下时截断，悬停显示全文。 */
+/**
+ * 紧凑的单行页脚，用顶部边框和底色与内容区分开，与页眉呼应。
+ * 右侧是语言菜单和 GitHub 链接，始终完整显示；隐私说明放不下时截断，悬停显示全文。
+ */
 export function SiteFooter() {
   const { t } = useTranslation();
   const privacy = t('footer.privacy');
@@ -18,6 +22,7 @@ export function SiteFooter() {
         <p title={privacy} className="min-w-0 flex-1 truncate">
           {privacy}
         </p>
+        <LanguageMenu />
         <a
           href={REPOSITORY_URL}
           target="_blank"
