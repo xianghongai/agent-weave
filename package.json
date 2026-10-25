@@ -1,6 +1,6 @@
 {
   "name": "agent-weave",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "在浏览器里维护一份中立规则集，为多个 AI Coding Agent 生成权限与 MCP 配置。",
   "license": "MIT",
