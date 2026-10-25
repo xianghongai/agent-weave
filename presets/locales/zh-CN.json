@@ -289,7 +289,7 @@
   "preset-agent-cursor-cli.mcp-scope-user.note": "对当前用户的所有项目生效，CLI 与 IDE 共用。Cursor 的环境变量写作 ${env:NAME}，本工具不转换 ${VAR}，粘贴后需要自行修改。",
   "preset-agent-cursor-cli.mcp-scope-project.name": "项目级",
   "preset-agent-cursor-cli.mcp-scope-project.note": "与用户级合并，同名 Server 以这里为准。Cursor 的环境变量写作 ${env:NAME}，本工具不转换 ${VAR}，粘贴后需要自行修改。",
-  "preset-agent-gemini-cli.description": "Google 的开源命令行 AI Coding Agent。只生成 MCP 配置：设置文件中的工具列表有弃用项，参数只对 Shell 有效，MCP 的放行在另一个路径；主推的 TOML 策略引擎每条规则有多个字段，模板表达不了。",
+  "preset-agent-gemini-cli.description": "Google 的开源命令行 AI Coding Agent。2026 年 6 月 18 日起，免费用户和 Google AI Pro、Ultra 订阅用户已转到 Antigravity CLI，企业许可和付费 API Key 用户仍可使用。只生成 MCP 配置：设置文件中的工具列表有弃用项，参数只对 Shell 有效，MCP 的放行在另一个路径；主推的 TOML 策略引擎每条规则有多个字段，模板表达不了。",
   "preset-agent-gemini-cli.mcp-scope-user.name": "用户级",
   "preset-agent-gemini-cli.mcp-scope-user.note": "对当前用户的所有项目生效。远程 MCP 用 url 表示 SSE、httpUrl 表示 Streamable HTTP，本工具不转换，粘贴后需要自行修改。",
   "preset-agent-gemini-cli.mcp-scope-project.name": "项目级",

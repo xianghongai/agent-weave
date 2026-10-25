@@ -51,6 +51,7 @@
 
 ## Gemini CLI
 
+- 没有废弃，但用户范围收窄了：2026 年 6 月 18 日起，免费用户和 Google AI Pro、Ultra 订阅用户已转到 Antigravity CLI，Gemini Code Assist Standard、Enterprise 许可和付费 API Key 用户仍可使用，见[官方公告](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli)。预设同时保留它和 Antigravity，在 Agent 描述中说明各自适用的用户。
 - 不输出权限，原因见 `docs/adr/0001-agent-definition-as-data.md`：
   - 设置文件的 `tools.allowed`、`tools.confirmationRequired` 仍可用，但 `tools.exclude` 已弃用，顶层的 `coreTools`、`excludeTools`、`autoAccept` 已移除。
   - `toolName(args)` 的括号参数只对 `run_shell_command` 有效，其他工具的参数被忽略、等同于整体放行，路径与域名规则会被悄悄放宽。
