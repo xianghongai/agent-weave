@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { currentLanguage } from '@/i18n';
 import { type MergeSkip, mergePresets, resetToPresets } from '@/lib/preset-operations';
+import { createPresetWorkspace } from '@/lib/presets';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
@@ -63,7 +64,10 @@ function PresetActions() {
 
   function merge() {
     // 合并是同步执行的，先算出结果再交给 store，才能拿到报告。
-    const { workspace, report } = mergePresets(useAppStore.getState().workspace, currentLanguage());
+    const { workspace, report } = mergePresets(
+      useAppStore.getState().workspace,
+      createPresetWorkspace(currentLanguage())
+    );
     if (report.added > 0) {
       replaceWorkspace(workspace);
     }
