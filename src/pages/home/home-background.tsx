@@ -3,25 +3,32 @@ import * as THREE from 'three';
 
 import { useAppStore } from '@/state/app-store';
 
-/** 两组流动交织丝束的配置：每组包含多根连续的平滑流线。 */
+/** 两组主流动交织丝束的配置。 */
 const STREAM_LINES = 22;
 const STREAM_SEGMENTS = 80;
+
+/** 右上角延伸副丝束的配置（让右上视野饱满舒展）。 */
+const UPPER_LINES = 16;
+const UPPER_SEGMENTS = 70;
 
 /** 连接两束流线的穿插横向弧线数量与分段。 */
 const CROSS_LINES = 18;
 const CROSS_SEGMENTS = 36;
 
 /** 流线上的浮动微光节点数量。 */
-const PARTICLES_COUNT = 80;
+const PARTICLES_COUNT = 90;
 
 interface Palette {
   warp: number;
   weft: number;
+  upper: number;
   cross: number;
   points: number;
+  glow: number;
   lineOpacity: number;
   crossOpacity: number;
   pointsOpacity: number;
+  glowOpacity: number;
   fogColor: number;
   fogDensity: number;
   blending: THREE.Blending;
@@ -32,11 +39,14 @@ const PALETTES: Record<'dark' | 'light', Palette> = {
   dark: {
     warp: 0x2dd4bf, // 品牌青绿 Teal
     weft: 0x818cf8, // 智能体紫蓝 Indigo
+    upper: 0x38bdf8, // 右上轻盈浅青 Sky
     cross: 0x475569, // 柔和交错暗青灰 Slate
     points: 0x7dd3c0,
+    glow: 0x2dd4bf, // 顶部柔光
     lineOpacity: 0.38,
     crossOpacity: 0.18,
     pointsOpacity: 0.7,
+    glowOpacity: 0.22,
     fogColor: 0x15161d,
     fogDensity: 0.02,
     blending: THREE.AdditiveBlending,
@@ -44,21 +54,43 @@ const PALETTES: Record<'dark' | 'light', Palette> = {
   light: {
     warp: 0x0d9488, // 浅色调深青
     weft: 0x4f46e5, // 浅色调靛蓝
+    upper: 0x0284c7, // 浅色调天蓝
     cross: 0x94a3b8, // 浅色灰织线
     points: 0x0d9488,
+    glow: 0x0d9488, // 顶部柔光
     lineOpacity: 0.22,
     crossOpacity: 0.12,
     pointsOpacity: 0.4,
+    glowOpacity: 0.08,
     fogColor: 0xf8fafc,
     fogDensity: 0.022,
     blending: THREE.NormalBlending,
   },
 };
 
+/** 动态生成柔和羽化的高斯径向光晕贴图，用于顶部天光。 */
+function createSoftGlowTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.25, 'rgba(255, 255, 255, 0.7)');
+    gradient.addColorStop(0.55, 'rgba(255, 255, 255, 0.25)');
+    gradient.addColorStop(0.85, 'rgba(255, 255, 255, 0.04)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 256, 256);
+  }
+  return new THREE.CanvasTexture(canvas);
+}
+
 /**
  * 首页全屏 3D 背景组件：
- * 以三维自然流线束（Flowing Woven Ribbons）与悬垂交织弧线构建动态空间，
- * 彻底摆脱规整正方格子的“直瓦楞”生硬感，柔和表达多智能体规则与 MCP 配置的交错汇聚。
+ * 以三维自然流线束（Flowing Woven Ribbons）、右上延伸丝带与顶部柔和光晕构建动态空间，
+ * 柔和表达多智能体规则与 MCP 配置的交错汇聚。
  *
  * 仅在首页挂载渲染，切换页面时完整释放所有 WebGL 资源。
  */
@@ -87,9 +119,9 @@ export function HomeBackground() {
     scene.fog = new THREE.FogExp2(palette.fogColor, palette.fogDensity);
 
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 120);
-    // 构图：相机略偏左并俯视，使两条丝带在右侧与底部优雅翻腾交错，避开左侧大标题区
+    // 构图：相机略偏左并俯视，使流线在右下交错并向右上延伸翻腾，避开左侧大标题区
     camera.position.set(-6, 15, 28);
-    const lookTarget = new THREE.Vector3(2, -1, 0);
+    const lookTarget = new THREE.Vector3(2, 0, 0);
     camera.lookAt(lookTarget);
 
     const renderer = new THREE.WebGLRenderer({
@@ -101,6 +133,22 @@ export function HomeBackground() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
+
+    // 顶部柔和天光光晕面片
+    const glowTexture = createSoftGlowTexture();
+    const glowGeo = new THREE.PlaneGeometry(68, 28);
+    const glowMat = new THREE.MeshBasicMaterial({
+      map: glowTexture,
+      color: palette.glow,
+      transparent: true,
+      opacity: palette.glowOpacity,
+      blending: palette.blending,
+      depthWrite: false,
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.position.set(4, 16, -5);
+    glowMesh.rotation.x = 0.22;
+    scene.add(glowMesh);
 
     // 材质创建
     const warpMaterial = new THREE.LineBasicMaterial({
@@ -115,6 +163,14 @@ export function HomeBackground() {
       color: palette.weft,
       transparent: true,
       opacity: palette.lineOpacity,
+      blending: palette.blending,
+      depthWrite: false,
+    });
+
+    const upperMaterial = new THREE.LineBasicMaterial({
+      color: palette.upper,
+      transparent: true,
+      opacity: palette.lineOpacity * 0.8,
       blending: palette.blending,
       depthWrite: false,
     });
@@ -147,7 +203,7 @@ export function HomeBackground() {
     const warpLines = new THREE.LineSegments(warpGeometry, warpMaterial);
     scene.add(warpLines);
 
-    // 2. 流线束 2（紫蓝 Agent 流束：以交叉角度斜向穿插穿行）
+    // 2. 流线束 2（紫蓝 Agent 流束：以交叉角度斜向穿插，并向右上昂扬延伸）
     const weftLineCount = STREAM_LINES;
     const weftSegments = STREAM_SEGMENTS;
     const weftVertexCount = weftLineCount * weftSegments * 2;
@@ -158,7 +214,18 @@ export function HomeBackground() {
     const weftLines = new THREE.LineSegments(weftGeometry, weftMaterial);
     scene.add(weftLines);
 
-    // 3. 穿插横向弧线（Cross Threads：连接两束流线的柔性交织线）
+    // 3. 右上副流线束（Upper Stream：弥漫延伸到右上空域）
+    const upperLineCount = UPPER_LINES;
+    const upperSegments = UPPER_SEGMENTS;
+    const upperVertexCount = upperLineCount * upperSegments * 2;
+    const upperPositions = new Float32Array(upperVertexCount * 3);
+    const upperGeometry = new THREE.BufferGeometry();
+    const upperPositionAttr = new THREE.BufferAttribute(upperPositions, 3);
+    upperGeometry.setAttribute('position', upperPositionAttr);
+    const upperLines = new THREE.LineSegments(upperGeometry, upperMaterial);
+    scene.add(upperLines);
+
+    // 4. 穿插横向弧线（Cross Threads：连接两束流线的柔性交织线）
     const crossLineCount = CROSS_LINES;
     const crossSegments = CROSS_SEGMENTS;
     const crossVertexCount = crossLineCount * crossSegments * 2;
@@ -169,7 +236,7 @@ export function HomeBackground() {
     const crossLines = new THREE.LineSegments(crossGeometry, crossMaterial);
     scene.add(crossLines);
 
-    // 4. 浮动微光节点粒子（沿着流线自然分布）
+    // 5. 浮动微光节点粒子（沿着流线自然分布）
     const totalPoints = PARTICLES_COUNT;
     const pointPositions = new Float32Array(totalPoints * 3);
     const pointsGeometry = new THREE.BufferGeometry();
@@ -185,7 +252,6 @@ export function HomeBackground() {
     let targetMouseY = 0;
 
     const onPointerMove = (event: PointerEvent) => {
-      // 归一化到 [-1, 1]
       targetMouseX = (event.clientX / window.innerWidth) * 2 - 1;
       targetMouseY = -(event.clientY / window.innerHeight) * 2 + 1;
     };
@@ -218,7 +284,6 @@ export function HomeBackground() {
     // 流束 1（青绿）核心中心线函数：u in [0, 1]
     const getStream1Point = (u: number, t: number, lineIndex: number) => {
       const lineWeight = (lineIndex - (STREAM_LINES - 1) / 2) / ((STREAM_LINES - 1) / 2);
-      // 中间展开，两端微收拢
       const envelope = 1 - 0.28 * Math.pow(2 * u - 1, 2);
       const spreadWidth = 5.2 * envelope;
 
@@ -226,7 +291,6 @@ export function HomeBackground() {
       const baseZ = -12 + u * 24 + Math.sin(u * 3.2 + t * 0.45) * 6.5;
       const baseY = Math.cos(u * 3.6 + t * 0.5) * 2.8 + Math.sin(u * 1.8 - t * 0.35) * 1.6 - 1.2;
 
-      // 细线横向展开与局部起伏微波
       const localRipple = Math.sin(u * 7.5 + lineIndex * 0.22 + t * 0.6) * 0.4;
       const x = baseX - lineWeight * spreadWidth * 0.2;
       const z = baseZ + lineWeight * spreadWidth * 0.95;
@@ -234,21 +298,40 @@ export function HomeBackground() {
       return { x, y, z };
     };
 
-    // 流束 2（紫蓝）核心中心线函数：v in [0, 1]（斜向与流束 1 交叉穿插）
+    // 流束 2（紫蓝）核心中心线函数：v in [0, 1]（向右上优雅扬起延伸）
     const getStream2Point = (v: number, t: number, lineIndex: number) => {
       const lineWeight = (lineIndex - (STREAM_LINES - 1) / 2) / ((STREAM_LINES - 1) / 2);
       const envelope = 1 - 0.28 * Math.pow(2 * v - 1, 2);
       const spreadWidth = 5.0 * envelope;
 
       const baseX = -30 + v * 64;
-      const baseZ = 16 - v * 32 + Math.cos(v * 3.0 + t * 0.45) * 6.0;
-      // 起伏相位与流束 1 交错，形成真实的上下交织穿越
-      const baseY = Math.sin(v * 3.6 + t * 0.5 + Math.PI * 0.5) * 2.8 - Math.cos(v * 1.8 - t * 0.35) * 1.5 - 1.2;
+      const baseZ = 16 - v * 30 + Math.cos(v * 3.0 + t * 0.45) * 6.0;
+
+      // 后半段（v > 0.3）向上升起，平滑延伸进右上角视野
+      const rise = Math.pow(Math.max(0, (v - 0.25) / 0.75), 1.5) * 8.5;
+      const baseY = Math.sin(v * 3.6 + t * 0.5 + Math.PI * 0.5) * 2.8 - Math.cos(v * 1.8 - t * 0.35) * 1.5 - 1.2 + rise;
 
       const localRipple = -Math.sin(v * 7.5 + lineIndex * 0.22 + t * 0.6) * 0.4;
       const x = baseX + lineWeight * spreadWidth * 0.25;
       const z = baseZ + lineWeight * spreadWidth * 0.95;
       const y = baseY - lineWeight * 0.4 + localRipple;
+      return { x, y, z };
+    };
+
+    // 右上副流束（Sky Blue Upper Stream）：w in [0, 1]（点缀右上角天空）
+    const getUpperStreamPoint = (w: number, t: number, lineIndex: number) => {
+      const lineWeight = (lineIndex - (UPPER_LINES - 1) / 2) / ((UPPER_LINES - 1) / 2);
+      const envelope = 1 - 0.22 * Math.pow(2 * w - 1, 2);
+      const spreadWidth = 4.0 * envelope;
+
+      const baseX = -10 + w * 46;
+      const baseZ = -8 + w * 4 + Math.sin(w * 2.6 + t * 0.4) * 4.0;
+      const baseY = 3 + w * 9.5 + Math.cos(w * 3.0 + t * 0.45) * 1.8;
+
+      const localRipple = Math.sin(w * 7.0 + lineIndex * 0.25 + t * 0.55) * 0.3;
+      const x = baseX - lineWeight * spreadWidth * 0.2;
+      const z = baseZ + lineWeight * spreadWidth * 0.95;
+      const y = baseY + lineWeight * 0.3 + localRipple;
       return { x, y, z };
     };
 
@@ -271,11 +354,14 @@ export function HomeBackground() {
       mouseX += (targetMouseX - mouseX) * lerpSpeed;
       mouseY += (targetMouseY - mouseY) * lerpSpeed;
 
-      // 相机在基础视角上附带轻微视差倾斜，幅度温和克制
+      // 相机在基础视角上附带轻微视差倾斜
       const parallaxFactor = reducedMotion ? 0.15 : 0.65;
       camera.position.x = -6 + mouseX * 1.5 * parallaxFactor;
       camera.position.y = 15 + mouseY * 1.0 * parallaxFactor;
       camera.lookAt(lookTarget.x + mouseX * 0.4, lookTarget.y + mouseY * 0.25, lookTarget.z);
+
+      // 顶部柔光微妙呼吸
+      glowMat.opacity = palette.glowOpacity * (1 + Math.sin(time * 0.5) * 0.18);
 
       // --- 1. 更新流束 1（青绿）---
       let warpIdx = 0;
@@ -297,7 +383,7 @@ export function HomeBackground() {
       }
       warpPositionAttr.needsUpdate = true;
 
-      // --- 2. 更新流束 2（紫蓝）---
+      // --- 2. 更新流束 2（紫蓝，右上延伸）---
       let weftIdx = 0;
       for (let l = 0; l < weftLineCount; l++) {
         for (let s = 0; s < weftSegments; s++) {
@@ -317,15 +403,33 @@ export function HomeBackground() {
       }
       weftPositionAttr.needsUpdate = true;
 
-      // --- 3. 更新穿插横向弧线（Cross Threads）---
+      // --- 3. 更新右上副流束 ---
+      let upperIdx = 0;
+      for (let l = 0; l < upperLineCount; l++) {
+        for (let s = 0; s < upperSegments; s++) {
+          const w0 = s / upperSegments;
+          const w1 = (s + 1) / upperSegments;
+          const p0 = getUpperStreamPoint(w0, time, l);
+          const p1 = getUpperStreamPoint(w1, time, l);
+
+          upperPositions[upperIdx++] = p0.x;
+          upperPositions[upperIdx++] = p0.y;
+          upperPositions[upperIdx++] = p0.z;
+
+          upperPositions[upperIdx++] = p1.x;
+          upperPositions[upperIdx++] = p1.y;
+          upperPositions[upperIdx++] = p1.z;
+        }
+      }
+      upperPositionAttr.needsUpdate = true;
+
+      // --- 4. 更新穿插横向弧线（Cross Threads）---
       let crossIdx = 0;
       for (let c = 0; c < crossLineCount; c++) {
         const param = (c + 0.5) / crossLineCount;
-        // 两端锚点：分别位于流束 1 与流束 2 的相应位置
         const anchor1 = getStream1Point(param, time, Math.floor(c % STREAM_LINES));
         const anchor2 = getStream2Point(param, time, Math.floor((c * 2) % STREAM_LINES));
 
-        // 中间控制点：带有自然的悬垂下陷或向上编织拱起
         const midX = (anchor1.x + anchor2.x) * 0.5;
         const midZ = (anchor1.z + anchor2.z) * 0.5;
         const sag = Math.sin(param * Math.PI) * (Math.sin(param * 4.0 + time * 0.5) * 1.2 - 0.6);
@@ -335,7 +439,6 @@ export function HomeBackground() {
           const t0 = s / crossSegments;
           const t1 = (s + 1) / crossSegments;
 
-          // 二次贝塞尔曲线平滑插值
           const getBezier = (tval: number) => {
             const it = 1 - tval;
             return {
@@ -359,13 +462,20 @@ export function HomeBackground() {
       }
       crossPositionAttr.needsUpdate = true;
 
-      // --- 4. 更新浮动微光节点粒子 ---
+      // --- 5. 更新浮动微光节点粒子 ---
       let pIdx = 0;
       for (let i = 0; i < totalPoints; i++) {
         const u = (i / totalPoints + time * 0.03) % 1;
-        const isStream1 = i % 2 === 0;
+        const streamType = i % 3;
         const lineIdx = Math.floor((i * 3) % STREAM_LINES);
-        const pt = isStream1 ? getStream1Point(u, time, lineIdx) : getStream2Point(u, time, lineIdx);
+        let pt: { x: number; y: number; z: number };
+        if (streamType === 0) {
+          pt = getStream1Point(u, time, lineIdx);
+        } else if (streamType === 1) {
+          pt = getStream2Point(u, time, lineIdx);
+        } else {
+          pt = getUpperStreamPoint(u, time, Math.min(lineIdx, UPPER_LINES - 1));
+        }
 
         pointPositions[pIdx++] = pt.x;
         pointPositions[pIdx++] = pt.y + 0.12;
@@ -398,7 +508,13 @@ export function HomeBackground() {
 
       applyMat(warpMaterial, palette.warp, palette.lineOpacity);
       applyMat(weftMaterial, palette.weft, palette.lineOpacity);
+      applyMat(upperMaterial, palette.upper, palette.lineOpacity * 0.8);
       applyMat(crossMaterial, palette.cross, palette.crossOpacity);
+
+      glowMat.color.setHex(palette.glow);
+      glowMat.opacity = palette.glowOpacity;
+      glowMat.blending = palette.blending;
+      glowMat.needsUpdate = true;
 
       pointsMaterial.color.setHex(palette.points);
       pointsMaterial.opacity = palette.pointsOpacity;
@@ -421,17 +537,22 @@ export function HomeBackground() {
       mediaQuery.removeEventListener('change', onMotionChange);
       observer.disconnect();
 
-      // 释放所有 BufferGeometry
+      // 释放所有 BufferGeometry 与贴图
       warpGeometry.dispose();
       weftGeometry.dispose();
+      upperGeometry.dispose();
       crossGeometry.dispose();
       pointsGeometry.dispose();
+      glowGeo.dispose();
+      glowTexture.dispose();
 
       // 释放材质
       warpMaterial.dispose();
       weftMaterial.dispose();
+      upperMaterial.dispose();
       crossMaterial.dispose();
       pointsMaterial.dispose();
+      glowMat.dispose();
 
       // 释放渲染器与 DOM
       renderer.dispose();
@@ -443,6 +564,10 @@ export function HomeBackground() {
   }, [theme]);
 
   return (
-    <div ref={containerRef} className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true" />
+    <div ref={containerRef} className="pointer-events-none fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      {/* 顶部柔和环境天光光晕 */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand/12 via-brand/4 to-transparent blur-3xl opacity-80" />
+      <div className="pointer-events-none absolute right-1/4 -top-20 size-[32rem] rounded-full bg-indigo-500/10 blur-[110px]" />
+    </div>
   );
 }
