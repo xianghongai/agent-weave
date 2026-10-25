@@ -14,7 +14,8 @@
   "footer": {
     "privacy": "数据只保存在你的浏览器和你选择的同步位置，本站不收集任何数据",
     "repository": "GitHub 仓库",
-    "language": "界面语言"
+    "language": "界面语言",
+    "languageLoadFailed": "无法加载所选语言，请检查网络连接后重试"
   },
   "home": {
     "headline": {

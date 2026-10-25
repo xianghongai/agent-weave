@@ -14,7 +14,8 @@
   "footer": {
     "privacy": "Your data stays in your browser and the sync location you choose. This site collects no data.",
     "repository": "GitHub repository",
-    "language": "Interface language"
+    "language": "Interface language",
+    "languageLoadFailed": "Couldn't load the selected language. Check your network connection and try again."
   },
   "home": {
     "headline": {
