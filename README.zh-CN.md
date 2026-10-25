@@ -42,12 +42,6 @@ Agent Weave 在浏览器里维护一份中立规则集，包含工具、权限�
 
 Secret Gist 不是加密存储，知道链接的人都可以读取，因此不要在工作区中放入密钥。Token 只授予 Gist 权限即可：经典 Token 只勾选 `gist`；Fine-grained Token 在 **Account permissions** 中把 **Gists** 设为 **Read and write**。
 
-## 界面语言
-
-界面提供简体中文和英文。首次访问时跟随浏览器语言，之后可以在页脚右侧切换，所选语言保存在当前设备上。
-
-从预设新加入的条目使用当前的界面语言。工作区中已有的文字属于用户数据，切换语言时不会改变。
-
 ## 开发
 
 Node.js 和 pnpm 的版本由 `mise.toml` 与 `package.json` 锁定，命令通过 [mise](https://mise.jdx.dev/) 运行：

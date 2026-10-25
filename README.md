@@ -42,12 +42,6 @@ To check, open the Network panel in your browser's developer tools. Requests go 
 
 A secret gist isn't encrypted. Anyone with its link can read it, so don't put secrets in your workspace. Use a token that has only gist access: a classic token with only the `gist` scope, or a fine-grained token with **Gists** set to **Read and write**.
 
-## Interface language
-
-The interface is available in Simplified Chinese and English. On your first visit, it follows your browser's language. You can switch at the right of the footer, and your choice is saved on the current device.
-
-New entries that come from presets use the current interface language. Text that's already in your workspace is your data and doesn't change when you switch languages.
-
 ## Development
 
 Node.js and pnpm versions are pinned in `mise.toml` and `package.json`. Run commands through [mise](https://mise.jdx.dev/):
