@@ -14,7 +14,6 @@
           "-y",
           "chrome-devtools-mcp@latest",
           "--auto-connect",
-          "--category-extensions",
           "--no-usage-statistics",
           "--no-performance-crux",
         ],
@@ -30,7 +29,15 @@
       "content": {
         "type": "stdio",
         "command": "npx",
-        "args": ["-y", "@mozilla/firefox-devtools-mcp@latest", "--connect-existing", "--tool-preset", "developer"],
+        "args": [
+          "-y",
+          "@mozilla/firefox-devtools-mcp@latest",
+          "--connect-existing",
+          "--tool-preset",
+          "developer",
+          "--log-file",
+          "/tmp/firefox-devtools-mcp/server.log",
+        ],
       },
       "description": "preset-mcp-firefox-devtools.description",
       "tag_ids": ["preset-tag-browser"],
@@ -40,7 +47,11 @@
     {
       "id": "preset-mcp-playwright",
       "key": "playwright",
-      "content": { "type": "stdio", "command": "npx", "args": ["-y", "@playwright/mcp@latest"] },
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@playwright/mcp@latest"],
+      },
       "description": "preset-mcp-playwright.description",
       "tag_ids": ["preset-tag-browser"],
       "high_risk": false,
@@ -62,7 +73,11 @@
     {
       "id": "preset-mcp-github",
       "key": "github",
-      "content": { "type": "stdio", "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"] },
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+      },
       "description": "preset-mcp-github.description",
       "tag_ids": ["preset-tag-vcs", "preset-tag-network"],
       "high_risk": false,

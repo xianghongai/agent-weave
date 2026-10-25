@@ -10,7 +10,6 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -43,7 +42,9 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -89,7 +90,6 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -122,7 +122,9 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -170,7 +172,6 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -203,7 +204,9 @@ exports[`预设：各 Agent 的生成快照 > Antigravity 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -1117,7 +1120,6 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -1150,7 +1152,9 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -1196,7 +1200,6 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -1229,7 +1232,9 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -1277,7 +1282,6 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -1310,7 +1314,9 @@ exports[`预设：各 Agent 的生成快照 > Claude Code 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -2181,7 +2187,6 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -2214,7 +2219,9 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -2260,7 +2267,6 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -2293,7 +2299,9 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -2341,7 +2349,6 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -2374,7 +2381,9 @@ exports[`预设：各 Agent 的生成快照 > CodeBuddy Code 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -3234,7 +3243,7 @@ exports[`预设：各 Agent 的生成快照 > Codex CLI 1`] = `
     "copyText": "[mcp_servers.chrome-devtools]
 type = "stdio"
 command = "npx"
-args = ["-y", "chrome-devtools-mcp@latest", "--auto-connect", "--category-extensions", "--no-usage-statistics", "--no-performance-crux"]
+args = ["-y", "chrome-devtools-mcp@latest", "--auto-connect", "--no-usage-statistics", "--no-performance-crux"]
 
 [mcp_servers.context7]
 type = "stdio"
@@ -3252,7 +3261,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/home/alice"]
 [mcp_servers.firefox-devtools]
 type = "stdio"
 command = "npx"
-args = ["-y", "@mozilla/firefox-devtools-mcp@latest", "--connect-existing", "--tool-preset", "developer"]
+args = ["-y", "@mozilla/firefox-devtools-mcp@latest", "--connect-existing", "--tool-preset", "developer", "--log-file", "/tmp/firefox-devtools-mcp/server.log"]
 
 [mcp_servers.github]
 type = "stdio"
@@ -3279,7 +3288,7 @@ args = ["-y", "@modelcontextprotocol/server-sequential-thinking"]",
     "preview": "[mcp_servers.chrome-devtools]
 type = "stdio"
 command = "npx"
-args = ["-y", "chrome-devtools-mcp@latest", "--auto-connect", "--category-extensions", "--no-usage-statistics", "--no-performance-crux"]
+args = ["-y", "chrome-devtools-mcp@latest", "--auto-connect", "--no-usage-statistics", "--no-performance-crux"]
 
 [mcp_servers.context7]
 type = "stdio"
@@ -3297,7 +3306,7 @@ args = ["-y", "@modelcontextprotocol/server-filesystem", "/home/alice"]
 [mcp_servers.firefox-devtools]
 type = "stdio"
 command = "npx"
-args = ["-y", "@mozilla/firefox-devtools-mcp@latest", "--connect-existing", "--tool-preset", "developer"]
+args = ["-y", "@mozilla/firefox-devtools-mcp@latest", "--connect-existing", "--tool-preset", "developer", "--log-file", "/tmp/firefox-devtools-mcp/server.log"]
 
 [mcp_servers.github]
 type = "stdio"
@@ -3351,7 +3360,6 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -3384,7 +3392,9 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -3430,7 +3440,6 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -3463,7 +3472,9 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -3511,7 +3522,6 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -3544,7 +3554,9 @@ exports[`预设：各 Agent 的生成快照 > Cursor CLI 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -4397,7 +4409,6 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -4430,7 +4441,9 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -4476,7 +4489,6 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -4509,7 +4521,9 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -4557,7 +4571,6 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -4590,7 +4603,9 @@ exports[`预设：各 Agent 的生成快照 > Devin CLI 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -5458,7 +5473,6 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -5491,7 +5505,9 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -5537,7 +5553,6 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -5570,7 +5585,9 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -5618,7 +5635,6 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -5651,7 +5667,9 @@ exports[`预设：各 Agent 的生成快照 > Gemini CLI 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
@@ -5721,7 +5739,6 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
     "-y",
     "chrome-devtools-mcp@latest",
     "--auto-connect",
-    "--category-extensions",
     "--no-usage-statistics",
     "--no-performance-crux"
   ]
@@ -5754,7 +5771,9 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
     "@mozilla/firefox-devtools-mcp@latest",
     "--connect-existing",
     "--tool-preset",
-    "developer"
+    "developer",
+    "--log-file",
+    "/tmp/firefox-devtools-mcp/server.log"
   ]
 },
 "github": {
@@ -5800,7 +5819,6 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
       "-y",
       "chrome-devtools-mcp@latest",
       "--auto-connect",
-      "--category-extensions",
       "--no-usage-statistics",
       "--no-performance-crux"
     ]
@@ -5833,7 +5851,9 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
       "@mozilla/firefox-devtools-mcp@latest",
       "--connect-existing",
       "--tool-preset",
-      "developer"
+      "developer",
+      "--log-file",
+      "/tmp/firefox-devtools-mcp/server.log"
     ]
   },
   "github": {
@@ -5881,7 +5901,6 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
         "-y",
         "chrome-devtools-mcp@latest",
         "--auto-connect",
-        "--category-extensions",
         "--no-usage-statistics",
         "--no-performance-crux"
       ]
@@ -5914,7 +5933,9 @@ exports[`预设：各 Agent 的生成快照 > Qwen Code 1`] = `
         "@mozilla/firefox-devtools-mcp@latest",
         "--connect-existing",
         "--tool-preset",
-        "developer"
+        "developer",
+        "--log-file",
+        "/tmp/firefox-devtools-mcp/server.log"
       ]
     },
     "github": {
