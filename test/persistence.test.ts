@@ -33,7 +33,7 @@ describe('持久化：恢复上次保存的状态', () => {
   it('首次访问时没有本地数据，使用预设、空的设置和深色主题，界面语言跟随浏览器，不提示', () => {
     expect(restorePersistedState(undefined, PREFERRED)).toEqual({
       state: {
-        workspace: createPresetWorkspace(),
+        workspace: createPresetWorkspace('zh-CN'),
         deviceSettings: { os: null, user_names: { linux: '', macos: '', windows: '' } },
         gistSettings: { token: '', gist_id: '' },
         theme: 'dark',
@@ -49,14 +49,14 @@ describe('持久化：恢复上次保存的状态', () => {
     ['规则的决策不在取值范围内', corruptValue(['rules', 0, 'decision'], 'maybe')],
   ])('工作区结构无效（%s）时只回退工作区到预设，设置照常恢复', (_, workspace) => {
     expect(restorePersistedState({ ...saved(), workspace }, PREFERRED)).toEqual({
-      state: { ...saved(), workspace: createPresetWorkspace() },
+      state: { ...saved(), workspace: createPresetWorkspace('en') },
       fallback: { workspace: { problem: 'invalidStructure' }, deviceSettings: null, gistSettings: null },
     });
   });
 
   it('工作区来自更新的版本时回退到预设，并给出原因码', () => {
     expect(restorePersistedState({ ...saved(), workspace: corruptValue(['schema_version'], 2) }, PREFERRED)).toEqual({
-      state: { ...saved(), workspace: createPresetWorkspace() },
+      state: { ...saved(), workspace: createPresetWorkspace('en') },
       fallback: { workspace: { problem: 'newerVersion' }, deviceSettings: null, gistSettings: null },
     });
   });
@@ -64,7 +64,7 @@ describe('持久化：恢复上次保存的状态', () => {
   it('工作区中有规则指向不存在的工具时回退到预设，并指出是哪条规则', () => {
     const workspace = corruptValue(['rules', 1, 'tool', 'id'], 'builtin-gone');
     expect(restorePersistedState({ ...saved(), workspace }, PREFERRED)).toEqual({
-      state: { ...saved(), workspace: createPresetWorkspace() },
+      state: { ...saved(), workspace: createPresetWorkspace('en') },
       fallback: {
         workspace: { problem: 'danglingReference', entryId: 'rule-2' },
         deviceSettings: null,
@@ -167,8 +167,37 @@ describe('持久化：恢复上次保存的状态', () => {
   });
 });
 
+describe('持久化：预设的语言与界面语言一致', () => {
+  /** 用已知条目的文字判断取的是哪种语言的预设：版本控制标签的名称。 */
+  function vcsTagName(state: PersistedState): string | undefined {
+    return state.workspace.tags.find((tag) => tag.id === 'preset-tag-vcs')?.name;
+  }
+
+  it.each([
+    [['zh-TW', 'en'], '版本控制'],
+    [['ja', 'en-US'], 'Version control'],
+    [['ja'], 'Version control'],
+    [[], 'Version control'],
+  ])('首次访问时，预设的语言由浏览器偏好 %j 决定', (preferred, name) => {
+    const { state } = restorePersistedState(undefined, preferred);
+    expect(vcsTagName(state)).toBe(name);
+    expect(state.language).toBeNull();
+  });
+
+  it('工作区回退时，预设的语言先取保存的界面语言', () => {
+    const persisted = { ...saved(), workspace: corruptValue(['rules'], undefined), language: 'zh-CN' };
+    expect(vcsTagName(restorePersistedState(persisted, ['en-US']).state)).toBe('版本控制');
+  });
+
+  it('工作区回退且没有保存界面语言时，预设的语言取浏览器偏好', () => {
+    const persisted = { ...saved(), workspace: corruptValue(['rules'], undefined), language: null };
+    expect(vcsTagName(restorePersistedState(persisted, ['en-GB']).state)).toBe('Version control');
+    expect(vcsTagName(restorePersistedState(persisted, ['zh']).state)).toBe('版本控制');
+  });
+});
+
 describe('工作区校验', () => {
   it('预设工作区通过校验', () => {
-    expect(parseWorkspace(createPresetWorkspace())).toEqual({ workspace: createPresetWorkspace() });
+    expect(parseWorkspace(createPresetWorkspace('zh-CN'))).toEqual({ workspace: createPresetWorkspace('zh-CN') });
   });
 });

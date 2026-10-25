@@ -98,7 +98,7 @@ export function restorePersistedState(
       workspace:
         'workspace' in workspaceResult
           ? workspaceResult.workspace
-          : presetWorkspace(resolveLanguage(language, preferred)),
+          : createPresetWorkspace(resolveLanguage(language, preferred)),
       deviceSettings: deviceSettings ?? EMPTY_DEVICE_SETTINGS,
       gistSettings: gistSettings ?? EMPTY_GIST_SETTINGS,
       theme,
@@ -111,17 +111,12 @@ export function restorePersistedState(
 /** 首次访问时的应用状态：浏览器语言偏好对应的预设工作区、空的设置、默认主题，界面语言跟随浏览器。 */
 export function defaultPersistedState(preferred: readonly string[]): PersistedState {
   return {
-    workspace: presetWorkspace(resolveLanguage(null, preferred)),
+    workspace: createPresetWorkspace(resolveLanguage(null, preferred)),
     deviceSettings: EMPTY_DEVICE_SETTINGS,
     gistSettings: EMPTY_GIST_SETTINGS,
     theme: DEFAULT_THEME,
     language: null,
   };
-}
-
-/** 某种语言的预设工作区。预设目前只有简体中文，各语言都得到同一份，按语言合成之后改为按语言选取。 */
-function presetWorkspace(_language: Language): Workspace {
-  return createPresetWorkspace();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

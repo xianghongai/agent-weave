@@ -60,6 +60,7 @@
     {
       "files": [
         "src/lib/preset-composition.ts",
+        "src/lib/language.ts",
         "src/lib/jsonc.ts",
         "src/lib/workspace.ts",
         "src/lib/workspace-validation.ts",

@@ -2,36 +2,66 @@ import { describe, expect, it } from 'vitest';
 
 import { readPresetFiles } from '../build/presets';
 import { generate } from '@/lib/generate';
+import { LANGUAGES, type Language } from '@/lib/language';
 import { composePresets } from '@/lib/preset-composition';
 import { createPresetWorkspace } from '@/lib/presets';
-import type { DeviceSettings } from '@/lib/workspace';
+import type { DeviceSettings, Workspace } from '@/lib/workspace';
 import { exportWorkspace, importWorkspace } from '@/lib/workspace-file';
 
 /*
  * 预设内容：读取 `presets/` 下的实际文件交给合成函数，再复用已有接缝：导入校验与生成。
  * 构建只对逻辑问题出警告，这里的失败才是拦住坏预设的关口（ADR 0004）。
+ * 合成与导入校验对每种语言都运行；内容整理与快照只看简体中文，另一种语言与它只差文字，由一条用例保证。
  * 快照使用固定的本机设置，`{{home}}` 展开为 `/home/alice`，结果不随运行环境变化。
  */
 
-const preset = createPresetWorkspace();
+const preset = createPresetWorkspace('zh-CN');
 const DEVICE: DeviceSettings = { os: 'linux', user_names: { linux: 'alice', macos: '', windows: '' } };
 
 function agentId(name: string): string {
   return preset.agents.find((agent) => agent.name === name)?.id ?? '';
 }
 
-describe('预设：合成与导入校验', () => {
+/** 去掉给人看的文字字段：标签名、描述、高危说明、作用域的名称和说明。剩下的是各语言应当完全相同的结构。 */
+function withoutText(workspace: Workspace): unknown {
+  const TEXT_KEYS = new Set(['name', 'description', 'high_risk_reason', 'note']);
+  const strip = (value: unknown, path: string[]): unknown => {
+    if (Array.isArray(value)) {
+      return value.map((item) => strip(item, path));
+    }
+    if (typeof value !== 'object' || value === null) {
+      return value;
+    }
+    // Agent 的 `name` 是标识而不是文字，MCP Server 的 `content` 原样输出，都要保留。
+    const isTagOrScope = path.at(-1) === 'tags' || path.at(-1) === 'scopes';
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => !(TEXT_KEYS.has(key) && (key !== 'name' || isTagOrScope)))
+        .map(([key, child]) => [key, key === 'content' ? child : strip(child, [...path, key])])
+    );
+  };
+  return strip(workspace, []);
+}
+
+describe.each(LANGUAGES)('预设（%s）：合成与导入校验', (language: Language) => {
   it('实际的预设文件合成时没有语法错误和警告', () => {
-    const { files, locale } = readPresetFiles();
-    const result = composePresets(files, locale);
+    const { files, locales } = readPresetFiles();
+    const result = composePresets(files, locales[language]);
     expect(result).not.toHaveProperty('syntaxErrors');
     expect('warnings' in result && result.warnings).toEqual([]);
   });
 
   it('预设工作区导出后再导入，通过校验且内容不变', () => {
-    expect(importWorkspace(exportWorkspace(preset).text)).toEqual({ workspace: preset });
+    const workspace = createPresetWorkspace(language);
+    expect(importWorkspace(exportWorkspace(workspace).text)).toEqual({ workspace });
   });
 
+  it('与简体中文的预设只在文字上不同', () => {
+    expect(withoutText(createPresetWorkspace(language))).toEqual(withoutText(preset));
+  });
+});
+
+describe('预设：合成与导入校验', () => {
   it('Agent 按优先级排列：Claude Code、Codex CLI 在前，Antigravity、Cursor CLI、Gemini CLI、Qwen Code 居中，CodeBuddy Code、Devin CLI 在后', () => {
     expect(preset.agents.map((agent) => agent.name)).toEqual([
       'Claude Code',
