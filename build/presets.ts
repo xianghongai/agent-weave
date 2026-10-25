@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vite';
 
-import { LANGUAGES, type Language } from '../src/lib/language';
+import { type Language, byLanguage } from '../src/lib/language';
 import { type PresetFile, type PresetWarning, composePresets } from '../src/lib/preset-composition';
 import type { Workspace } from '../src/lib/workspace';
 
@@ -35,8 +35,7 @@ export function readPresetFiles(dir: string = PRESET_DIR): {
     .filter((path) => path.endsWith('.jsonc') && !path.startsWith('locales/'))
     .toSorted()
     .map(read);
-  const locales = Object.fromEntries(LANGUAGES.map((language) => [language, read(localePath(language))]));
-  return { files, locales: locales as Record<Language, PresetFile> };
+  return { files, locales: byLanguage((language) => read(localePath(language))) };
 }
 
 /**
@@ -73,21 +72,21 @@ export function presets(): Plugin {
       // 数据文件的问题每种语言都会报一次，去重后再输出。
       const syntaxErrors = new Set<string>();
       const warnings = new Set<string>();
-      const workspaces: Partial<Record<Language, Workspace>> = {};
-      for (const language of LANGUAGES) {
+      // 有语法错误的语言得到 `null`，随后构建失败，不会输出。
+      const workspaces = byLanguage((language): Workspace | null => {
         const locale = locales[language];
         const result = composePresets(files, locale);
         if ('syntaxErrors' in result) {
           for (const error of result.syntaxErrors) {
             syntaxErrors.add(`presets/${error.path}:${error.line}:${error.column} ${error.code}`);
           }
-          continue;
+          return null;
         }
         for (const warning of result.warnings) {
           warnings.add(formatPresetWarning(warning, locale));
         }
-        workspaces[language] = result.workspace;
-      }
+        return result.workspace;
+      });
       if (syntaxErrors.size > 0) {
         this.error(`预设文件有语法错误：\n${[...syntaxErrors].join('\n')}`);
       }

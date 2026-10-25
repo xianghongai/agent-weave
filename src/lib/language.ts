@@ -11,6 +11,12 @@ export type Language = (typeof LANGUAGES)[number];
 /** 浏览器偏好中没有支持的语言时使用的语言。 */
 export const DEFAULT_LANGUAGE: Language = 'en';
 
+/** 每种支持的语言各算一份值，得到以语言为键的完整记录。新增语言时调用方不用改。 */
+export function byLanguage<T>(value: (language: Language) => T): Record<Language, T> {
+  // `Object.fromEntries` 只能推出 string 键；键正好是 `LANGUAGES` 的每一项，记录是完整的。
+  return Object.fromEntries(LANGUAGES.map((language) => [language, value(language)])) as Record<Language, T>;
+}
+
 export function isLanguage(value: unknown): value is Language {
   return LANGUAGES.some((language) => language === value);
 }
