@@ -59,3 +59,10 @@ describe.each(Object.entries(translations))('界面语言包 %s', (_, messages) 
     }
   });
 });
+
+describe('英文界面语言包', () => {
+  it('不含中文字符，没有残留的占位译文', () => {
+    const leftovers = [...flatten(en)].filter(([, texts]) => texts.some((text) => /\p{Script=Han}/u.test(text)));
+    expect(leftovers.map(([key]) => key)).toEqual([]);
+  });
+});

@@ -119,7 +119,7 @@ export default function McpPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('mcp.deleteTitle', { key: deleteTarget?.key ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteRuleCount > 0 ? t('mcp.deleteWithRules', { n: deleteRuleCount }) : t('mcp.deleteNoRules')}
+              {deleteRuleCount > 0 ? t('mcp.deleteWithRules', { count: deleteRuleCount }) : t('mcp.deleteNoRules')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

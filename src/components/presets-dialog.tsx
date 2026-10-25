@@ -66,7 +66,7 @@ function PresetActions() {
     if (report.added > 0) {
       replaceWorkspace(workspace);
     }
-    toast.success(report.added > 0 ? t('presets.mergedSome', { n: report.added }) : t('presets.mergedNone'));
+    toast.success(report.added > 0 ? t('presets.mergedSome', { count: report.added }) : t('presets.mergedNone'));
     setSkipped(report.skipped);
   }
 
@@ -112,7 +112,7 @@ function PresetActions() {
 
       {skipped.length > 0 && (
         <Note tone="warning" icon={TriangleAlertIcon}>
-          <p className="font-medium">{t('presets.skippedTitle', { n: skipped.length })}</p>
+          <p className="font-medium">{t('presets.skippedTitle', { count: skipped.length })}</p>
           <p>{t('presets.skippedHint')}</p>
           <ul className="list-disc pl-5">
             {skipped.map((skip) => (

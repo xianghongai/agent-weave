@@ -23,7 +23,7 @@ export function RuleCountBadge({ tool }: { tool: ToolRef }) {
       title={t('rules.showForTool')}
       render={<Link to={{ pathname: pageById('rules').path, search }} />}
     >
-      {t('rules.count', { n: count })}
+      {t('rules.count', { count })}
     </Badge>
   );
 }
