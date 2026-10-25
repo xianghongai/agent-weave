@@ -1,4 +1,5 @@
 import { EMPTY_GIST_SETTINGS, type GistSettings } from '@/lib/gist';
+import { type Language, isLanguage, resolveLanguage } from '@/lib/language';
 import { createPresetWorkspace } from '@/lib/presets';
 import { type DeviceSettings, EMPTY_DEVICE_SETTINGS, OPERATING_SYSTEMS, type Workspace } from '@/lib/workspace';
 import type { ImportFailure, ImportProblem } from '@/lib/workspace-file';
@@ -19,7 +20,7 @@ export type Theme = (typeof THEMES)[number];
 export const DEFAULT_THEME: Theme = 'dark';
 
 /**
- * 写入本地存储的应用状态。本机设置和 Gist 设置只存在本机：
+ * 写入本地存储的应用状态。本机设置、Gist 设置、主题和界面语言只存在本机：
  * 与工作区存放在同一个键中，但导出文件和 Gist 推送只序列化工作区。
  */
 export interface PersistedState {
@@ -27,6 +28,8 @@ export interface PersistedState {
   deviceSettings: DeviceSettings;
   gistSettings: GistSettings;
   theme: Theme;
+  /** 手动选择的界面语言；`null` 表示跟随浏览器。 */
+  language: Language | null;
 }
 
 /**
@@ -64,14 +67,18 @@ export function parseFailedFallback(): RestoreFallback {
 /**
  * 校验从本地存储读到的应用状态，总是返回一份可用的状态。
  * 没有本地数据（首次访问）时返回默认值且不提示；某一部分无效时只回退这一部分，其余照常恢复。
- * 主题无效时静默回退到默认主题。
+ * 主题、界面语言无效时静默回退到默认主题、跟随浏览器。
+ * `preferred` 是浏览器的语言偏好，与保存的界面语言一起决定回退时预设的语言，与界面语言一致。
  */
-export function restorePersistedState(persisted: unknown): {
+export function restorePersistedState(
+  persisted: unknown,
+  preferred: readonly string[]
+): {
   state: PersistedState;
   fallback: RestoreFallback | null;
 } {
   if (persisted === undefined || persisted === null) {
-    return { state: defaultPersistedState(), fallback: null };
+    return { state: defaultPersistedState(preferred), fallback: null };
   }
   const value = isRecord(persisted) ? persisted : {};
 
@@ -79,6 +86,7 @@ export function restorePersistedState(persisted: unknown): {
   const deviceSettings = isRecord(value.deviceSettings) ? parseDeviceSettings(value.deviceSettings) : null;
   const gistSettings = isRecord(value.gistSettings) ? parseGistSettings(value.gistSettings) : null;
   const theme = THEMES.find((candidate) => candidate === value.theme) ?? DEFAULT_THEME;
+  const language = isLanguage(value.language) ? value.language : null;
 
   const fallback: RestoreFallback = {
     workspace: 'workspace' in workspaceResult ? null : workspaceResult,
@@ -87,23 +95,33 @@ export function restorePersistedState(persisted: unknown): {
   };
   return {
     state: {
-      workspace: 'workspace' in workspaceResult ? workspaceResult.workspace : createPresetWorkspace(),
+      workspace:
+        'workspace' in workspaceResult
+          ? workspaceResult.workspace
+          : presetWorkspace(resolveLanguage(language, preferred)),
       deviceSettings: deviceSettings ?? EMPTY_DEVICE_SETTINGS,
       gistSettings: gistSettings ?? EMPTY_GIST_SETTINGS,
       theme,
+      language,
     },
     fallback: fallback.workspace || fallback.deviceSettings || fallback.gistSettings ? fallback : null,
   };
 }
 
-/** 首次访问时的应用状态：预设工作区、空的设置、默认主题。 */
-export function defaultPersistedState(): PersistedState {
+/** 首次访问时的应用状态：浏览器语言偏好对应的预设工作区、空的设置、默认主题，界面语言跟随浏览器。 */
+export function defaultPersistedState(preferred: readonly string[]): PersistedState {
   return {
-    workspace: createPresetWorkspace(),
+    workspace: presetWorkspace(resolveLanguage(null, preferred)),
     deviceSettings: EMPTY_DEVICE_SETTINGS,
     gistSettings: EMPTY_GIST_SETTINGS,
     theme: DEFAULT_THEME,
+    language: null,
   };
+}
+
+/** 某种语言的预设工作区。预设目前只有简体中文，各语言都得到同一份，按语言合成之后改为按语言选取。 */
+function presetWorkspace(_language: Language): Workspace {
+  return createPresetWorkspace();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

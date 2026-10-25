@@ -7,7 +7,7 @@
 - **网络请求只发往 GitHub API**：运行时唯一的对外请求是 Gist 同步。`build/content-security-policy.ts` 在构建产物中注入 CSP，`connect-src` 只放行 `'self'` 和 `https://api.github.com`，不得放宽；`test/content-security-policy.test.ts` 检查这一点。
 - **不引用 CDN**：依赖一律从 npm 安装并随站点打包，运行时不加载任何远程脚本、样式、字体或 WASM。图片以独立文件提供，`build.assetsInlineLimit` 保持为 `0`。
 - **不收集数据**：工作区只存在于浏览器本地和用户自己的 Gist 中。不接入统计、埋点或错误上报服务。
-- **本机数据不外流**：Gist Token、Gist ID 和本机设置只保存在当前设备，不进入工作区、导出文件和 Gist。
+- **本机数据不外流**：Gist Token、Gist ID、本机设置和界面语言只保存在当前设备，不进入工作区、导出文件和 Gist。
 - **界面文案不写在组件里**：文案放在 `src/locales/zh-CN.json`，组件通过 `useTranslation` 读取。
 - **纯逻辑不含文案**：`src/lib/` 出错时返回原因码，由界面层翻译成文案。
 
@@ -16,12 +16,12 @@
 - `src/pages/`：每个页面一个目录，在 `src/pages/registry.ts` 登记后自动注册路由，并按 `entry` 出现在顶部导航或页眉的设置菜单中（不常维护的页面放进设置菜单，如标签页）。登记顺序就是入口中的顺序；首页 `/` 是宣传页，也是默认入口，点击 Logo 回到这里，不在这里登记；`id` 同时决定文案键 `pages.<id>.title`、`pages.<id>.description`。尚未实现的页面用 `src/components/placeholder-page.tsx` 占位。
 - `src/lib/`：纯函数，不依赖 React 和 DOM，全部由 `test/` 下的单元测试覆盖。工作区模型、工作区操作、生成、Gist 客户端、持久化等模块都放在这里。
 - `src/state/`：全局状态，用 Zustand 加 Immer，按生命周期分成两个 store，理由见 `docs/adr/0002-state-layering.md`。两个 store 都按 slices 组织，action 与 state 放在同一个 store 中，只保存结果，业务逻辑留在 `src/lib/`。组件直接用 selector 订阅，一次取多个值时配合 `useShallow`，不另包自定义 Hook；事件处理中读取最新值用 `getState()`。
-  - `app-store.ts`：持久化应用 store，包含工作区、本机设置、Gist 设置、主题，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键。工作区只通过 `applyOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作，或用 `replaceWorkspace()` 整体替换。读取时的校验与回退由 `src/lib/persistence.ts` 的纯函数负责，读写错误写进界面 store。
+  - `app-store.ts`：持久化应用 store，包含工作区、本机设置、Gist 设置、主题、界面语言，中间件顺序为 `devtools(persist(immer(...)))`，`persist` 只写一个存储键。工作区只通过 `applyOperation()` 执行 `src/lib/workspace-operations.ts` 中的操作，或用 `replaceWorkspace()` 整体替换。读取时的校验与回退由 `src/lib/persistence.ts` 的纯函数负责，读写错误写进界面 store。
   - `ui-store.ts`：非持久化全局界面 store，包含存储状态（回退原因 `fallback`、无法保存的原因 `unsaved`）、多个页面共用的当前选中 Agent，以及当前打开的全局对话框 `openDialog`（本机设置、预设）。
   - `devtools.ts`：只在开发环境接入 Redux DevTools，生产构建不包含它。
   - `theme.ts`：订阅应用 store，把主题同步到 `<html>` 的 `dark` class 上。
   - 只在一个页面内使用的状态（Tab、表单）用 `useState`，不进 store。列表页的筛选条件放在 URL 查询串中，从其他页面带着条件跳过来也是同样的查询串，与查询串互转的纯函数在 `src/lib/filter-query.ts`，理由见 `docs/adr/0003-react-router-filter-query.md`。
-- `src/i18n/`、`src/locales/`：界面文案。界面只提供简体中文，`zh-CN.json` 随主脚本打包，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查。原因码到文案的翻译函数、按语言环境显示时间等格式化函数放在 `src/i18n/` 中。
+- `src/i18n/`、`src/locales/`：界面文案。界面提供简体中文和英文，`zh-CN.json` 是键的正本，`src/i18n/i18next.d.ts` 让 `t()` 的键参与类型检查；新增文案先加到 `zh-CN.json`，再在 `en.json` 补齐英文，键、插值变量不一致或文案为空时 `test/locales.test.ts` 失败。语言包用动态 `import()` 打包成独立脚本，首屏只加载当前语言；不放在 `public/` 中用 `fetch()` 读取，因为那样要占用 `connect-src`，动态导入的脚本属于 `script-src 'self'`，还会被 PWA 预缓存，离线也能切换。界面语言的选择与判断在 `src/lib/language.ts`，手动选择保存在应用 store 中，切换用 `src/i18n/index.ts` 的 `switchLanguage()`。原因码到文案的翻译函数、按界面语言显示时间等格式化函数放在 `src/i18n/` 中。
 - `src/components/`：站点外壳（页眉、页脚、主题切换、设置菜单，以及挂在外壳上的本机设置和预设对话框）、页面容器 `page.tsx`，以及多个页面共用的界面组件，如标签选择与标签徽标、筛选、高危开关与标记、复制按钮、存储提示横幅、表单对话框、帮助气泡与 Markdown 渲染。只在一个页面中使用的组件放在该页面的目录里。
 - `src/hooks/`：多个页面共用的 React Hook，如实体对话框的 `useOperationForm()`。
 - `src/browser/`：直接调用浏览器 API、又不是组件的界面辅助函数，如让浏览器下载文件的 `download.ts`。
