@@ -108,7 +108,7 @@ export default function TagsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('tags.deleteTitle', { key: deleteTarget?.key ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteToolCount > 0 ? t('tags.deleteWithTools', { n: deleteToolCount }) : t('tags.deleteNoTools')}
+              {deleteToolCount > 0 ? t('tags.deleteWithTools', { count: deleteToolCount }) : t('tags.deleteNoTools')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -115,7 +115,7 @@ function PermissionOutputView({ section }: { section: PermissionSection }) {
                 disabled={decision.entries.length === 0}
                 label={`${t('copy.copyInner')} · ${decision.key}`}
                 className={cn(DECISION_TONE[decision.decision])}
-                title={t('output.entryCount', { n: decision.entries.length })}
+                title={t('output.entryCount', { count: decision.entries.length })}
               />
             ))}
             <CopyButton text={section.copyText} label={t('copy.copy')} variant="default" />

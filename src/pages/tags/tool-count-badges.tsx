@@ -24,7 +24,7 @@ export function ToolCountBadges({ tagId, counts }: ToolCountBadgesProps) {
   return (
     <div className="flex flex-wrap justify-end gap-1.5">
       {types.map((type) => {
-        const label = t(`tags.toolCounts.${type}`, { n: counts[type] });
+        const label = t(`tags.toolCounts.${type}`, { count: counts[type] });
         // 不可点击的徽标用描边样式，与可点击的区分开。
         return hasToolListPage(type) ? (
           <Badge

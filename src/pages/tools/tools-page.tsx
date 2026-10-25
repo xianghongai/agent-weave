@@ -116,7 +116,7 @@ export default function ToolsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('tools.deleteTitle', { key: deleteTarget?.key ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteRuleCount > 0 ? t('tools.deleteWithRules', { n: deleteRuleCount }) : t('tools.deleteNoRules')}
+              {deleteRuleCount > 0 ? t('tools.deleteWithRules', { count: deleteRuleCount }) : t('tools.deleteNoRules')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
