@@ -18,7 +18,7 @@ export const PWA_OPTIONS: Partial<VitePWAOptions> = {
     short_name: 'Agent Weave',
     // 清单在脚本运行前就被读取，不随界面语言变化，统一写英文。
     description:
-      'Maintain one agent-neutral rule set in your browser and generate permission and MCP configurations for multiple AI coding agents.',
+      'Maintain one neutral rule set in your browser and generate permission and MCP configurations for multiple AI coding agents.',
     lang: 'en',
     start_url: './',
     scope: './',

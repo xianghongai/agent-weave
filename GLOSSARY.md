@@ -22,7 +22,7 @@ _English_：Presets
 _Avoid_：默认配置、模板
 
 **Agent**：
-一个具体的 AI Coding Agent 产品，如 Claude Code、Codex CLI、Antigravity。不区分厂商。
+一个具体的 AI Coding Agent 产品，如 Claude Code、Codex CLI、Antigravity。不区分厂商。英文正文中小写为 agent，只在标题等首字母大写的位置写作 Agent。
 _English_：Agent
 _Avoid_：厂商、Vendor、客户端
 

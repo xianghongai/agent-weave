@@ -22,7 +22,7 @@
       "lead": "One set of permission rules,",
       "tail": "woven into every agent"
     },
-    "intro": "Maintain one agent-neutral list of permission rules and MCP servers, and generate configuration for Claude Code, Codex CLI, Antigravity, and more. Everything runs in your browser.",
+    "intro": "Maintain one neutral rule set of permission rules and MCP servers, and generate configuration for Claude Code, Codex CLI, Antigravity, and more. Everything runs in your browser.",
     "features": "Features",
     "start": "Start writing rules",
     "tools": {
