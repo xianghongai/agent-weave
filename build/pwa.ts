@@ -16,8 +16,10 @@ export const PWA_OPTIONS: Partial<VitePWAOptions> = {
   manifest: {
     name: 'Agent Weave',
     short_name: 'Agent Weave',
-    description: '在浏览器里维护一份中立规则集，为多个 AI Coding Agent 生成权限与 MCP 配置。',
-    lang: 'zh-CN',
+    // 清单在脚本运行前就被读取，不随界面语言变化，统一写英文。
+    description:
+      'Maintain one neutral rule set in your browser and generate permission and MCP configurations for multiple AI coding agents.',
+    lang: 'en',
     start_url: './',
     scope: './',
     display: 'standalone',

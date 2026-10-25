@@ -309,7 +309,7 @@ describe('生成：跳过的规则', () => {
 });
 
 describe('生成：预设 Antigravity', () => {
-  const preset = createPresetWorkspace();
+  const preset = createPresetWorkspace('zh-CN');
   const antigravity = preset.agents.find((agent) => agent.name === 'Antigravity');
   const output = antigravity ? generate(preset, antigravity.id, EMPTY_DEVICE_SETTINGS) : null;
 
@@ -369,7 +369,7 @@ describe('生成：没有权限输出的 Agent', () => {
 });
 
 describe('生成：预设的 MCP Server', () => {
-  const preset = createPresetWorkspace();
+  const preset = createPresetWorkspace('zh-CN');
   const outputOf = (name: string) => {
     const agent = preset.agents.find((candidate) => candidate.name === name);
     return agent ? generate(preset, agent.id, EMPTY_DEVICE_SETTINGS) : null;
@@ -824,7 +824,7 @@ describe('生成：路径占位符', () => {
     });
 
     it('预设 filesystem 的根目录在 Linux 上展开为用户主目录', () => {
-      const preset = createPresetWorkspace();
+      const preset = createPresetWorkspace('zh-CN');
       const agent = preset.agents.find((candidate) => candidate.name === 'Claude Code');
       const output = generate(preset, agent?.id ?? '', linux);
       expect(output?.mcp?.copyText).toContain('"/home/alice"');

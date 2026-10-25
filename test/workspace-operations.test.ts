@@ -811,7 +811,7 @@ describe('工作区操作：标签', () => {
 
   it('增删标签、给工具打标签都不改变任何 Agent 的生成结果', () => {
     const ctx = context();
-    const preset = createPresetWorkspace();
+    const preset = createPresetWorkspace('zh-CN');
     const outputs = (ws: Workspace) => ws.agents.map((agent) => generate(ws, agent.id, EMPTY_DEVICE_SETTINGS));
 
     const tagged = apply(

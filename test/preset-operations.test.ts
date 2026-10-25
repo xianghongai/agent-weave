@@ -42,22 +42,31 @@ describe('合并预设', () => {
       ].map((entry) => entry.id);
     }
 
-    const first = ids(createPresetWorkspace());
-    expect(ids(createPresetWorkspace())).toEqual(first);
+    const first = ids(createPresetWorkspace('zh-CN'));
+    expect(ids(createPresetWorkspace('zh-CN'))).toEqual(first);
     expect(new Set(first).size).toBe(first.length);
   });
 
-  it('默认使用站点预设：合并进空工作区，得到预设的全部内容', () => {
-    const { workspace: merged, report } = mergePresets(workspace({}), undefined, ctx);
+  it.each(['zh-CN', 'en'] as const)('站点预设合并进空工作区，得到 %s 预设的全部内容', (language) => {
+    const { workspace: merged, report } = mergePresets(workspace({}), createPresetWorkspace(language), ctx);
 
-    expect(merged).toEqual({ ...createPresetWorkspace(), updated_at: NOW });
+    expect(merged).toEqual({ ...createPresetWorkspace(language), updated_at: NOW });
     expect(report.skipped).toEqual([]);
   });
 
-  it('预设条目已全部存在时，工作区原样返回，修改时间不变', () => {
-    const mine = { ...createPresetWorkspace(), updated_at: BEFORE };
+  it('另一种语言的预设条目已存在时按 ID 跳过，已有文字不变', () => {
+    const mine = { ...createPresetWorkspace('zh-CN'), updated_at: BEFORE };
 
-    const { workspace: merged, report } = mergePresets(mine, undefined, ctx);
+    const { workspace: merged, report } = mergePresets(mine, createPresetWorkspace('en'), ctx);
+
+    expect(merged).toBe(mine);
+    expect(report.added).toBe(0);
+  });
+
+  it('预设条目已全部存在时，工作区原样返回，修改时间不变', () => {
+    const mine = { ...createPresetWorkspace('zh-CN'), updated_at: BEFORE };
+
+    const { workspace: merged, report } = mergePresets(mine, createPresetWorkspace('zh-CN'), ctx);
 
     expect(merged).toBe(mine);
     expect(report).toEqual({ added: 0, skipped: [] });
@@ -308,10 +317,16 @@ describe('合并预设', () => {
 });
 
 describe('重置为预设', () => {
-  it('得到站点预设的全部内容，修改时间取当前时间', () => {
-    const { workspace: reset } = resetToPresets(ctx);
+  it.each(['zh-CN', 'en'] as const)('得到 %s 站点预设的全部内容，修改时间取当前时间', (language) => {
+    const { workspace: reset } = resetToPresets(language, ctx);
 
-    expect(reset).toEqual({ ...createPresetWorkspace(), updated_at: NOW });
+    expect(reset).toEqual({ ...createPresetWorkspace(language), updated_at: NOW });
+  });
+
+  it('按传入的语言取预设：标签用英文名称', () => {
+    const { workspace: reset } = resetToPresets('en');
+
+    expect(reset.tags.find((tag) => tag.id === 'preset-tag-vcs')?.name).toBe('Version control');
   });
 });
 

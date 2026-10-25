@@ -2,7 +2,9 @@ import { create, type StateCreator } from 'zustand';
 import { createJSONStorage, type PersistStorage, persist, type StateStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
+import { interfaceLanguage } from '@/browser/browser-languages';
 import type { GistSettings } from '@/lib/gist';
+import type { Language } from '@/lib/language';
 import {
   type PersistedState,
   STORAGE_KEY,
@@ -17,7 +19,7 @@ import { devtoolsInDev } from '@/state/devtools';
 import { useUiStore } from '@/state/ui-store';
 
 /*
- * 持久化的应用状态：工作区、本机设置、Gist 设置、主题，写入本地存储的同一个键。
+ * 持久化的应用状态：工作区、本机设置、Gist 设置、主题、界面语言，写入本地存储的同一个键。
  * 启动时从本地存储恢复；首次访问或数据无效时使用默认值，回退原因写进界面 store。
  * 本地存储的读写错误不抛给 action，而是记录在界面 store 中，由存储提示横幅显示。
  */
@@ -49,7 +51,13 @@ export interface ThemeSlice {
   setTheme: (theme: Theme) => void;
 }
 
-export type AppState = WorkspaceSlice & DeviceSettingsSlice & GistSettingsSlice & ThemeSlice;
+export interface LanguageSlice {
+  /** 手动选择的界面语言；`null` 表示跟随浏览器。由 `switchLanguage()` 写入，界面读当前语言用 `currentLanguage()`。 */
+  language: Language | null;
+  setLanguage: (language: Language) => void;
+}
+
+export type AppState = WorkspaceSlice & DeviceSettingsSlice & GistSettingsSlice & ThemeSlice & LanguageSlice;
 
 type AppSliceCreator<Slice> = StateCreator<
   AppState,
@@ -58,7 +66,7 @@ type AppSliceCreator<Slice> = StateCreator<
   Slice
 >;
 
-const initial = defaultPersistedState();
+const initial = defaultPersistedState(interfaceLanguage(null));
 
 const createWorkspaceSlice: AppSliceCreator<WorkspaceSlice> = (set, get) => ({
   workspace: initial.workspace,
@@ -127,6 +135,18 @@ const createThemeSlice: AppSliceCreator<ThemeSlice> = (set) => ({
     ),
 });
 
+const createLanguageSlice: AppSliceCreator<LanguageSlice> = (set) => ({
+  language: initial.language,
+  setLanguage: (language) =>
+    set(
+      (state) => {
+        state.language = language;
+      },
+      undefined,
+      'language/setLanguage'
+    ),
+});
+
 /**
  * 浏览器的 `localStorage`。每次调用时才访问它：
  * 有的浏览器在禁用站点数据时，连读取 `localStorage` 属性都会抛异常，这样异常会落在读写各自的错误处理里，
@@ -166,20 +186,22 @@ export const useAppStore = create<AppState>()(
         ...createDeviceSettingsSlice(...args),
         ...createGistSettingsSlice(...args),
         ...createThemeSlice(...args),
+        ...createLanguageSlice(...args),
       })),
       {
         name: STORAGE_KEY,
         storage: reportingStorage(createJSONStorage<PersistedState>(() => browserStorage)!),
         // action 不写入本地存储。
-        partialize: ({ workspace, deviceSettings, gistSettings, theme }): PersistedState => ({
+        partialize: ({ workspace, deviceSettings, gistSettings, theme, language }): PersistedState => ({
           workspace,
           deviceSettings,
           gistSettings,
           theme,
+          language,
         }),
         // 不设 `version`、不写 `migrate`：工作区的结构版本由 `restorePersistedState` 中的工作区校验与迁移负责。
         merge: (persisted, current) => {
-          const { state, fallback } = restorePersistedState(persisted);
+          const { state, fallback } = restorePersistedState(persisted, interfaceLanguage);
           useUiStore.getState().setFallback(fallback);
           return { ...current, ...state };
         },

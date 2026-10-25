@@ -1,0 +1,534 @@
+{
+  "brand": {
+    "name": "Agent Weave"
+  },
+  "header": {
+    "home": "Go to home page",
+    "pages": "Pages",
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme",
+    "settings": "Settings",
+    "deviceSettings": "Device settings",
+    "presets": "Presets"
+  },
+  "footer": {
+    "privacy": "Your data stays in your browser and the sync location you choose. This site collects no data.",
+    "repository": "GitHub repository",
+    "language": "Interface language",
+    "languageLoadFailed": "Couldn't load the selected language. Check your network connection and try again."
+  },
+  "home": {
+    "headline": {
+      "lead": "One set of permission rules,",
+      "tail": "woven into every agent"
+    },
+    "intro": "Maintain one neutral rule set of permission rules and MCP servers, and generate configuration for Claude Code, Codex CLI, Antigravity, and more. Everything runs in your browser.",
+    "features": "Features",
+    "start": "Start writing rules",
+    "tools": {
+      "title": "Set up tools",
+      "summary": "Manage command tools and built-in tools in one place, and flag high-risk tools."
+    },
+    "mcp": {
+      "title": "Set up MCP servers",
+      "summary": "All agents share one list. Each server automatically becomes an MCP tool."
+    },
+    "rules": {
+      "title": "Write permission rules",
+      "summary": "Allow, ask, or deny by tool and pattern. Conflicts and high-risk rules are flagged automatically."
+    },
+    "output": {
+      "title": "Generate output",
+      "summary": "Generate each agent's configuration by scope, then copy and paste it."
+    }
+  },
+  "pages": {
+    "rules": {
+      "title": "Permission rules",
+      "description": "Write allow, ask, and deny rules for command tools, MCP tools, and built-in tools."
+    },
+    "tools": {
+      "title": "Tools",
+      "description": "Maintain the command tools that all agents share. Maintain each agent's built-in tools on the Agents page."
+    },
+    "mcp": {
+      "title": "MCP servers",
+      "description": "Maintain the MCP servers you connect, with content in Claude-style JSON."
+    },
+    "tags": {
+      "title": "Tags",
+      "description": "Group tools with tags. Tags affect filtering only, not output."
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Declare each agent's output location, decision keys, and templates."
+    },
+    "output": {
+      "title": "Output",
+      "description": "Preview and copy the generated permission output and MCP output for each agent."
+    },
+    "sync": {
+      "title": "Sync",
+      "description": "Import or export your workspace, or sync it across devices through a gist."
+    }
+  },
+  "placeholder": {
+    "comingSoon": "This page is under construction."
+  },
+  "common": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saveAndContinue": "Save and add another",
+    "added": "Added {{label}}",
+    "optional": "Optional"
+  },
+  "copy": {
+    "copy": "Copy",
+    "copyInner": "Copy inner",
+    "copied": "Copied",
+    "failed": "Couldn't copy. Select the text and copy it manually."
+  },
+  "decisions": {
+    "allow": "Allow",
+    "ask": "Ask",
+    "deny": "Deny"
+  },
+  "presets": {
+    "title": "Presets",
+    "hint": "Presets are the initial content that ships with the site. When the site updates its presets, you can merge in the new entries or reset everything.",
+    "merge": "Merge presets",
+    "mergeHint": "Adds only entries that aren't in your workspace yet. Your changes aren't overwritten.",
+    "mergedSome_one": "Added {{count}} entry from the presets.",
+    "mergedSome_other": "Added {{count}} entries from the presets.",
+    "mergedNone": "All preset entries are already in your workspace. Nothing was added.",
+    "skippedTitle_one": "{{count}} preset entry was skipped",
+    "skippedTitle_other": "{{count}} preset entries were skipped",
+    "skippedHint": "They conflict with entries already in your workspace. If needed, change the key or name of the existing entry and merge again.",
+    "skipped": {
+      "tag": "Tag {{key}}: A tag with this key already exists. New tools use the existing tag instead.",
+      "command_tool": "Command tool {{key}}: A command tool with this key already exists.",
+      "mcp_server": "MCP server {{key}}: An MCP server with this key already exists.",
+      "agent": "Agent {{key}}: An agent with this name already exists.",
+      "built_in_tool": "Built-in tool {{key}} of {{agent}}: This agent already has a built-in tool with this key.",
+      "rule": "Permission rule {{tool}} {{pattern}}: Its tool was skipped."
+    },
+    "dismissReport": "Got it",
+    "reset": "Reset to presets",
+    "resetHint": "Replaces your whole workspace with the presets. Everything you added or changed is lost.",
+    "resetTitle": "Reset to presets?",
+    "resetDescription": "All tags, tools, MCP servers, agents, and permission rules in your workspace are replaced with the presets. You can't undo this. To keep them, export your workspace first.",
+    "resetConfirm": "Reset",
+    "resetDone": "Reset to presets."
+  },
+  "gist": {
+    "title": "Gist sync",
+    "hint": "Sync your workspace manually across devices through your own GitHub gist. Pushing and pulling overwrite everything; changes on both sides aren't merged.",
+    "tokenGuide": "You need a token with gist access only. For a classic token, select only gist. For a fine-grained token, set Gists to Read and write under Account permissions.",
+    "createClassicToken": "Create classic token",
+    "createFineGrainedToken": "Create fine-grained token",
+    "secretWarning": "A secret gist isn't encrypted. It doesn't appear in public lists or search results, but anyone with the link can see it. Don't put secrets in your workspace.",
+    "localOnly": "Your token and gist ID are saved only in this browser. They aren't part of your workspace or export files.",
+    "token": "Token",
+    "tokenHint": "You need a token to push. To pull only, you can leave it empty.",
+    "gistId": "Gist ID",
+    "gistIdPlaceholder": "Leave empty to create on push",
+    "gistIdHint": "To pull on another device, enter the same ID or gist URL there.",
+    "gistIdInvalid": "Couldn't recognize the gist ID. Enter the ID itself or the URL of the gist page.",
+    "openGist": "Open gist",
+    "auth": "Authentication",
+    "authTitle": "Gist authentication",
+    "status": {
+      "token": {
+        "configured": "Token set",
+        "missing": "No token set. Enter one before you push."
+      },
+      "gist": {
+        "linked": "Gist linked",
+        "missing": "No gist linked. One is created on your first push.",
+        "invalid": "The gist ID isn't valid. Change it in Authentication."
+      }
+    },
+    "push": "Push",
+    "pull": "Pull",
+    "working": "Connecting to GitHub…",
+    "created": "Created a secret gist and pushed to it. The gist ID is saved.",
+    "pushed": "Pushed to the gist.",
+    "pulled": "Pulled the workspace from the gist.",
+    "pushFailed": "Couldn't push",
+    "pullFailed": "Couldn't pull",
+    "invalidStructure": "The token and gist ID saved in this browser weren't valid and were cleared. Enter them again.",
+    "description": "agent-weave workspace (created by agent-weave to sync across devices)",
+    "confirmPushTitle": "Overwrite the gist with your local workspace?",
+    "confirmPushDescription": "agent-weave.jsonc in the gist is replaced entirely by your local workspace. Nothing is merged.",
+    "confirmPullTitle": "Replace your local workspace with the one in the gist?",
+    "confirmPullDescription": "Everything in your local workspace is replaced. You can't undo this. To keep it, export a backup first.",
+    "remote": "Remote (gist)",
+    "local": "Local",
+    "remoteUnreadable": "Couldn't read: {{reason}}",
+    "remoteNewer": "The remote is newer than your local copy. Pushing overwrites the newer remote changes.",
+    "localNewer": "Your local copy is newer than the remote. Pulling discards the newer local changes.",
+    "confirmPush": "Overwrite gist",
+    "confirmPull": "Replace local"
+  },
+  "problems": {
+    "operation": {
+      "keyEmpty": "Enter a key.",
+      "keyDuplicate": "An entry with this key already exists. Keys must be unique.",
+      "notFound": "This entry no longer exists. It might have been deleted.",
+      "toolEmpty": "Select a tool.",
+      "ruleDuplicate": "A permission rule with the same tool, pattern, and decision already exists.",
+      "toolMissing": "The selected tool no longer exists. Select another one.",
+      "nameEmpty": "Enter a name.",
+      "nameDuplicate": "An agent with this name already exists. Names must be unique.",
+      "propertyPathInvalid": "The property path can't be empty, and no dot-separated segment can be empty.",
+      "decisionKeyDuplicate": "Two decisions can't use the same key.",
+      "mcpPropertyPathInvalid": "The MCP output property path can't be empty, and no dot-separated segment can be empty.",
+      "contentInvalid": "The content must be a valid JSON object. Paste only the object that follows the server name, without the outer key."
+    },
+    "skip": {
+      "decisionKeyMissing": "This agent doesn't support \"{{decision}}\": the decision key is empty.",
+      "templateMissing": "A template of this agent is empty: {{templates}} > {{template}}."
+    },
+    "entryId": " The entry with the problem has ID {{id}}.",
+    "persistence": {
+      "readFailed": "The browser doesn't allow this site to access local storage. Site data might be blocked.",
+      "writeFailed": "The browser refused to write to local storage. It might be in private mode, or storage might be full.",
+      "parseFailed": "The workspace saved in this browser is corrupted and can't be parsed.",
+      "invalidStructure": "The workspace saved in this browser has an invalid structure.",
+      "newerVersion": "The workspace saved in this browser comes from a newer version of the site. Refresh the page to update the site, and it loads again.",
+      "duplicateId": "In the workspace saved in this browser, entries of the same kind have duplicate internal IDs.",
+      "duplicateKey": "In the workspace saved in this browser, entries of the same kind have duplicate keys, or agents have duplicate names.",
+      "danglingReference": "In the workspace saved in this browser, a permission rule points to a tool that doesn't exist."
+    },
+    "import": {
+      "parseFailed": "The content isn't valid JSON or JSONC. It might be incomplete or truncated.",
+      "invalidStructure": "The content isn't a valid workspace: a required property is missing, or a property has the wrong type or value.",
+      "newerVersion": "The content comes from a newer version of the site. Refresh the page to update the site, and then try again.",
+      "duplicateId": "Entries of the same kind have duplicate internal IDs.",
+      "duplicateKey": "Entries of the same kind have duplicate keys, or agents have duplicate names.",
+      "danglingReference": "A permission rule points to a tool that doesn't exist."
+    },
+    "gist": {
+      "unauthorized": "The token isn't valid, has expired, or doesn't have read and write access to gists.",
+      "notFound": "Couldn't find this gist. Check the gist ID. When pushing, the token might also lack permission to change it.",
+      "rateLimited": "You've exceeded the GitHub API rate limit. Try again later.",
+      "networkFailed": "Couldn't connect to GitHub. Check your network and try again.",
+      "unexpectedResponse": "GitHub returned an unexpected response. Try again later.",
+      "fileMissing": "The gist doesn't contain agent-weave.jsonc.",
+      "fileTruncated": "agent-weave.jsonc in the gist is larger than 1 MB, so the GitHub API returned only part of it.",
+      "invalidContent": "agent-weave.jsonc in the gist isn't a valid workspace. {{reason}}"
+    }
+  },
+  "storage": {
+    "unsavedTitle": "Changes won't be saved",
+    "unsavedHint": "Your changes last only until you close or refresh the page.",
+    "fallbackTitle": "Presets loaded",
+    "fallbackHint": "Your saved data is still there, but your next change overwrites it.",
+    "dismiss": "Got it"
+  },
+  "tools": {
+    "commandTools": "Command tools",
+    "commandToolsHelp": "About command tools",
+    "commandToolsHint": "- A command tool is a program that the agent runs through its shell.\n- All agents share command tools.",
+    "add": "Add command tool",
+    "addTitle": "Add command tool",
+    "editTitle": "Edit command tool",
+    "empty": "No command tools yet.",
+    "key": "Key",
+    "keyPlaceholder": "For example, git",
+    "keyHint": "The command itself. In a permission rule's pattern, enter only the command prefix that follows it.",
+    "description": "Description",
+    "editLabel": "Edit {{key}}",
+    "deleteLabel": "Delete {{key}}",
+    "deleteTitle": "Delete command tool {{key}}?",
+    "deleteWithRules_one": "{{count}} permission rule points to it and is also deleted.",
+    "deleteWithRules_other": "{{count}} permission rules point to it and are also deleted.",
+    "deleteNoRules": "No permission rules point to it."
+  },
+  "mcp": {
+    "servers": "MCP servers",
+    "serversHelp": "About MCP servers",
+    "serversHint": "- Each MCP server automatically becomes an MCP tool, so you can write permission rules for it directly.\n- All agents share MCP servers.",
+    "add": "Add MCP server",
+    "addTitle": "Add MCP server",
+    "editTitle": "Edit MCP server",
+    "empty": "No MCP servers yet.",
+    "key": "Key",
+    "keyPlaceholder": "For example, context7",
+    "keyHint": "The server name in the output.",
+    "content": "Content",
+    "contentHint": "A Claude-style JSON object, such as `command`, `args`, and `env`. Only checks that it's a JSON object; you're responsible for the fields. Environment variable placeholders like `${VAR}` are output as is, so keep secrets in local environment variables.",
+    "description": "Description",
+    "descriptionHint": "Shown only in this tool. Not included in the output.",
+    "editLabel": "Edit {{key}}",
+    "deleteLabel": "Delete {{key}}",
+    "deleteTitle": "Delete MCP server {{key}}?",
+    "deleteWithRules_one": "{{count}} permission rule points to it and is also deleted.",
+    "deleteWithRules_other": "{{count}} permission rules point to it and are also deleted.",
+    "deleteNoRules": "No permission rules point to it."
+  },
+  "rules": {
+    "add": "Add permission rule",
+    "addTitle": "Add permission rule",
+    "tool": "Tool",
+    "toolPlaceholder": "Type to filter tools",
+    "toolNoMatch": "No matching tools",
+    "noTools": "No tools yet. Add command tools on the Tools page, MCP servers on the MCP servers page, or built-in tools on the Agents page.",
+    "mcpBadge": "MCP",
+    "mcpPatternPlaceholder": "query-docs, or leave empty",
+    "mcpPatternHint": "- Enter the name of a tool that this MCP server provides, such as `resolve-library-id`.\n- Leave it empty to cover the whole server.\n- `*` isn't escaped. Each agent treats it as a wildcard by its own rules.",
+    "pattern": "Pattern",
+    "patternHelp": "About patterns",
+    "patternPlaceholder": "push --force, or leave empty",
+    "patternHint": "- Enter the part after the command. It matches by prefix.\n- For example, with tool `git` and pattern `push`, it matches every command that starts with `git push`.\n- Leave it empty to cover the whole tool.\n- `*` isn't escaped. Each agent treats it as a wildcard by its own rules.",
+    "builtInPatternPlaceholder": "./src/, or leave empty",
+    "builtInPatternHint": "- For a path, enter a directory that ends with `/`, such as `./src/`. The template adds the glob.\n- Leave it empty to cover the whole tool.\n- `*` isn't escaped. Each agent treats it as a wildcard by its own rules.\n- This rule belongs only to {{agent}}.",
+    "decision": "Decision",
+    "description": "Description",
+    "listHelp": "About the rule list",
+    "listHint": "- Sorted automatically by tool type (command tool, MCP tool, built-in tool), tool key, and pattern.\n- Rules for the same tool are grouped. The group header shows the tool's description and tags.\n- A rule's description appears to the left of its decision. It's for people only and isn't included in the output.\n- The output follows the order of the list.",
+    "owner": "Owner",
+    "ownerAll": "All owners",
+    "ownerShared": "Shared",
+    "empty": "No permission rules yet.",
+    "noMatch": "No rules match the filters.",
+    "wholeTool": "Whole tool",
+    "count_one": "{{count}} rule",
+    "count_other": "{{count}} rules",
+    "showForTool": "View permission rules for this tool",
+    "editTitle": "Edit permission rule",
+    "editLabel": "Edit rule {{rule}}",
+    "deleteLabel": "Delete rule {{rule}}"
+  },
+  "output": {
+    "noAgents": "No agents yet.",
+    "permission": "Permissions",
+    "noPermission": "This agent doesn't output permissions. To turn it on, go to Permission output on the Agents page.",
+    "scopes": "Paste into",
+    "preview": "Preview",
+    "copyHint": "Copy copies only the {{key}} key and its value, so you can fold the existing property in your editor and replace it. Copy inner copies only the elements of the decision array, so you can append them to an existing array and remove duplicates yourself.",
+    "entryCount_one": "{{count}} entry",
+    "entryCount_other": "{{count}} entries",
+    "skippedRules": "Skipped rules",
+    "skippedRulesHint": "This agent definition can't express these rules, so they aren't in the output.",
+    "mcp": "MCP",
+    "noMcp": "This agent doesn't output MCP. To turn it on, go to MCP output on the Agents page.",
+    "notices": "Notices",
+    "hasHighRisk": "(includes high-risk notices)",
+    "noNotices": "No notices.",
+    "mcpCopyHint": "Copy copies only the {{key}} key and its value, so you can replace the existing property. Copy inner copies only each server's key and value, so you can add them to an existing object. Remove servers with the same name yourself.",
+    "mcpTomlCopyHint": "Copy copies a set of TOML tables that you can append to the end of the configuration file. If the file already has a table for a server with the same name, delete the old table first.",
+    "tomlFieldSkipped": "Fields TOML can't express",
+    "tomlFieldSkippedHint": "These field values (such as `null`) can't be written as TOML, so they aren't in the output.",
+    "placeholderUnexpanded": "Placeholders not expanded",
+    "placeholderUnexpandedHint": "`{{home}}` or `{{user}}` stays as is in the output (rules: {{rules}}, MCP servers: {{servers}}) because your device settings are incomplete.",
+    "openDeviceSettings": "Complete device settings"
+  },
+  "deviceSettings": {
+    "title": "Device settings",
+    "hint": "In the output, `{{home}}` and `{{user}}` in rule patterns and MCP server content expand according to these settings. Device settings are saved only in this browser. They aren't part of your workspace or export files and aren't synced, so the same workspace generates the right paths on each system.",
+    "os": "Operating system",
+    "osNames": {
+      "linux": "Linux",
+      "macos": "macOS",
+      "windows": "Windows"
+    },
+    "osHint": "Placeholders expand for the selected system. Each system keeps its own username, so you don't need to retype it when you switch.",
+    "userName": "{{os}} username",
+    "userNameHint": "The username you sign in to {{os}} with: the last segment of your home directory `{{home}}`.",
+    "homeExamples": {
+      "linux": "/home/<username>",
+      "macos": "/Users/<username>",
+      "windows": "C:\\Users\\<username>"
+    },
+    "expandsTo": "{{placeholder}} expands to",
+    "incomplete": "Placeholders expand only after you select an operating system and enter its username. Until then, they stay as is in the output, and the Output page shows a notice.",
+    "claudePathHint": "- For Claude Code path rules, write paths with `~/`. In its rules, a single leading `/` means relative to the settings file's directory, so the absolute path that `{{home}}` expands to has the wrong meaning.\n- `{{home}}` works well in Antigravity rules and MCP server content.",
+    "invalidStructure": "The device settings saved in this browser weren't valid and were cleared. Enter them again."
+  },
+  "workspaceFile": {
+    "title": "Import and export",
+    "hint": "Save your whole workspace as a JSONC file to back it up or share it with colleagues. You can add comments to it in an editor. You can also replace your current workspace with such a file.",
+    "export": "Export",
+    "exportHint": "Export files don't include your gist token, gist ID, or device settings.",
+    "import": "Import",
+    "importFailed": "Couldn't import {{file}}",
+    "readFailed": "Couldn't read the selected file.",
+    "confirmTitle": "Replace your current workspace with {{file}}?",
+    "confirmDescription": "Everything in your current workspace is replaced. You can't undo this. To keep it, export a backup first.",
+    "summary": "The file contains command tools: {{commands}}, MCP servers: {{servers}}, agents: {{agents}}, permission rules: {{rules}}. Last modified {{updatedAt}}. ",
+    "confirm": "Replace",
+    "imported": "Workspace imported"
+  },
+  "pwa": {
+    "offlineReady": "Ready to work offline",
+    "update": "New version available",
+    "updateDescription": "Refresh to apply it. Your workspace is saved automatically, but anything you're entering and haven't submitted is lost, so you can finish first and then refresh.",
+    "reload": "Refresh",
+    "later": "Later"
+  },
+  "agents": {
+    "add": "Add agent",
+    "addTitle": "Add agent",
+    "addHint": "Enter the basic information to create the agent. You can add the permission output and MCP output on the Agents page later.",
+    "editTitle": "Edit basic information",
+    "editBasic": "Edit basic information",
+    "editPermissionTitle": "Edit permission output for {{name}}",
+    "editMcpTitle": "Edit MCP output for {{name}}",
+    "editPermissionLabel": "Edit permission output for {{name}}",
+    "editMcpLabel": "Edit MCP output for {{name}}",
+    "empty": "No agents yet.",
+    "name": "Name",
+    "namePlaceholder": "For example, Claude Code",
+    "description": "Description",
+    "permissionSection": "Permission output",
+    "mcpSection": "MCP output",
+    "permissionOutput": "Output permissions",
+    "permissionOutputHint": "When this is off, the agent doesn't output permissions or list skipped rules.",
+    "noPermissionOutput": "This agent doesn't output permissions.",
+    "scopes": "Scopes",
+    "scopesHint": "Only tells you which file to paste the output into. Doesn't affect the output.",
+    "scopeName": "Name",
+    "scopeNamePlaceholder": "Select or type",
+    "scopePath": "Path",
+    "scopePathPlaceholder": "~/.claude/settings.json",
+    "scopeNote": "Note",
+    "addScope": "Add scope",
+    "removeScope": "Remove scope",
+    "noScopes": "No scopes yet.",
+    "mcpOutput": "Output MCP",
+    "mcpOutputHint": "When this is off, the agent doesn't output MCP.",
+    "noMcpOutput": "This agent doesn't output MCP.",
+    "mcpStyle": "Style",
+    "mcpStyles": {
+      "json": "JSON",
+      "toml": "TOML"
+    },
+    "mcpStyleHint": "- **JSON**: Writes the servers into the object at the property path, such as `mcpServers`.\n- **TOML**: Generates a table for each server, such as `[mcp_servers.github]`.",
+    "mcpPropertyPathHint": "A dot-separated path, such as `mcpServers` or `mcp_servers`.",
+    "propertyPath": "Property path",
+    "propertyPathHint": "A dot-separated path, such as `permissions` or `userSettings.globalPermissionGrants`.",
+    "decisionKeys": "Decision keys",
+    "decisionKeysHint": "The key for each decision in the output. Leave it empty if the agent doesn't support that decision; rules with that decision become skipped rules.",
+    "decisionKeyPlaceholder": "Empty if unsupported",
+    "decisionKeyUnsupported": "Not supported",
+    "templateEmpty": "Not set",
+    "commandTemplates": "Command tool templates",
+    "mcpTemplates": "MCP tool templates",
+    "withPattern": "Template with pattern",
+    "withoutPattern": "Template without pattern",
+    "editLabel": "Edit basic information for {{name}}",
+    "deleteLabel": "Delete {{name}}",
+    "deleteTitle": "Delete agent {{name}}?",
+    "deleteDescription": "Its built-in tools ({{tools}}) and the permission rules that point to them ({{rules}}) are also deleted. Shared rules aren't affected.",
+    "builtInTemplates": "Built-in tool templates",
+    "mcpStyleHelp": "About styles",
+    "scopeNameOptions": {
+      "user": "User",
+      "project": "Project",
+      "projectLocal": "Project local"
+    },
+    "withPatternHelp": "About the template with pattern",
+    "withoutPatternHelp": "About the template without pattern",
+    "templateHelp": {
+      "commandWith": "Used when a rule has a pattern.\n\n- Available placeholders: `{command}`, `{pattern}`.\n- For example, with `Bash({command} {pattern} *)`, `git` with pattern `push` becomes `Bash(git push *)`.\n- If it's empty, rules with a pattern become skipped rules.",
+      "commandWithout": "Used when a rule omits the pattern to cover the whole tool.\n\n- Available placeholder: `{command}`.\n- For example, with `Bash({command} *)`, `git` becomes `Bash(git *)`.\n- If it's empty, rules without a pattern become skipped rules.",
+      "mcpWith": "Used when a rule has a pattern. The pattern is the name of a tool that the MCP server provides.\n\n- Available placeholders: `{server}`, `{pattern}`.\n- For example, with `mcp__{server}__{pattern}`, `github` with pattern `create_issue` becomes `mcp__github__create_issue`.\n- If it's empty, rules with a pattern become skipped rules.",
+      "mcpWithout": "Used when a rule omits the pattern to cover the whole MCP server.\n\n- Available placeholder: `{server}`.\n- For example, with `mcp__{server}`, `github` becomes `mcp__github`.\n- If it's empty, rules without a pattern become skipped rules.",
+      "builtInWith": "Used when a rule has a pattern. A path pattern is a directory prefix that ends with `/`, and the template completes the glob.\n\n- Available placeholder: `{pattern}`.\n- For example, with `Read({pattern}**)`, pattern `./src/` becomes `Read(./src/**)`. Another example is `read_file({pattern})`.\n- If it's empty, rules with a pattern become skipped rules.",
+      "builtInWithout": "Used when a rule omits the pattern to cover the whole tool. No placeholder is needed.\n\n- For example, `Read` or `read_file(*)`.\n- If it's empty, rules without a pattern become skipped rules."
+    }
+  },
+  "builtInTools": {
+    "title": "Built-in tools",
+    "sectionLabel": "Built-in tools of {{agent}}",
+    "add": "Add built-in tool",
+    "addLabel": "Add built-in tool for {{agent}}",
+    "addTitle": "Add built-in tool for {{agent}}",
+    "editTitle": "Edit built-in tool of {{agent}}",
+    "empty": "No built-in tools yet.",
+    "key": "Key",
+    "keyPlaceholder": "For example, Read",
+    "keyHint": "Unique among the built-in tools of {{agent}}. Permission rules that point to it belong only to {{agent}}.",
+    "description": "Description",
+    "writes": "Writes files",
+    "writesHint": "A tool that writes files. Allowing it to write anywhere, to the root directory, or to the home directory creates a high-risk notice.",
+    "writesBadge": "Writes",
+    "deleteTitle": "Delete built-in tool {{key}} of {{agent}}?"
+  },
+  "tags": {
+    "add": "Add tag",
+    "addTitle": "Add tag",
+    "editTitle": "Edit tag",
+    "listHelp": "About the tag list",
+    "listHint": "- Sorted by key.\n- Deleting a tag doesn't change the tools that have it. Those tools keep the reference, which appears as a deleted tag with a warning icon.",
+    "empty": "No tags yet.",
+    "key": "Key",
+    "keyPlaceholder": "For example, vcs",
+    "keyHint": "Unique among all tags. Tools refer to tags by internal ID, so changing the key or name doesn't affect tags already applied.",
+    "name": "Name",
+    "namePlaceholder": "For example, Version control",
+    "nameHint": "Shown in tool lists and filters.",
+    "toolCounts": {
+      "command_one": "{{count}} command tool",
+      "command_other": "{{count}} command tools",
+      "mcp_one": "{{count}} MCP tool",
+      "mcp_other": "{{count}} MCP tools",
+      "built_in_one": "{{count}} built-in tool",
+      "built_in_other": "{{count}} built-in tools"
+    },
+    "showTools": {
+      "command": "View command tools with this tag on the Tools page",
+      "mcp": "View MCP servers with this tag on the MCP servers page"
+    },
+    "editLabel": "Edit tag {{key}}",
+    "deleteLabel": "Delete tag {{key}}",
+    "deleteTitle": "Delete tag {{key}}?",
+    "deleteWithTools_one": "{{count}} tool has this tag. After you delete it, the tool keeps the reference, which appears as a deleted tag with a warning icon. You can remove it when you edit the tool.",
+    "deleteWithTools_other": "{{count}} tools have this tag. After you delete it, those tools keep the reference, which appears as a deleted tag with a warning icon. You can remove it when you edit each tool.",
+    "deleteNoTools": "No tools have this tag.",
+    "field": "Tags",
+    "fieldHint": "You can select more than one. Tags are only for grouping and filtering and don't affect output.",
+    "fieldDanglingHint": "Tags with a warning icon have been deleted. Clear them to remove them.",
+    "fieldEmpty": "No tags yet. You can add them on the Tags page.",
+    "dangling": "This tag has been deleted. What you see is a leftover reference.",
+    "deletedLabel": "Deleted tag"
+  },
+  "filters": {
+    "name": "Filter by name",
+    "namePlaceholder": "Filter by name",
+    "tag": "Filter by tag",
+    "tagAll": "All tags",
+    "decision": "Filter by decision",
+    "decisionAll": "All decisions",
+    "tool": "Filter by tool",
+    "toolAll": "All tools",
+    "toolType": "Filter by tool type",
+    "toolTypeAll": "All types",
+    "highRisk": "High risk only",
+    "toolTypes": {
+      "command": "Command tools",
+      "mcp": "MCP tools",
+      "built_in": "Built-in tools"
+    },
+    "noMatch": "No tools match the filters.",
+    "clear": "Clear filters"
+  },
+  "notices": {
+    "highRiskFlag": "High risk",
+    "highRiskReason": "High-risk reason",
+    "highRiskReasonPlaceholder": "Why it's high risk (optional), for example: can't be undone",
+    "toolHighRiskHint": "Allowing a rule that points to it creates a high-risk notice.",
+    "ruleHighRiskHint": "Creates a high-risk notice when the decision is Allow, even if its tool isn't high risk.",
+    "highRiskRule": "High risk: allows a high-risk operation",
+    "conflictRule": "Conflict: the same tool and pattern have another decision",
+    "highRisk": "High-risk notices",
+    "highRiskDetail": "These rules allow high-risk operations: their tool or the rule itself is flagged as high risk, or they allow a built-in tool that writes files to write anywhere, to the root directory, or to the home directory. This is only a reminder and doesn't affect the output.",
+    "conflict": "Conflict notices",
+    "conflictDetail": "The rules in each group have the same tool and pattern but different decisions. Each decision is output as usual; which one takes effect depends on the agent's own precedence.",
+    "editRule": "Edit this rule"
+  }
+}

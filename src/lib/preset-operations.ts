@@ -1,3 +1,4 @@
+import type { Language } from '@/lib/language';
 import { createPresetWorkspace } from '@/lib/presets';
 import type { Agent, Rule, Tag, ToolRef, ToolType, Workspace } from '@/lib/workspace';
 import { type OperationContext, systemContext } from '@/lib/workspace-operations';
@@ -195,11 +196,11 @@ function mergeRules(merged: Workspace, preset: Workspace, report: MergeReport): 
  * 标识与工作区已有条目冲突的预设条目跳过，并列在报告中。
  * 跳过的预设标签由同标识的已有标签代替，新增的工具改为引用已有标签；已有的工具不变。
  * 没有新增任何条目时原样返回工作区，修改时间不变。
- * `preset` 只供测试替换，界面使用默认的站点预设。
+ * `preset` 由界面层传入界面语言的站点预设，新加入的条目用这种语言的文字；已有条目按 ID 跳过，文字不变。
  */
 export function mergePresets(
   workspace: Workspace,
-  preset: Workspace = createPresetWorkspace(),
+  preset: Workspace,
   ctx: OperationContext = systemContext
 ): MergeResult {
   const report: MergeReport = { added: 0, skipped: [] };
@@ -220,9 +221,9 @@ export function mergePresets(
 }
 
 /**
- * 重置为预设：用站点预设整体替换当前工作区，不保留任何用户数据。
+ * 重置为预设：用 `language`（界面语言，由界面层传入）的站点预设整体替换当前工作区，不保留任何用户数据。
  * 修改时间取当前时间而不是预设的固定时间，同步时它才会被视为最新的修改。
  */
-export function resetToPresets(ctx: OperationContext = systemContext): { workspace: Workspace } {
-  return { workspace: { ...createPresetWorkspace(), updated_at: ctx.now() } };
+export function resetToPresets(language: Language, ctx: OperationContext = systemContext): { workspace: Workspace } {
+  return { workspace: { ...createPresetWorkspace(language), updated_at: ctx.now() } };
 }

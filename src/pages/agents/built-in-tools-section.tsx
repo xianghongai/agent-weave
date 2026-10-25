@@ -105,7 +105,7 @@ export function BuiltInToolsSection({ agent, className }: { agent: Agent; classN
               {t('builtInTools.deleteTitle', { agent: agent.name, key: deleteTarget?.key ?? '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteRuleCount > 0 ? t('tools.deleteWithRules', { n: deleteRuleCount }) : t('tools.deleteNoRules')}
+              {deleteRuleCount > 0 ? t('tools.deleteWithRules', { count: deleteRuleCount }) : t('tools.deleteNoRules')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

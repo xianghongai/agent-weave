@@ -18,7 +18,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { currentLanguage } from '@/i18n';
 import { type MergeSkip, mergePresets, resetToPresets } from '@/lib/preset-operations';
+import { createPresetWorkspace } from '@/lib/presets';
 import { useAppStore } from '@/state/app-store';
 import { useUiStore } from '@/state/ui-store';
 
@@ -62,16 +64,19 @@ function PresetActions() {
 
   function merge() {
     // 合并是同步执行的，先算出结果再交给 store，才能拿到报告。
-    const { workspace, report } = mergePresets(useAppStore.getState().workspace);
+    const { workspace, report } = mergePresets(
+      useAppStore.getState().workspace,
+      createPresetWorkspace(currentLanguage())
+    );
     if (report.added > 0) {
       replaceWorkspace(workspace);
     }
-    toast.success(report.added > 0 ? t('presets.mergedSome', { n: report.added }) : t('presets.mergedNone'));
+    toast.success(report.added > 0 ? t('presets.mergedSome', { count: report.added }) : t('presets.mergedNone'));
     setSkipped(report.skipped);
   }
 
   function reset() {
-    replaceWorkspace(resetToPresets().workspace);
+    replaceWorkspace(resetToPresets(currentLanguage()).workspace);
     setSkipped([]);
     setResetOpen(false);
     toast.success(t('presets.resetDone'));
@@ -112,7 +117,7 @@ function PresetActions() {
 
       {skipped.length > 0 && (
         <Note tone="warning" icon={TriangleAlertIcon}>
-          <p className="font-medium">{t('presets.skippedTitle', { n: skipped.length })}</p>
+          <p className="font-medium">{t('presets.skippedTitle', { count: skipped.length })}</p>
           <p>{t('presets.skippedHint')}</p>
           <ul className="list-disc pl-5">
             {skipped.map((skip) => (
