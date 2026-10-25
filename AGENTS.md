@@ -28,7 +28,7 @@
 - `src/components/ui/`：shadcn/ui（Base UI）生成的组件，通过 `shadcn` CLI 添加，不做格式化和 lint。CLI 生成的 `@/lib/utils` 导入要改为 `import { cn } from 'cn'`。
 - `build/`：只在构建时使用的 Vite 插件和配置，不打包进站点。
 - `test/`：Vitest 单元测试，以 `*.test.ts` 命名，只测纯函数。
-- `presets/`：预设的 JSONC 数据文件，每个文件是一份部分工作区，每个 Agent 一个文件，中文在 `presets/locales/`。构建时由 `build/presets.ts` 调用 `src/lib/preset-composition.ts` 合成，以虚拟模块 `virtual:preset-workspace` 提供；写法见 `presets/README.md`，理由见 `docs/adr/0004-presets-as-jsonc-data.md`。
+- `presets/`：预设的 JSONC 数据文件，每个文件是一份部分工作区，每个 Agent 一个文件，每种界面语言的文字在 `presets/locales/` 下各一个语言文件。构建时由 `build/presets.ts` 调用 `src/lib/preset-composition.ts` 按语言各合成一份，以虚拟模块 `virtual:preset-workspace` 提供；写法见 `presets/README.md`，理由见 `docs/adr/0004-presets-as-jsonc-data.md` 和 `docs/adr/0005-presets-follow-interface-language.md`。
 - `public/`：原样发布的静态文件，如站点图标。
 - `.scratch/`：本地 Issue 与规格，见下文“Agent skills”。
 
@@ -40,7 +40,7 @@
 - 设计令牌在 `src/index.css` 中用 `@theme` 声明，不使用 `tailwind.config.js`。品牌色为 `brand`。
 - 默认深色主题：`index.html` 的 `<html>` 自带 `dark` class，`src/state/theme.ts` 负责切换。
 - class 合并使用 `import { cn } from 'cn'`，不使用 clsx 与 tailwind-merge。
-- `build/` 导入的 `src/lib/` 模块及其依赖链（`preset-composition.ts`、`jsonc.ts`、`workspace.ts`、`workspace-validation.ts`、`workspace-migrations.ts`）一律用相对路径导入：构建插件在加载 Vite 配置时导入它们，那时 `@/` 别名还不可用。`.oxlintrc.json` 对这几个文件禁止 `@/` 导入；依赖链新增模块时把它加进同一个 override。
+- `build/` 导入的 `src/lib/` 模块及其依赖链（`preset-composition.ts`、`language.ts`、`jsonc.ts`、`workspace.ts`、`workspace-validation.ts`、`workspace-migrations.ts`）一律用相对路径导入：构建插件在加载 Vite 配置时导入它们，那时 `@/` 别名还不可用。`.oxlintrc.json` 对这几个文件禁止 `@/` 导入；依赖链新增模块时把它加进同一个 override。
 - 页面适配窄屏，但不禁止缩放：`index.html` 的 viewport 保持 `width=device-width, initial-scale=1.0`，不加 `maximum-scale`、`user-scalable=no`。
 - 宽屏（md 及以上）为一屏布局：外壳固定为视口高度，页眉和页脚不动，页面通过 `Page` 的 `scroll` 决定标题以下整体滚动，还是只把一部分放进 `PageScroll`。列表页用 `PageScroll framed`：带圆角边框的列表框本身就是滚动区，列表不再自带边框。窄屏保持整页滚动。
 - 输入框字号在窄屏下保持 16px、宽屏 14px（`text-base md:text-sm`），避免 iOS Safari 在获得焦点时自动放大页面。

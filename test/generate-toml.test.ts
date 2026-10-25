@@ -169,7 +169,7 @@ describe('生成：TOML 风格的 MCP 输出', () => {
 });
 
 describe('生成：预设 Codex CLI', () => {
-  const preset = createPresetWorkspace();
+  const preset = createPresetWorkspace('zh-CN');
   const agent = preset.agents.find((candidate) => candidate.name === 'Codex CLI');
   const output = agent ? generate(preset, agent.id, EMPTY_DEVICE_SETTINGS) : null;
 
