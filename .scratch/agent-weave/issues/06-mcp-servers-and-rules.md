@@ -6,7 +6,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 可以新增、编辑、删除 MCP Server；标识唯一；内容不是 JSON 对象时提示，不能保存
 - [ ] 录入规则时可以选择 MCP 工具；模式填 MCP 工具名，留空表示整个 Server

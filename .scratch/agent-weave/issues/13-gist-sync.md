@@ -6,7 +6,7 @@
 
 **Blocked by:** 11
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Gist 客户端由调用方注入 `fetch`，只访问 `api.github.com`
 - [ ] 推送：没有 ID 时创建 Secret Gist 并保存 ID；有 ID 时更新 `agent-weave.json`

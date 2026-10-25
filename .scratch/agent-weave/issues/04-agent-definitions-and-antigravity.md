@@ -8,7 +8,7 @@ Agent 定义采用数据加模板的方式，见 ADR 0001。作用域只作提�
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 可以新增、编辑、删除 Agent；名称唯一；删除前确认
 - [ ] 权限输出可以缺省；属性路径支持点分的多层嵌套

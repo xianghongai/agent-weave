@@ -1,0 +1,290 @@
+{
+  "priority": 50,
+  "agents": [
+    // Antigravity：权限按动作而不是工具名建模，命令工具写成 command(git push)，MCP 工具写成 mcp(server/tool)。
+    // 官方公开的只有 CLI 设置文件 ~/.gemini/antigravity-cli/settings.json 的 permissions，因此以它为属性路径；
+    // IDE 侧的 userSettings.globalPermissionGrants 是本机观察到的结构，列为第二个作用域，提示粘贴位置。
+    // CLI 的 /permissions 还有 Shared、Project 两个作用域，官方没有公布存储路径，不列出。
+    // 调研依据：2026-10-24 的官方权限文档、CLI 文档与 SDK 工具参考，见 docs/agent-formats.md。
+    {
+      "id": "preset-agent-antigravity",
+      "name": "Antigravity",
+      "description": "preset-agent-antigravity.description",
+      "built_in_tools": [
+        // 内置工具即权限动作，收录 read_file、write_file、read_url、execute_url；command 与 mcp 由模板表达。
+        // 不收录 unsandboxed：只对商业或企业账号生效，其他账号会忽略并警告。
+        // SDK 的 view_file、create_file、run_command 等是构建 Agent 用的工具名，不是权限动作，写进规则不会生效。
+        // 文件路径按目录递归匹配，模式直接填以 / 结尾的目录前缀，如 write_file(src/)，模板不再补 glob。
+        {
+          "id": "preset-built-in-antigravity-read-file",
+          "key": "read_file",
+          "description": "preset-built-in-antigravity-read-file.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "read_file({pattern})",
+            "without_pattern": "read_file(*)",
+          },
+        },
+        {
+          "id": "preset-built-in-antigravity-write-file",
+          "key": "write_file",
+          "description": "preset-built-in-antigravity-write-file.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": true,
+          "templates": {
+            "with_pattern": "write_file({pattern})",
+            "without_pattern": "write_file(*)",
+          },
+        },
+        {
+          "id": "preset-built-in-antigravity-read-url",
+          "key": "read_url",
+          "description": "preset-built-in-antigravity-read-url.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "read_url({pattern})",
+            "without_pattern": "read_url(*)",
+          },
+        },
+        {
+          "id": "preset-built-in-antigravity-execute-url",
+          "key": "execute_url",
+          "description": "preset-built-in-antigravity-execute-url.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "execute_url({pattern})",
+            "without_pattern": "execute_url(*)",
+          },
+        },
+      ],
+      "permission_output": {
+        "property_path": "permissions",
+        "scopes": [
+          {
+            "name": "preset-agent-antigravity.permission-scope-cli.name",
+            "path": "~/.gemini/antigravity-cli/settings.json",
+            "note": "preset-agent-antigravity.permission-scope-cli.note",
+          },
+          {
+            "name": "preset-agent-antigravity.permission-scope-shared.name",
+            "path": "~/.gemini/config/config.json",
+            "note": "preset-agent-antigravity.permission-scope-shared.note",
+          },
+        ],
+        "decision_keys": {
+          "allow": "allow",
+          "ask": "ask",
+          "deny": "deny",
+        },
+        "command_templates": {
+          "with_pattern": "command({command} {pattern})",
+          "without_pattern": "command({command})",
+        },
+        "mcp_templates": {
+          "with_pattern": "mcp({server}/{pattern})",
+          "without_pattern": "mcp({server}/*)",
+        },
+      },
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-antigravity.mcp-scope-user.name",
+            "path": "~/.gemini/config/mcp_config.json",
+            "note": "preset-agent-antigravity.mcp-scope-user.note",
+          },
+          {
+            "name": "preset-agent-antigravity.mcp-scope-workspace.name",
+            "path": ".agents/mcp_config.json",
+            "note": "preset-agent-antigravity.mcp-scope-workspace.note",
+          },
+        ],
+      },
+    },
+  ],
+  "rules": [
+    // 来自实际配置：读文件、读网页、在网页上执行操作整体允许，写文件只允许下面列出的目录。
+    {
+      "id": "preset-rule-antigravity-read-file-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-read-file",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-read-url-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-read-url",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-execute-url-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-execute-url",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    // 允许写入的目录。主目录下的写成 {{home}}/，由本机设置展开；
+    // 原配置中 Linux 与 macOS 两套主目录写法合并为同一条规则。
+    {
+      "id": "preset-rule-antigravity-write-file-downloads-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/Downloads/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-documents-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/Documents/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-features-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/Features/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-workspaces-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/Workspaces/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-vendors-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/Vendors/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-dot-agents-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/.agents/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-dot-claude-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/.claude/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-dot-codex-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/.codex/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-dot-copilot-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/.copilot/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-dot-gemini-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "{{home}}/.gemini/",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-antigravity-write-file-src-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-antigravity-write-file",
+      },
+      "pattern": "src/",
+      "decision": "allow",
+      "description": "preset-rule-antigravity-write-file-src-allow.description",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+  ],
+}

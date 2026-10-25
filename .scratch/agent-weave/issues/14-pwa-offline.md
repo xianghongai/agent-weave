@@ -6,7 +6,7 @@
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 使用 `vite-plugin-pwa` 只预缓存构建产物；不添加运行时缓存或后台同步
 - [ ] 提供 manifest 和站点图标

@@ -1,0 +1,194 @@
+{
+  "priority": 100,
+  "agents": [
+    // Claude Code：权限写在 permissions 下，命令工具通过 Bash(...) 表达。
+    // 调研依据：2026-10-24 的官方文档与 2.1.310 版本，见 docs/agent-formats.md。
+    {
+      "id": "preset-agent-claude-code",
+      "name": "Claude Code",
+      "description": "preset-agent-claude-code.description",
+      "built_in_tools": [
+        // 只收录受权限规则控制、并且用户有理由单独放行或拒绝的工具。
+        // 不收录：
+        // - 规则不会命中的 Write、NotebookEdit、Glob：写在它们上面的路径规则会被接受但永远不命中，
+        //   写入归 Edit，按名查找归 Read，在 Read、Edit 的描述中说明。Grep、LSP 同样归 Read。
+        // - 不需要审批的工具：Agent（启动子代理本身不触发权限）、AskUserQuestion、TodoWrite 与 Task*、
+        //   ToolSearch、MCP 资源工具、EnterPlanMode 等。ExitPlanMode 虽然要审批，但审批的是计划本身，不宜预先放行。
+        // - Bash 由命令工具的模板表达，不作为内置工具；Monitor 沿用 Bash 的规则；
+        //   PowerShell 只在 Windows 默认启用，命令模板按 Bash 输出，不另列。
+        // 路径模式是以 / 结尾的目录前缀，模板补上 ** 得到 gitignore 风格的 glob，如 Read(./src/**)。
+        {
+          "id": "preset-built-in-claude-code-read",
+          "key": "Read",
+          "description": "preset-built-in-claude-code-read.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Read({pattern}**)",
+            "without_pattern": "Read",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-edit",
+          "key": "Edit",
+          "description": "preset-built-in-claude-code-edit.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": true,
+          "templates": {
+            "with_pattern": "Edit({pattern}**)",
+            "without_pattern": "Edit",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-webfetch",
+          "key": "WebFetch",
+          "description": "preset-built-in-claude-code-webfetch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "WebFetch(domain:{pattern})",
+            "without_pattern": "WebFetch",
+          },
+        },
+        // WebSearch 不接受模式，有模式的规则会进入跳过的规则。
+        {
+          "id": "preset-built-in-claude-code-websearch",
+          "key": "WebSearch",
+          "description": "preset-built-in-claude-code-websearch.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "",
+            "without_pattern": "WebSearch",
+          },
+        },
+        // 按技能名匹配，如 Skill(deploy *)。
+        {
+          "id": "preset-built-in-claude-code-skill",
+          "key": "Skill",
+          "description": "preset-built-in-claude-code-skill.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "Skill({pattern})",
+            "without_pattern": "Skill",
+          },
+        },
+        // Workflow 与 Artifact 的规则只按工具名匹配，官方没有给出参数写法，有模式的规则会进入跳过的规则。
+        {
+          "id": "preset-built-in-claude-code-workflow",
+          "key": "Workflow",
+          "description": "preset-built-in-claude-code-workflow.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "",
+            "without_pattern": "Workflow",
+          },
+        },
+        {
+          "id": "preset-built-in-claude-code-artifact",
+          "key": "Artifact",
+          "description": "preset-built-in-claude-code-artifact.description",
+          "tag_ids": [],
+          "high_risk": false,
+          "high_risk_reason": "",
+          "writes": false,
+          "templates": {
+            "with_pattern": "",
+            "without_pattern": "Artifact",
+          },
+        },
+      ],
+      "permission_output": {
+        "property_path": "permissions",
+        "scopes": [
+          {
+            "name": "preset-agent-claude-code.permission-scope-user.name",
+            "path": "~/.claude/settings.json",
+            "note": "preset-agent-claude-code.permission-scope-user.note",
+          },
+          {
+            "name": "preset-agent-claude-code.permission-scope-project.name",
+            "path": ".claude/settings.json",
+            "note": "preset-agent-claude-code.permission-scope-project.note",
+          },
+          {
+            "name": "preset-agent-claude-code.permission-scope-project-local.name",
+            "path": ".claude/settings.local.json",
+            "note": "preset-agent-claude-code.permission-scope-project-local.note",
+          },
+        ],
+        "decision_keys": {
+          "allow": "allow",
+          "ask": "ask",
+          "deny": "deny",
+        },
+        "command_templates": {
+          "with_pattern": "Bash({command} {pattern} *)",
+          "without_pattern": "Bash({command} *)",
+        },
+        "mcp_templates": {
+          "with_pattern": "mcp__{server}__{pattern}",
+          "without_pattern": "mcp__{server}",
+        },
+      },
+      "mcp_output": {
+        "style": "json",
+        "property_path": "mcpServers",
+        "scopes": [
+          {
+            "name": "preset-agent-claude-code.mcp-scope-project.name",
+            "path": ".mcp.json",
+            "note": "preset-agent-claude-code.mcp-scope-project.note",
+          },
+          {
+            "name": "preset-agent-claude-code.mcp-scope-user.name",
+            "path": "~/.claude.json",
+            "note": "preset-agent-claude-code.mcp-scope-user.note",
+          },
+        ],
+      },
+    },
+  ],
+  "rules": [
+    // 来自实际配置：网页抓取与搜索整体允许。
+    // 路径规则要写成 ~/ 形式：单个前导 / 在 Claude Code 中表示相对设置文件所在目录，不能用 {{home}}。
+    {
+      "id": "preset-rule-claude-code-webfetch-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-claude-code-webfetch",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-rule-claude-code-websearch-allow",
+      "tool": {
+        "type": "built_in",
+        "id": "preset-built-in-claude-code-websearch",
+      },
+      "pattern": "",
+      "decision": "allow",
+      "description": "",
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+  ],
+}

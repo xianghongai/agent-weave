@@ -1,0 +1,28 @@
+// 不收录的产品，以及卡在哪里。依据 2026-10-24 的三份调研，写法限制见 ADR 0001：
+// Agent 定义只能表达“属性路径下按决策分组的字符串数组，每条规则由模板拼成一个字符串”，
+// MCP 只能输出 Claude 风格的 JSON 或 Codex 风格的 TOML。想补充其中某一家时，先解决对应的卡点。
+//
+// 权限规则是对象或数组：
+// - OpenCode：opencode.json 的 permission 按工具类别分组，值是“模式 → 决策”的对象，最后命中的生效；
+//   MCP 根键是 mcp，command 是单个数组、环境变量键为 environment，条目结构也不同。
+// - Amp：settings.json 的 amp.permissions 是 { tool, matches, action } 对象数组，第一条命中生效；
+//   MCP 放行在另一个数组 amp.mcpPermissions 中。
+// - Kimi Code：config.toml 的 [[permission.rules]] 是带 decision、scope、pattern 的表数组，第一条命中生效。
+// - Trae：permission/global.json 的 commandRules、mcpRules 以模式为键，值是带 approval 的对象。
+// - VS Code Copilot：chat.tools.terminal.autoApprove 等设置以命令或正则为键、布尔值或对象为值。
+// 规则是正则：
+// - Zed：agent.tool_permissions 按工具分组，always_allow 等是 { pattern } 对象数组，pattern 是 Rust 正则。
+// 规则是 YAML：
+// - Kiro：~/.kiro/settings/permissions.yaml 的能力规则。
+// - Continue：CLI 的 ~/.continue/permissions.yaml，IDE 只存在本地存储里。
+// 规则是命令行参数：
+// - Copilot CLI：--allow-tool、--deny-tool 等参数，设置文件中没有对应的规则列表；
+//   ~/.copilot/permissions-config.json 只保存交互中批准过的结果。
+// 只有界面开关、模式或工具名单，没有按决策分组的规则：
+// - Cline、Roo Code：分类开关保存在扩展的全局状态中。
+// - Windsurf 旧版 Cascade：命令允许与拒绝列表在界面中维护，没有公开的权限文件。
+// - Qoder CN、文心快码 Comate：界面中的档位，Qoder 另有子 Agent 的工具白名单。
+// - 智谱 ZCode：permission 下只有审批模式和工具名允许、禁止列表，不能按命令或路径匹配。
+// 已停止服务：
+// - iFlow CLI：2026-04-17 停止服务。
+{}

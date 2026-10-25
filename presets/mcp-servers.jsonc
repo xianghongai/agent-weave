@@ -1,0 +1,129 @@
+{
+  // 预设 MCP Server。内容是 Claude 风格的 JSON；个人路径写成 {{home}}，密钥写成 ${VAR}，留在本机环境变量里。
+  // 内容中自带的 description 挪到描述字段，描述不进入输出。
+  // 只与某台机器相关的参数不收录，如 Firefox 的安装路径（工具能自动查找）和调试日志文件。
+  // 每个 Server 在 rules.jsonc 中各有一条允许整个 Server 的规则。
+  "mcp_servers": [
+    {
+      "id": "preset-mcp-chrome-devtools",
+      "key": "chrome-devtools",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "chrome-devtools-mcp@latest",
+          "--auto-connect",
+          "--no-usage-statistics",
+          "--no-performance-crux",
+        ],
+      },
+      "description": "preset-mcp-chrome-devtools.description",
+      "tag_ids": ["preset-tag-browser"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-firefox-devtools",
+      "key": "firefox-devtools",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": [
+          "-y",
+          "@mozilla/firefox-devtools-mcp@latest",
+          "--connect-existing",
+          "--tool-preset",
+          "developer",
+          "--log-file",
+          "/tmp/firefox-devtools-mcp/server.log",
+        ],
+      },
+      "description": "preset-mcp-firefox-devtools.description",
+      "tag_ids": ["preset-tag-browser"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-playwright",
+      "key": "playwright",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@playwright/mcp@latest"],
+      },
+      "description": "preset-mcp-playwright.description",
+      "tag_ids": ["preset-tag-browser"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-filesystem",
+      "key": "filesystem",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{home}}"],
+      },
+      "description": "preset-mcp-filesystem.description",
+      "tag_ids": ["preset-tag-filesystem"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-github",
+      "key": "github",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+      },
+      "description": "preset-mcp-github.description",
+      "tag_ids": ["preset-tag-vcs", "preset-tag-network"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-context7",
+      "key": "context7",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@upstash/context7-mcp@latest"],
+        "env": { "CONTEXT7_API_KEY": "${CONTEXT7_API_KEY}" },
+      },
+      "description": "preset-mcp-context7.description",
+      "tag_ids": ["preset-tag-search", "preset-tag-network"],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    // 存储位置只能通过环境变量 MEMORY_FILE_PATH 指定，Server 自己展开 ~。
+    {
+      "id": "preset-mcp-memory",
+      "key": "memory",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-memory"],
+        "env": { "MEMORY_FILE_PATH": "~/.local/agent/share/mcp-memory.json" },
+      },
+      "description": "preset-mcp-memory.description",
+      "tag_ids": [],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+    {
+      "id": "preset-mcp-sequential-thinking",
+      "key": "sequential-thinking",
+      "content": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      },
+      "description": "preset-mcp-sequential-thinking.description",
+      "tag_ids": [],
+      "high_risk": false,
+      "high_risk_reason": "",
+    },
+  ],
+}

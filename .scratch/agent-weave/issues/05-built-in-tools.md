@@ -6,7 +6,7 @@
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 内置工具包括标识（在所属 Agent 内唯一）、可选描述、写入类标记、有模式模板、无模式模板（如 `Read({pattern})` 与 `Read`，`read_file({pattern})` 与 `read_file(*)`）
 - [ ] 录入规则时可以选择内置工具，界面标明该规则归属哪个 Agent

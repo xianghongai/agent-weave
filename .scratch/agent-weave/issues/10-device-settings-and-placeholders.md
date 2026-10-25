@@ -4,7 +4,7 @@
 
 **Blocked by:** 03, 05, 06
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 本机设置使用独立的本地存储键，不进入工作区，也不进入导出文件
 - [ ] `{{home}}` 按操作系统展开为 `/home/<用户名>`、`/Users/<用户名>`、`C:\Users\<用户名>`；`{{user}}` 展开为用户名

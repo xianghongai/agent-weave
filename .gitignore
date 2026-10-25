@@ -290,3 +290,6 @@ blob-report/
 
 # Allow project-specific directories shadowing generic community rules
 !test/
+
+# Claude Code 子代理的临时 worktree
+.claude/worktrees/

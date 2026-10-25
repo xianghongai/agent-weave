@@ -1,0 +1,36 @@
+{
+  "priority": 100,
+  "agents": [
+    // Codex CLI：只有 MCP 输出。调研依据：codex-cli 0.163.0 与 2026-10-24 的官方文档，见 docs/agent-formats.md。
+    // 它的命令规则是 Starlark 的 prefix_rule（预览功能），路径与网址规则在仍是 beta 的权限配置文件
+    // [permissions.<name>] 中，按路径或域名做键、取值为 read/write/deny 或 allow/deny，模板表达不了，
+    // 因此不输出权限（ADR 0001）。
+    // 内置工具为空：Codex 以 Shell 为中心，读写搜索经 exec_command 与 apply_patch 完成，
+    // 审批由 approval_policy 与 sandbox_mode 决定，没有按工具名写的权限规则。
+    // MCP 输出是 TOML 的 [mcp_servers.<标识>] 表，由各 Server 的 JSON 内容转换而来；
+    // 内容按原样转换，不替用户改写，因此在作用域说明中提示 env_vars 的差异。
+    {
+      "id": "preset-agent-codex-cli",
+      "name": "Codex CLI",
+      "description": "preset-agent-codex-cli.description",
+      "built_in_tools": [],
+      "permission_output": null,
+      "mcp_output": {
+        "style": "toml",
+        "property_path": "mcp_servers",
+        "scopes": [
+          {
+            "name": "preset-agent-codex-cli.mcp-scope-user.name",
+            "path": "~/.codex/config.toml",
+            "note": "preset-agent-codex-cli.mcp-scope-user.note",
+          },
+          {
+            "name": "preset-agent-codex-cli.mcp-scope-project.name",
+            "path": ".codex/config.toml",
+            "note": "preset-agent-codex-cli.mcp-scope-project.note",
+          },
+        ],
+      },
+    },
+  ],
+}

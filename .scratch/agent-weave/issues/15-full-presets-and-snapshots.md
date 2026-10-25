@@ -6,7 +6,7 @@
 
 **Blocked by:** 07, 08, 09, 10, 12
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] 共享规则取两份配置的并集，并按正确性整理：去掉被更宽规则完全覆盖的冗余规则（如已有 `sudo` 拒绝时去掉 `sudo rm`）；去掉不是真实命令名的条目（如 `ripgrep`、`tealdeer`）；保留“整体允许加特定拒绝”的组合
 - [ ] 每个 MCP Server 都有一条共享的 `allow` 规则
