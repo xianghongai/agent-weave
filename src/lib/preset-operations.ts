@@ -196,13 +196,11 @@ function mergeRules(merged: Workspace, preset: Workspace, report: MergeReport): 
  * 标识与工作区已有条目冲突的预设条目跳过，并列在报告中。
  * 跳过的预设标签由同标识的已有标签代替，新增的工具改为引用已有标签；已有的工具不变。
  * 没有新增任何条目时原样返回工作区，修改时间不变。
- * `language` 是界面语言，由界面层传入，新加入的条目用这种语言的文字；已有条目按 ID 跳过，文字不变。
- * `preset` 只供测试替换，界面使用该语言的站点预设。
+ * `preset` 由界面层传入界面语言的站点预设，新加入的条目用这种语言的文字；已有条目按 ID 跳过，文字不变。
  */
 export function mergePresets(
   workspace: Workspace,
-  language: Language,
-  preset: Workspace = createPresetWorkspace(language),
+  preset: Workspace,
   ctx: OperationContext = systemContext
 ): MergeResult {
   const report: MergeReport = { added: 0, skipped: [] };

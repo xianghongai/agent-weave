@@ -14,14 +14,15 @@
   "footer": {
     "privacy": "Your data stays in your browser and the sync location you choose. This site collects no data.",
     "repository": "GitHub repository",
-    "language": "Interface language"
+    "language": "Interface language",
+    "languageLoadFailed": "Couldn't load the selected language. Check your network connection and try again."
   },
   "home": {
     "headline": {
       "lead": "One set of permission rules,",
       "tail": "woven into every agent"
     },
-    "intro": "Maintain one agent-neutral list of permission rules and MCP servers, and generate configuration for Claude Code, Codex CLI, Antigravity, and more. Everything runs in your browser.",
+    "intro": "Maintain one neutral rule set of permission rules and MCP servers, and generate configuration for Claude Code, Codex CLI, Antigravity, and more. Everything runs in your browser.",
     "features": "Features",
     "start": "Start writing rules",
     "tools": {

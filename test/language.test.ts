@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { matchLanguage, resolveLanguage } from '@/lib/language';
+import { LANGUAGES, byLanguage, matchLanguage, resolveLanguage } from '@/lib/language';
 
 describe('语言：把浏览器语言标签映射到界面语言', () => {
   it('中文不论地区和书写系统都映射到简体中文', () => {
@@ -18,6 +18,10 @@ describe('语言：把浏览器语言标签映射到界面语言', () => {
   it('忽略首尾空白', () => {
     expect(matchLanguage(' zh-CN ')).toBe('zh-CN');
     expect(matchLanguage(' en ')).toBe('en');
+  });
+
+  it.each(LANGUAGES)('支持的语言 %s 匹配到自己', (language) => {
+    expect(matchLanguage(language)).toBe(language);
   });
 
   it('其他语言不匹配', () => {
@@ -40,5 +44,11 @@ describe('语言：决定显示哪种界面语言', () => {
   it('都不匹配或没有偏好时用英文', () => {
     expect(resolveLanguage(null, ['ja', 'fr'])).toBe('en');
     expect(resolveLanguage(null, [])).toBe('en');
+  });
+});
+
+describe('语言：按每种语言各算一份值', () => {
+  it('每种支持的语言都有一项，值由该语言算出', () => {
+    expect(byLanguage((language) => `${language}!`)).toEqual({ 'zh-CN': 'zh-CN!', en: 'en!' });
   });
 });

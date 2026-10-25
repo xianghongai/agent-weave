@@ -14,7 +14,8 @@
   "footer": {
     "privacy": "数据只保存在你的浏览器和你选择的同步位置，本站不收集任何数据",
     "repository": "GitHub 仓库",
-    "language": "界面语言"
+    "language": "界面语言",
+    "languageLoadFailed": "无法加载所选语言，请检查网络连接后重试"
   },
   "home": {
     "headline": {
@@ -274,13 +275,13 @@
     "noTools": "还没有工具，先到“工具”页新增命令工具，到“MCP Server”页新增 MCP Server，或在“Agent”页新增内置工具。",
     "mcpBadge": "MCP",
     "mcpPatternPlaceholder": "如 query-docs，留空表示整个 Server",
-    "mcpPatternHint": "- 填该 MCP Server 提供的工具名，如 `resolve-library-id`。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。",
+    "mcpPatternHint": "- 填该 MCP Server 提供的工具名，如 `resolve-library-id`。\n- 留空表示整个 Server。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。",
     "pattern": "模式",
     "patternHelp": "模式说明",
     "patternPlaceholder": "如 push --force，留空表示整个工具",
-    "patternHint": "- 填命令后面的部分，按前缀匹配。\n- 例如工具为 `git`、模式为 `push`，匹配所有以 `git push` 开头的命令。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。",
+    "patternHint": "- 填命令后面的部分，按前缀匹配。\n- 例如工具为 `git`、模式为 `push`，匹配所有以 `git push` 开头的命令。\n- 留空表示整个工具。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。",
     "builtInPatternPlaceholder": "如 ./src/，留空表示整个工具",
-    "builtInPatternHint": "- 路径填以 `/` 结尾的目录，如 `./src/`，模板会补上 glob。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。\n- 该规则只属于 {{agent}}。",
+    "builtInPatternHint": "- 路径填以 `/` 结尾的目录，如 `./src/`，模板会补上 glob。\n- 留空表示整个工具。\n- `*` 不做转义，由各 Agent 按自己的规则当作通配符。\n- 该规则只属于 {{agent}}。",
     "decision": "决策",
     "description": "描述",
     "listHelp": "规则列表说明",
