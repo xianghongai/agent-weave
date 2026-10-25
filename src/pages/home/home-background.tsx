@@ -3,21 +3,24 @@ import * as THREE from 'three';
 
 import { useAppStore } from '@/state/app-store';
 
-/** 经线（Warp）与纬线（Weft）的分段与线条数量配置。 */
-const WARP_LINES = 24;
-const WARP_SEGMENTS = 70;
-const WEFT_LINES = 24;
-const WEFT_SEGMENTS = 70;
+/** 两组流动交织丝束的配置：每组包含多根连续的平滑流线。 */
+const STREAM_LINES = 22;
+const STREAM_SEGMENTS = 80;
 
-const GRID_WIDTH = 56;
-const GRID_DEPTH = 50;
+/** 连接两束流线的穿插横向弧线数量与分段。 */
+const CROSS_LINES = 18;
+const CROSS_SEGMENTS = 36;
+
+/** 流线上的浮动微光节点数量。 */
+const PARTICLES_COUNT = 80;
 
 interface Palette {
   warp: number;
   weft: number;
-  neutral: number;
+  cross: number;
   points: number;
   lineOpacity: number;
+  crossOpacity: number;
   pointsOpacity: number;
   fogColor: number;
   fogDensity: number;
@@ -29,31 +32,33 @@ const PALETTES: Record<'dark' | 'light', Palette> = {
   dark: {
     warp: 0x2dd4bf, // 品牌青绿 Teal
     weft: 0x818cf8, // 智能体紫蓝 Indigo
-    neutral: 0x334155, // 暗色灰网 Slate
+    cross: 0x475569, // 柔和交错暗青灰 Slate
     points: 0x7dd3c0,
-    lineOpacity: 0.32,
+    lineOpacity: 0.38,
+    crossOpacity: 0.18,
     pointsOpacity: 0.7,
     fogColor: 0x15161d,
-    fogDensity: 0.022,
+    fogDensity: 0.02,
     blending: THREE.AdditiveBlending,
   },
   light: {
     warp: 0x0d9488, // 浅色调深青
     weft: 0x4f46e5, // 浅色调靛蓝
-    neutral: 0x94a3b8, // 浅色灰网
+    cross: 0x94a3b8, // 浅色灰织线
     points: 0x0d9488,
-    lineOpacity: 0.2,
+    lineOpacity: 0.22,
+    crossOpacity: 0.12,
     pointsOpacity: 0.4,
     fogColor: 0xf8fafc,
-    fogDensity: 0.024,
+    fogDensity: 0.022,
     blending: THREE.NormalBlending,
   },
 };
 
 /**
  * 首页全屏 3D 背景组件：
- * 以 Three.js 绘制交织穿插的动态多层经纬织网（Weave Matrix）与微光交点粒子，
- * 柔和表现多智能体规则与 MCP 配置的交错汇聚与编织。
+ * 以三维自然流线束（Flowing Woven Ribbons）与悬垂交织弧线构建动态空间，
+ * 彻底摆脱规整正方格子的“直瓦楞”生硬感，柔和表达多智能体规则与 MCP 配置的交错汇聚。
  *
  * 仅在首页挂载渲染，切换页面时完整释放所有 WebGL 资源。
  */
@@ -82,8 +87,8 @@ export function HomeBackground() {
     scene.fog = new THREE.FogExp2(palette.fogColor, palette.fogDensity);
 
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 120);
-    // 构图：相机略微偏左并抬高俯视，使右下方呈现舒展的编织波浪，避开左侧文字标题区
-    camera.position.set(-6, 16, 28);
+    // 构图：相机略偏左并俯视，使两条丝带在右侧与底部优雅翻腾交错，避开左侧大标题区
+    camera.position.set(-6, 15, 28);
     const lookTarget = new THREE.Vector3(2, -1, 0);
     camera.lookAt(lookTarget);
 
@@ -114,7 +119,14 @@ export function HomeBackground() {
       depthWrite: false,
     });
 
-    // 粒子：经纬交点微光节点
+    const crossMaterial = new THREE.LineBasicMaterial({
+      color: palette.cross,
+      transparent: true,
+      opacity: palette.crossOpacity,
+      blending: palette.blending,
+      depthWrite: false,
+    });
+
     const pointsMaterial = new THREE.PointsMaterial({
       color: palette.points,
       size: 0.16,
@@ -124,9 +136,9 @@ export function HomeBackground() {
       depthWrite: false,
     });
 
-    // 1. 经线（沿 X 轴延伸，多条沿 Z 分布）
-    const warpLineCount = WARP_LINES;
-    const warpSegments = WARP_SEGMENTS;
+    // 1. 流线束 1（青绿规则流束：沿大弧度穿过空间）
+    const warpLineCount = STREAM_LINES;
+    const warpSegments = STREAM_SEGMENTS;
     const warpVertexCount = warpLineCount * warpSegments * 2;
     const warpPositions = new Float32Array(warpVertexCount * 3);
     const warpGeometry = new THREE.BufferGeometry();
@@ -135,9 +147,9 @@ export function HomeBackground() {
     const warpLines = new THREE.LineSegments(warpGeometry, warpMaterial);
     scene.add(warpLines);
 
-    // 2. 纬线（沿 Z 轴延伸，多条沿 X 分布）
-    const weftLineCount = WEFT_LINES;
-    const weftSegments = WEFT_SEGMENTS;
+    // 2. 流线束 2（紫蓝 Agent 流束：以交叉角度斜向穿插穿行）
+    const weftLineCount = STREAM_LINES;
+    const weftSegments = STREAM_SEGMENTS;
     const weftVertexCount = weftLineCount * weftSegments * 2;
     const weftPositions = new Float32Array(weftVertexCount * 3);
     const weftGeometry = new THREE.BufferGeometry();
@@ -146,10 +158,19 @@ export function HomeBackground() {
     const weftLines = new THREE.LineSegments(weftGeometry, weftMaterial);
     scene.add(weftLines);
 
-    // 3. 交织节点粒子（从交点中挑选若干节点）
-    const sampleXCount = 12;
-    const sampleZCount = 12;
-    const totalPoints = sampleXCount * sampleZCount;
+    // 3. 穿插横向弧线（Cross Threads：连接两束流线的柔性交织线）
+    const crossLineCount = CROSS_LINES;
+    const crossSegments = CROSS_SEGMENTS;
+    const crossVertexCount = crossLineCount * crossSegments * 2;
+    const crossPositions = new Float32Array(crossVertexCount * 3);
+    const crossGeometry = new THREE.BufferGeometry();
+    const crossPositionAttr = new THREE.BufferAttribute(crossPositions, 3);
+    crossGeometry.setAttribute('position', crossPositionAttr);
+    const crossLines = new THREE.LineSegments(crossGeometry, crossMaterial);
+    scene.add(crossLines);
+
+    // 4. 浮动微光节点粒子（沿着流线自然分布）
+    const totalPoints = PARTICLES_COUNT;
     const pointPositions = new Float32Array(totalPoints * 3);
     const pointsGeometry = new THREE.BufferGeometry();
     const pointsPositionAttr = new THREE.BufferAttribute(pointPositions, 3);
@@ -180,30 +201,6 @@ export function HomeBackground() {
     };
     window.addEventListener('resize', onResize);
 
-    // 动画波浪计算函数：垂直高度起伏
-    const computeHeight = (x: number, z: number, t: number, strandPhase = 0) => {
-      const w1 = Math.sin(x * 0.09 + t * 0.45 + z * 0.06 + strandPhase) * 1.1;
-      const w2 = Math.cos(z * 0.08 - t * 0.35 + x * 0.04) * 0.85;
-      const ripple = Math.sin(Math.sqrt(x * x + z * z) * 0.08 - t * 0.4) * 0.45;
-      // 编织交错效果：依据 z 和 x 的网格奇偶位置交错凸起与凹陷
-      const weaveShift = Math.sin(x * 0.35) * Math.cos(z * 0.35) * 0.35;
-      return w1 + w2 + ripple + weaveShift;
-    };
-
-    // 经线在水平面上的波浪蛇行偏移：让每根经线呈现柔和水波曲线
-    const computeWarpZ = (x: number, baseZ: number, lineIndex: number, t: number) => {
-      const wave = Math.sin(x * 0.1 + t * 0.35 + lineIndex * 0.16) * 1.4;
-      const subWave = Math.cos(x * 0.05 - t * 0.25 + baseZ * 0.06) * 0.65;
-      return baseZ + wave + subWave;
-    };
-
-    // 纬线在水平面上的波浪蛇行偏移：让每根纬线呈现正交水波曲线
-    const computeWeftX = (z: number, baseX: number, lineIndex: number, t: number) => {
-      const wave = Math.sin(z * 0.1 + t * 0.35 + lineIndex * 0.16) * 1.4;
-      const subWave = Math.cos(z * 0.05 - t * 0.25 + baseX * 0.06) * 0.65;
-      return baseX + wave + subWave;
-    };
-
     // 动画时间与渲染循环
     let animationFrameId = 0;
     let time = 0;
@@ -218,6 +215,43 @@ export function HomeBackground() {
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
 
+    // 流束 1（青绿）核心中心线函数：u in [0, 1]
+    const getStream1Point = (u: number, t: number, lineIndex: number) => {
+      const lineWeight = (lineIndex - (STREAM_LINES - 1) / 2) / ((STREAM_LINES - 1) / 2);
+      // 中间展开，两端微收拢
+      const envelope = 1 - 0.28 * Math.pow(2 * u - 1, 2);
+      const spreadWidth = 5.2 * envelope;
+
+      const baseX = -34 + u * 68;
+      const baseZ = -12 + u * 24 + Math.sin(u * 3.2 + t * 0.45) * 6.5;
+      const baseY = Math.cos(u * 3.6 + t * 0.5) * 2.8 + Math.sin(u * 1.8 - t * 0.35) * 1.6 - 1.2;
+
+      // 细线横向展开与局部起伏微波
+      const localRipple = Math.sin(u * 7.5 + lineIndex * 0.22 + t * 0.6) * 0.4;
+      const x = baseX - lineWeight * spreadWidth * 0.2;
+      const z = baseZ + lineWeight * spreadWidth * 0.95;
+      const y = baseY + lineWeight * 0.4 + localRipple;
+      return { x, y, z };
+    };
+
+    // 流束 2（紫蓝）核心中心线函数：v in [0, 1]（斜向与流束 1 交叉穿插）
+    const getStream2Point = (v: number, t: number, lineIndex: number) => {
+      const lineWeight = (lineIndex - (STREAM_LINES - 1) / 2) / ((STREAM_LINES - 1) / 2);
+      const envelope = 1 - 0.28 * Math.pow(2 * v - 1, 2);
+      const spreadWidth = 5.0 * envelope;
+
+      const baseX = -30 + v * 64;
+      const baseZ = 16 - v * 32 + Math.cos(v * 3.0 + t * 0.45) * 6.0;
+      // 起伏相位与流束 1 交错，形成真实的上下交织穿越
+      const baseY = Math.sin(v * 3.6 + t * 0.5 + Math.PI * 0.5) * 2.8 - Math.cos(v * 1.8 - t * 0.35) * 1.5 - 1.2;
+
+      const localRipple = -Math.sin(v * 7.5 + lineIndex * 0.22 + t * 0.6) * 0.4;
+      const x = baseX + lineWeight * spreadWidth * 0.25;
+      const z = baseZ + lineWeight * spreadWidth * 0.95;
+      const y = baseY - lineWeight * 0.4 + localRipple;
+      return { x, y, z };
+    };
+
     const render = (timestamp: number) => {
       animationFrameId = requestAnimationFrame(render);
       if (!isTabVisible) {
@@ -227,9 +261,9 @@ export function HomeBackground() {
       const delta = (timestamp - lastTimestamp) / 1000;
       lastTimestamp = timestamp;
 
-      // 如果未开启减弱动效，平滑推进时间（放缓速率使波浪更加舒缓沉静）
+      // 如果未开启减弱动效，平滑推进时间
       if (!reducedMotion) {
-        time += delta * 0.4;
+        time += delta * 0.38;
       }
 
       // 更柔和沉静的鼠标平滑阻尼
@@ -240,81 +274,102 @@ export function HomeBackground() {
       // 相机在基础视角上附带轻微视差倾斜，幅度温和克制
       const parallaxFactor = reducedMotion ? 0.15 : 0.65;
       camera.position.x = -6 + mouseX * 1.5 * parallaxFactor;
-      camera.position.y = 16 + mouseY * 1.0 * parallaxFactor;
+      camera.position.y = 15 + mouseY * 1.0 * parallaxFactor;
       camera.lookAt(lookTarget.x + mouseX * 0.4, lookTarget.y + mouseY * 0.25, lookTarget.z);
 
-      // --- 1. 更新经线（Warp：波浪状曲线）---
+      // --- 1. 更新流束 1（青绿）---
       let warpIdx = 0;
-      const xStart = -GRID_WIDTH * 0.5;
-      const zStart = -GRID_DEPTH * 0.5;
-      const zStep = GRID_DEPTH / (warpLineCount - 1);
-      const xStep = GRID_WIDTH / warpSegments;
-
       for (let l = 0; l < warpLineCount; l++) {
-        const baseZ = zStart + l * zStep;
         for (let s = 0; s < warpSegments; s++) {
-          const x0 = xStart + s * xStep;
-          const x1 = xStart + (s + 1) * xStep;
-          const z0 = computeWarpZ(x0, baseZ, l, time);
-          const z1 = computeWarpZ(x1, baseZ, l, time);
-          const y0 = computeHeight(x0, z0, time, 0);
-          const y1 = computeHeight(x1, z1, time, 0);
+          const u0 = s / warpSegments;
+          const u1 = (s + 1) / warpSegments;
+          const p0 = getStream1Point(u0, time, l);
+          const p1 = getStream1Point(u1, time, l);
 
-          // 段起点
-          warpPositions[warpIdx++] = x0;
-          warpPositions[warpIdx++] = y0;
-          warpPositions[warpIdx++] = z0;
-          // 段终点
-          warpPositions[warpIdx++] = x1;
-          warpPositions[warpIdx++] = y1;
-          warpPositions[warpIdx++] = z1;
+          warpPositions[warpIdx++] = p0.x;
+          warpPositions[warpIdx++] = p0.y;
+          warpPositions[warpIdx++] = p0.z;
+
+          warpPositions[warpIdx++] = p1.x;
+          warpPositions[warpIdx++] = p1.y;
+          warpPositions[warpIdx++] = p1.z;
         }
       }
       warpPositionAttr.needsUpdate = true;
 
-      // --- 2. 更新纬线（Weft：波浪状曲线）---
+      // --- 2. 更新流束 2（紫蓝）---
       let weftIdx = 0;
-      const weftXStep = GRID_WIDTH / (weftLineCount - 1);
-      const weftZStep = GRID_DEPTH / weftSegments;
-
       for (let l = 0; l < weftLineCount; l++) {
-        const baseX = xStart + l * weftXStep;
         for (let s = 0; s < weftSegments; s++) {
-          const z0 = zStart + s * weftZStep;
-          const z1 = zStart + (s + 1) * weftZStep;
-          const x0 = computeWeftX(z0, baseX, l, time);
-          const x1 = computeWeftX(z1, baseX, l, time);
-          // 加上反相偏移以形成经纬穿插视觉
-          const y0 = computeHeight(x0, z0, time, Math.PI * 0.5);
-          const y1 = computeHeight(x1, z1, time, Math.PI * 0.5);
+          const v0 = s / weftSegments;
+          const v1 = (s + 1) / weftSegments;
+          const p0 = getStream2Point(v0, time, l);
+          const p1 = getStream2Point(v1, time, l);
 
-          weftPositions[weftIdx++] = x0;
-          weftPositions[weftIdx++] = y0;
-          weftPositions[weftIdx++] = z0;
+          weftPositions[weftIdx++] = p0.x;
+          weftPositions[weftIdx++] = p0.y;
+          weftPositions[weftIdx++] = p0.z;
 
-          weftPositions[weftIdx++] = x1;
-          weftPositions[weftIdx++] = y1;
-          weftPositions[weftIdx++] = z1;
+          weftPositions[weftIdx++] = p1.x;
+          weftPositions[weftIdx++] = p1.y;
+          weftPositions[weftIdx++] = p1.z;
         }
       }
       weftPositionAttr.needsUpdate = true;
 
-      // --- 3. 更新节点粒子 ---
-      let pIdx = 0;
-      const xSampleStep = GRID_WIDTH / (sampleXCount + 1);
-      const zSampleStep = GRID_DEPTH / (sampleZCount + 1);
+      // --- 3. 更新穿插横向弧线（Cross Threads）---
+      let crossIdx = 0;
+      for (let c = 0; c < crossLineCount; c++) {
+        const param = (c + 0.5) / crossLineCount;
+        // 两端锚点：分别位于流束 1 与流束 2 的相应位置
+        const anchor1 = getStream1Point(param, time, Math.floor(c % STREAM_LINES));
+        const anchor2 = getStream2Point(param, time, Math.floor((c * 2) % STREAM_LINES));
 
-      for (let ix = 1; ix <= sampleXCount; ix++) {
-        const baseX = xStart + ix * xSampleStep;
-        for (let iz = 1; iz <= sampleZCount; iz++) {
-          const baseZ = zStart + iz * zSampleStep;
-          const px = computeWeftX(baseZ, baseX, ix, time);
-          const pz = computeWarpZ(baseX, baseZ, iz, time);
-          const py = computeHeight(px, pz, time, 0) + 0.15;
-          pointPositions[pIdx++] = px;
-          pointPositions[pIdx++] = py;
-          pointPositions[pIdx++] = pz;
+        // 中间控制点：带有自然的悬垂下陷或向上编织拱起
+        const midX = (anchor1.x + anchor2.x) * 0.5;
+        const midZ = (anchor1.z + anchor2.z) * 0.5;
+        const sag = Math.sin(param * Math.PI) * (Math.sin(param * 4.0 + time * 0.5) * 1.2 - 0.6);
+        const midY = (anchor1.y + anchor2.y) * 0.5 + sag;
+
+        for (let s = 0; s < crossSegments; s++) {
+          const t0 = s / crossSegments;
+          const t1 = (s + 1) / crossSegments;
+
+          // 二次贝塞尔曲线平滑插值
+          const getBezier = (tval: number) => {
+            const it = 1 - tval;
+            return {
+              x: it * it * anchor1.x + 2 * it * tval * midX + tval * tval * anchor2.x,
+              y: it * it * anchor1.y + 2 * it * tval * midY + tval * tval * anchor2.y,
+              z: it * it * anchor1.z + 2 * it * tval * midZ + tval * tval * anchor2.z,
+            };
+          };
+
+          const b0 = getBezier(t0);
+          const b1 = getBezier(t1);
+
+          crossPositions[crossIdx++] = b0.x;
+          crossPositions[crossIdx++] = b0.y;
+          crossPositions[crossIdx++] = b0.z;
+
+          crossPositions[crossIdx++] = b1.x;
+          crossPositions[crossIdx++] = b1.y;
+          crossPositions[crossIdx++] = b1.z;
         }
+      }
+      crossPositionAttr.needsUpdate = true;
+
+      // --- 4. 更新浮动微光节点粒子 ---
+      let pIdx = 0;
+      for (let i = 0; i < totalPoints; i++) {
+        const u = (i / totalPoints + time * 0.03) % 1;
+        const isStream1 = i % 2 === 0;
+        const lineIdx = Math.floor((i * 3) % STREAM_LINES);
+        const pt = isStream1 ? getStream1Point(u, time, lineIdx) : getStream2Point(u, time, lineIdx);
+
+        pointPositions[pIdx++] = pt.x;
+        pointPositions[pIdx++] = pt.y + 0.12;
+        pointPositions[pIdx++] = pt.z;
       }
       pointsPositionAttr.needsUpdate = true;
 
@@ -343,6 +398,7 @@ export function HomeBackground() {
 
       applyMat(warpMaterial, palette.warp, palette.lineOpacity);
       applyMat(weftMaterial, palette.weft, palette.lineOpacity);
+      applyMat(crossMaterial, palette.cross, palette.crossOpacity);
 
       pointsMaterial.color.setHex(palette.points);
       pointsMaterial.opacity = palette.pointsOpacity;
@@ -368,11 +424,13 @@ export function HomeBackground() {
       // 释放所有 BufferGeometry
       warpGeometry.dispose();
       weftGeometry.dispose();
+      crossGeometry.dispose();
       pointsGeometry.dispose();
 
       // 释放材质
       warpMaterial.dispose();
       weftMaterial.dispose();
+      crossMaterial.dispose();
       pointsMaterial.dispose();
 
       // 释放渲染器与 DOM
