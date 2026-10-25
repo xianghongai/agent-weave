@@ -1,5 +1,5 @@
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 
 import { DeviceSettingsDialog } from '@/components/device-settings-dialog';
@@ -10,8 +10,9 @@ import { SiteHeader } from '@/components/site-header';
 import { StorageBanner } from '@/components/storage-banner';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import HomePage from '@/pages/home/home-page';
 import { PAGES } from '@/pages/registry';
+
+const HomePage = lazy(() => import('@/pages/home/home-page'));
 
 function PageRoutes() {
   const location = useLocation();
