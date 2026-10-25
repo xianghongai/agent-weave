@@ -8,7 +8,7 @@ One set of permission rules, woven into every agent.
 
 Agent Weave lets you maintain one neutral rule set of tools, permission rules, and MCP servers, and generates the permission and MCP configuration for each AI coding agent. Everything runs in your browser.
 
-Open it at <https://xianghongai.github.io/agent-weave/>.
+Open it at <https://agent-weave.xinlu.ink/>.
 
 ## Why
 
@@ -32,12 +32,13 @@ Agents whose permission format can't be expressed yet are listed, with the reaso
 
 ## Privacy
 
-| Promise                         | How it's kept                                                                                                                                               |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Data stays with you             | Your workspace is saved in your browser's local storage. It leaves the device only when you export a file or push to your own gist.                         |
-| One external destination        | The built site carries a Content Security Policy whose `connect-src` allows only the site itself and `https://api.github.com`, which is used for gist sync. |
-| No third-party code             | No analytics, tracking, or error reporting. All dependencies are installed from npm and bundled; nothing is loaded from a CDN.                              |
-| Device data stays on the device | Your GitHub token, gist ID, device settings, and interface language are never written to the workspace, exported files, or the gist.                        |
+| Promise                         | How it's kept                                                                                                                                                                                 |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data stays with you             | Your workspace is saved in your browser's local storage. It leaves the device only when you export a file or push to your own gist.                                                           |
+| One external destination        | The built site carries a Content Security Policy whose `connect-src` allows only the site itself and `https://api.github.com`, which is used for gist sync.                                   |
+| No third-party code             | No analytics, tracking, or error reporting. All dependencies are installed from npm and bundled; nothing is loaded from a CDN.                                                                |
+| Device data stays on the device | Your GitHub token, gist ID, device settings, and interface language are never written to the workspace, exported files, or the gist.                                                          |
+| Isolated from other sites       | The site has its own domain, so pages on other domains, including other GitHub Pages sites, can't read its storage. It won't render inside another page's frame, which prevents clickjacking. |
 
 To check, open the Network panel in your browser's developer tools. Requests go only to the site itself, plus `api.github.com` when you push or pull.
 
