@@ -42,28 +42,6 @@ Agent Weave 在浏览器里维护一份中立规则集，包含工具、权限�
 
 Secret Gist 不是加密存储，知道链接的人都可以读取，因此不要在工作区中放入密钥。Token 只授予 Gist 权限即可：经典 Token 只勾选 `gist`；Fine-grained Token 在 **Account permissions** 中把 **Gists** 设为 **Read and write**。
 
-## 开发
-
-Node.js 和 pnpm 的版本由 `mise.toml` 与 `package.json` 锁定，命令通过 [mise](https://mise.jdx.dev/) 运行：
-
-```sh
-mise exec -- pnpm install
-mise exec -- pnpm dev
-```
-
-提交前运行全部校验：
-
-```sh
-mise exec -- pnpm format:check && mise exec -- pnpm lint && mise exec -- pnpm check-types && mise exec -- pnpm test && mise exec -- pnpm build
-```
-
-- 修改预设的方法见 [`presets/README.md`](presets/README.md)。
-- 各 Agent 的权限与 MCP 格式规则及已知的坑见 [`docs/agent-formats.md`](docs/agent-formats.md)。
-- 术语定义在 [`GLOSSARY.md`](GLOSSARY.md) 中，设计决策记录在 [`docs/adr/`](docs/adr/) 中。
-- 项目约定见 [`AGENTS.md`](AGENTS.md) 与 [`CODING_STANDARDS.md`](CODING_STANDARDS.md)。
-
-技术栈：Vite、React、TypeScript、Tailwind CSS、shadcn/ui（Base UI）、Zustand、i18next、CodeMirror。
-
 ## 许可证
 
 [MIT](LICENSE)

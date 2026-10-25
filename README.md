@@ -42,28 +42,6 @@ To check, open the Network panel in your browser's developer tools. Requests go 
 
 A secret gist isn't encrypted. Anyone with its link can read it, so don't put secrets in your workspace. Use a token that has only gist access: a classic token with only the `gist` scope, or a fine-grained token with **Gists** set to **Read and write**.
 
-## Development
-
-Node.js and pnpm versions are pinned in `mise.toml` and `package.json`. Run commands through [mise](https://mise.jdx.dev/):
-
-```sh
-mise exec -- pnpm install
-mise exec -- pnpm dev
-```
-
-Before you commit, run all checks:
-
-```sh
-mise exec -- pnpm format:check && mise exec -- pnpm lint && mise exec -- pnpm check-types && mise exec -- pnpm test && mise exec -- pnpm build
-```
-
-- To change presets, see [`presets/README.md`](presets/README.md).
-- Agent permission and MCP formats, with known pitfalls, are in [`docs/agent-formats.md`](docs/agent-formats.md).
-- Terms are defined in [`GLOSSARY.md`](GLOSSARY.md), and design decisions are recorded in [`docs/adr/`](docs/adr/).
-- Project conventions are in [`AGENTS.md`](AGENTS.md) and [`CODING_STANDARDS.md`](CODING_STANDARDS.md).
-
-Built with Vite, React, TypeScript, Tailwind CSS, shadcn/ui (Base UI), Zustand, i18next, and CodeMirror.
-
 ## License
 
 [MIT](LICENSE)
